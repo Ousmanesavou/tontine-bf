@@ -57,3 +57,9 @@ class StorageService {
     await _prefs.remove('tontines_cache');
   }
 }
+
+static Future<void> savePays(String pays) async {
+  await _prefs.setString('pays', pays);
+}
+
+static String? getPays() => _prefs.getString('pays');

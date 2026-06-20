@@ -303,7 +303,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
       ),
     );
   }
-
+ 
+  
   Widget _buildScoreCard(int score) {
     final couleur = score >= 80
         ? AppTheme.vert
@@ -354,7 +355,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
       ),
     );
   }
-
+  _buildItemAction(
+  Icons.settings_outlined,
+  'Réglages',
+  '',
+  () => context.push('/reglages'),
+), 
   @override
   void dispose() {
     _vocal.stop();

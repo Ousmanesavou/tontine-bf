@@ -19,6 +19,8 @@ import 'screens/profil/profil_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'utils/app_theme.dart';
 import 'services/storage_service.dart';
+import 'screens/profil/reglages_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +97,9 @@ final _router = GoRouter(
       path: '/paiement/succes',
       builder: (ctx, state) => const SuccesPaiementScreen(),
     ),
+
+    // Dans les routes :
+    GoRoute(path: '/reglages', builder: (ctx, state) => const ReglagesScreen()),
     GoRoute(
       path: '/paiement/:cotisationId',
       builder: (ctx, state) =>
