@@ -37,3 +37,6 @@
 {"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-20 17:10:41"}
 {"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-20 17:10:41"}
 {"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-20 17:10:41"}
+{"level":"info","message":"CRON: Rappels urgents J-1...","timestamp":"2026-06-20 18:00:00"}
+{"level":"info","message":"Push notification pour 4b918b56-c980-45e9-bf20-538524cacd52: rappel_cotisation","timestamp":"2026-06-20 18:00:01"}
+{"level":"info","message":"1 rappels urgents envoyés","timestamp":"2026-06-20 18:00:01"}
