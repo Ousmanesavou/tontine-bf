@@ -3,7 +3,7 @@ import 'storage_service.dart';
 import 'offline_service.dart';
 import 'connectivity_service.dart';
 class ApiService {
-  static const String baseUrl = 'http://192.168.11.129:3000/api';
+  static const String baseUrl = 'https://tontine-bf.onrender.com/api';
 
   static Dio get _dio {
     final dio = Dio(BaseOptions(

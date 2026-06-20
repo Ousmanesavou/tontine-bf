@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 function validate(schema) {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body, { abortEarly: false });
+    const { error } = schema.validate(req.body, { abortEarly: false, allowUnknown: true });
     if (error) {
       return res.status(400).json({
         error: 'Données invalides',
@@ -16,38 +16,70 @@ function validate(schema) {
 const validateInscription = validate(Joi.object({
   nom: Joi.string().min(2).max(100).required(),
   prenom: Joi.string().min(2).max(100).required(),
-  telephone: Joi.string().required()
-    .messages({ 'string.pattern.base': 'Numéro de téléphone Burkina Faso invalide' }),
+  telephone: Joi.string().min(6).max(20).required(),
   code_pin: Joi.string().length(4).pattern(/^\d+$/).required()
     .messages({ 'string.length': 'Le code PIN doit avoir 4 chiffres' }),
-  langue: Joi.string().valid('fr', 'moore', 'dioula').default('fr'),
+  langue: Joi.string().optional().default('fr'),
   type_acces: Joi.string().valid('smartphone', 'basic').default('smartphone'),
-  orange_money_numero: Joi.string().optional(),
-  moov_money_numero: Joi.string().optional()
+  pays: Joi.string().optional().default('BF'),
+  indicatif: Joi.string().optional(),
+  orange_money_numero: Joi.string().optional().allow(''),
+  moov_money_numero: Joi.string().optional().allow(''),
+  photo_profil: Joi.string().optional().allow(''),
 }));
 
 const validateConnexion = validate(Joi.object({
-  telephone: Joi.string().required(),
-  code_pin: Joi.string().length(4).required()
+  telephone: Joi.string().min(6).max(20).required(),
+  code_pin: Joi.string().min(4).max(6).required()
 }));
 
 const validateTontine = validate(Joi.object({
   nom: Joi.string().min(3).max(200).required(),
-  type: Joi.string().valid('argent_liquide', 'objet', 'caisse_fixe', 'evenementielle').required(),
-  description: Joi.string().max(500).optional(),
+  type: Joi.string().required(),
+  description: Joi.string().max(1000).optional().allow(''),
   montant_cotisation: Joi.number().positive().required(),
-  periodicite: Joi.string().valid('quotidien', '2_jours', 'hebdomadaire', '2_semaines', 'mensuel', 'personnalise').required(),
-  periodicite_jours: Joi.number().integer().min(1).max(90).default(1),
-  nombre_membres: Joi.number().integer().min(2).max(100).required(),
-  date_debut: Joi.date().min('now').required(),
+  periodicite: Joi.string().required(),
+  periodicite_jours: Joi.number().integer().min(1).max(365).default(1),
+  nombre_membres: Joi.number().integer().min(2).max(500).required(),
+  date_debut: Joi.alternatives().try(
+    Joi.date(),
+    Joi.string()
+  ).required(),
   ordre_rotation: Joi.string().valid('tirage_sort', 'manuel', 'besoin').default('tirage_sort'),
-  produit_catalogue_id: Joi.string().uuid().optional()
+  produit_catalogue_id: Joi.string().uuid().optional().allow('', null),
+  photo_tontine: Joi.string().optional().allow('', null),
+  video_tontine: Joi.string().optional().allow('', null),
+  devise: Joi.string().optional().default('XOF'),
+  pays: Joi.string().optional().default('BF'),
+  est_publique: Joi.boolean().optional().default(false),
 }));
 
 const validateCotisation = validate(Joi.object({
   cotisation_id: Joi.string().uuid().required(),
-  methode_paiement: Joi.string().valid('orange_money', 'moov_money', 'depot_physique').required(),
-  telephone_paiement: Joi.string().optional()
+  methode_paiement: Joi.string().required(),
+  telephone_paiement: Joi.string().optional().allow('', null)
 }));
 
-module.exports = { validateInscription, validateConnexion, validateTontine, validateCotisation };
+const validateInvitation = validate(Joi.object({
+  telephone: Joi.string().min(6).max(20).required(),
+  message: Joi.string().optional().allow(''),
+}));
+
+const validateProfil = validate(Joi.object({
+  nom: Joi.string().min(2).max(100).optional(),
+  prenom: Joi.string().min(2).max(100).optional(),
+  langue: Joi.string().optional(),
+  pays: Joi.string().optional(),
+  photo_profil: Joi.string().optional().allow('', null),
+  orange_money_numero: Joi.string().optional().allow('', null),
+  moov_money_numero: Joi.string().optional().allow('', null),
+}));
+
+module.exports = {
+  validateInscription,
+  validateConnexion,
+  validateTontine,
+  validateCotisation,
+  validateInvitation,
+  validateProfil,
+};
