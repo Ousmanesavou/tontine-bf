@@ -16,11 +16,21 @@ const catalogueRoutes = require('./routes/catalogue');
 const paiementRoutes = require('./routes/paiements');
 const notificationRoutes = require('./routes/notifications');
 const ussdRoutes = require('./routes/ussd');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') || '*' }));
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false,
+}));
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,6 +48,7 @@ app.use('/api/cotisations', cotisationRoutes);
 app.use('/api/catalogue', catalogueRoutes);
 app.use('/api/paiements', paiementRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/ussd', ussdRoutes);
 
 app.get('/health', (req, res) => {

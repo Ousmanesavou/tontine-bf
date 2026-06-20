@@ -41,6 +41,7 @@ async function createTables(client) {
       code_pin VARCHAR(255) NOT NULL,
       langue VARCHAR(10) DEFAULT 'fr',
       type_acces VARCHAR(20) DEFAULT 'smartphone',
+      role VARCHAR(20) DEFAULT 'user',
       orange_money_numero VARCHAR(20),
       moov_money_numero VARCHAR(20),
       score_fiabilite INTEGER DEFAULT 100,
@@ -109,6 +110,17 @@ async function createTables(client) {
       created_at TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS fournisseurs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      nom VARCHAR(200) NOT NULL,
+      categorie VARCHAR(50),
+      telephone VARCHAR(20),
+      adresse TEXT,
+      livraison_disponible BOOLEAN DEFAULT false,
+      est_actif BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS emprunts (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       tontine_id UUID REFERENCES tontines(id),
@@ -137,12 +149,47 @@ async function createTables(client) {
       created_at TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS notifications_admin (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      titre VARCHAR(200) NOT NULL,
+      message_fr TEXT NOT NULL,
+      message_moore TEXT,
+      message_dioula TEXT,
+      destinataires VARCHAR(50) NOT NULL,
+      canal VARCHAR(50) NOT NULL,
+      nb_envoyes INTEGER DEFAULT 0,
+      taux_lecture DECIMAL(5,2) DEFAULT 0,
+      envoye_par UUID REFERENCES utilisateurs(id),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_cotisations_tontine ON cotisations(tontine_id);
     CREATE INDEX IF NOT EXISTS idx_cotisations_membre ON cotisations(membre_id);
     CREATE INDEX IF NOT EXISTS idx_membres_tontine ON membres_tontine(tontine_id);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(utilisateur_id);
+    CREATE INDEX IF NOT EXISTS idx_utilisateurs_role ON utilisateurs(role);
+
+    ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
   `);
+
+  await creerCompteAdmin(client);
   logger.info('Tables créées / vérifiées avec succès');
+}
+
+async function creerCompteAdmin(client) {
+  const bcrypt = require('bcryptjs');
+  const { rows } = await client.query(
+    "SELECT id FROM utilisateurs WHERE role = 'admin' LIMIT 1"
+  );
+  if (rows.length === 0) {
+    const hashedPin = await bcrypt.hash('admin123', 10);
+    await client.query(`
+      INSERT INTO utilisateurs (nom, prenom, telephone, code_pin, langue, role)
+      VALUES ('Admin', 'Tontine BF', 'admin@tontine-bf.com', $1, 'fr', 'admin')
+      ON CONFLICT (telephone) DO NOTHING
+    `, [hashedPin]);
+    logger.info('Compte admin créé : admin@tontine-bf.com / admin123');
+  }
 }
 
 module.exports = { pool, connectDB };
