@@ -163,6 +163,23 @@ async function createTables(client) {
       created_at TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS adhesions_tontine (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tontine_id UUID REFERENCES tontines(id) ON DELETE CASCADE,
+  demandeur_id UUID REFERENCES utilisateurs(id),
+  statut VARCHAR(20) DEFAULT 'en_attente',
+  message TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(tontine_id, demandeur_id)
+);
+
+ALTER TABLE tontines ADD COLUMN IF NOT EXISTS est_publique BOOLEAN DEFAULT false;
+ALTER TABLE tontines ADD COLUMN IF NOT EXISTS photo_tontine TEXT;
+ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS photo_profil TEXT;
+ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS pays VARCHAR(5) DEFAULT 'BF';
+ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS indicatif VARCHAR(10) DEFAULT '+226';
+  
     CREATE INDEX IF NOT EXISTS idx_cotisations_tontine ON cotisations(tontine_id);
     CREATE INDEX IF NOT EXISTS idx_cotisations_membre ON cotisations(membre_id);
     CREATE INDEX IF NOT EXISTS idx_membres_tontine ON membres_tontine(tontine_id);

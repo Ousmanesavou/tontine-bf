@@ -25,4 +25,10 @@ router.post('/:id/emprunts', tontineController.demanderEmprunt);
 router.put('/:id/emprunts/:empruntId/voter', tontineController.voterEmprunt);
 router.post('/:id/emprunts/:empruntId/rembourser', tontineController.rembourserEmprunt);
 
+router.get('/publiques', tontineController.getTontinesPubliques);
+router.post('/:id/rejoindre', tontineController.rejoindreTontine);
+router.post('/:id/demander-adhesion', tontineController.demanderAdhesion);
+router.get('/adhesions/mes-demandes', tontineController.getMesDemandes);
+router.put('/adhesions/:adhesionId/accepter', tontineController.accepterAdhesion);
+router.put('/adhesions/:adhesionId/refuser', tontineController.refuserAdhesion);
 module.exports = router;
