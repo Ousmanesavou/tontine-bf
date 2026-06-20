@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tontine BF — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --vert: #1D9E75; --vert-fonce: #0F6E56; --vert-clair: #E1F5EE;
+  --orange: #EF9F27; --orange-clair: #FAEEDA;
+  --rouge: #E24B4A; --rouge-clair: #FCEBEB;
+  --texte: #2C2C2A; --gris: #888780; --gris-clair: #F1EFE8;
+  --fond: #F5F5F5; --blanc: #FFFFFF; --sidebar: #0F2419;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--fond); color: var(--texte); }
+.login-page { min-height:100vh; background:var(--sidebar); display:flex; align-items:center; justify-content:center; }
+.login-card { background:white; border-radius:16px; padding:40px; width:380px; }
+.login-logo { text-align:center; margin-bottom:28px; }
+.login-logo h1 { font-size:26px; font-weight:800; }
+.login-logo h1 span { color:var(--vert); }
+.login-logo p { color:var(--gris); font-size:13px; margin-top:4px; }
+.login-error { background:var(--rouge-clair); color:var(--rouge); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none; }
+.login-btn { width:100%; padding:13px; background:var(--vert); color:white; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; }
+.login-btn:disabled { opacity:0.6; cursor:not-allowed; }
+#dashboard { display:none; min-height:100vh; }
+.layout { display:flex; min-height:100vh; }
+.sidebar { width:240px; background:var(--sidebar); min-height:100vh; display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:100; }
+.sidebar-logo { padding:22px 20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.sidebar-logo h1 { color:white; font-size:18px; font-weight:700; }
+.sidebar-logo h1 span { color:var(--vert); }
+.sidebar-logo p { color:rgba(255,255,255,0.4); font-size:11px; margin-top:2px; }
+.sidebar-nav { flex:1; padding:10px 0; overflow-y:auto; }
+.nav-section { padding:14px 20px 5px; font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:rgba(255,255,255,0.6); cursor:pointer; transition:all 0.15s; font-size:14px; border:none; background:none; width:100%; text-align:left; }
+.nav-item:hover { background:rgba(255,255,255,0.06); color:white; }
+.nav-item.active { background:var(--vert); color:white; }
+.nav-badge { background:var(--rouge); color:white; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:auto; }
+.nav-badge.orange { background:var(--orange); }
+.sidebar-footer { padding:14px 20px; border-top:1px solid rgba(255,255,255,0.08); }
+.admin-info { display:flex; align-items:center; gap:10px; }
+.admin-avatar { width:34px; height:34px; background:var(--vert); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:white; flex-shrink:0; }
+.admin-name { color:white; font-size:13px; font-weight:600; }
+.admin-role { color:rgba(255,255,255,0.4); font-size:11px; }
+.main { margin-left:240px; flex:1; display:flex; flex-direction:column; min-height:100vh; }
+.topbar { background:white; padding:0 28px; height:60px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #E8E8E5; position:sticky; top:0; z-index:50; }
+.topbar-title { font-size:17px; font-weight:700; }
+.topbar-right { display:flex; align-items:center; gap:12px; }
+.logout-btn { padding:7px 14px; background:var(--rouge-clair); color:var(--rouge); border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+.content { padding:24px 28px; flex:1; }
+.page { display:none; }
+.page.active { display:block; }
+.loading { text-align:center; padding:40px; color:var(--gris); }
+.spinner { width:32px; height:32px; border:3px solid var(--gris-clair); border-top-color:var(--vert); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card { background:white; border-radius:12px; padding:20px; border:1px solid #E8E8E5; }
+.stat-icon { font-size:28px; float:right; opacity:0.2; }
+.stat-label { font-size:11px; color:var(--gris); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+.stat-value { font-size:26px; font-weight:700; }
+.stat-change { font-size:12px; margin-top:4px; }
+.stat-up { color:var(--vert); }
+.stat-down { color:var(--rouge); }
+.charts-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:24px; }
+.chart-card { background:white; border-radius:12px; padding:20px; border:1px solid #E8E8E5; }
+.chart-title { font-size:14px; font-weight:700; margin-bottom:16px; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.table-card { background:white; border-radius:12px; border:1px solid #E8E8E5; margin-bottom:20px; overflow:hidden; }
+.table-header { padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #E8E8E5; gap:10px; flex-wrap:wrap; }
+.table-title { font-size:14px; font-weight:700; }
+.table-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.search-input { padding:7px 12px; border:1px solid #E8E8E5; border-radius:8px; font-size:13px; outline:none; width:180px; }
+.search-input:focus { border-color:var(--vert); }
+table { width:100%; border-collapse:collapse; }
+th { padding:9px 16px; text-align:left; font-size:11px; color:var(--gris); text-transform:uppercase; letter-spacing:0.5px; background:var(--fond); border-bottom:1px solid #E8E8E5; white-space:nowrap; }
+td { padding:11px 16px; font-size:13px; border-bottom:1px solid #F5F5F5; vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#FAFAFA; }
+.table-empty { text-align:center; padding:40px; color:var(--gris); }
+.pagination { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #E8E8E5; }
+.page-btn { padding:5px 12px; border:1px solid #E8E8E5; border-radius:6px; font-size:13px; cursor:pointer; background:white; }
+.page-btn.active { background:var(--vert); color:white; border-color:var(--vert); }
+.page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.page-info { font-size:12px; color:var(--gris); }
+.badge { padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block; white-space:nowrap; }
+.badge-green { background:var(--vert-clair); color:var(--vert-fonce); }
+.badge-orange { background:var(--orange-clair); color:#854F0B; }
+.badge-red { background:var(--rouge-clair); color:#A32D2D; }
+.badge-gray { background:var(--gris-clair); color:var(--gris); }
+.badge-blue { background:#E6F1FB; color:#042C53; }
+.user-avatar { width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; margin-right:8px; vertical-align:middle; flex-shrink:0; }
+.score-bar { width:70px; height:5px; background:var(--gris-clair); border-radius:3px; display:inline-block; vertical-align:middle; overflow:hidden; margin-right:5px; }
+.score-fill { height:100%; border-radius:3px; }
+.btn { padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:none; transition:opacity 0.15s; }
+.btn:hover { opacity:0.85; }
+.btn-primary { background:var(--vert); color:white; }
+.btn-danger { background:var(--rouge-clair); color:var(--rouge); }
+.btn-secondary { background:var(--gris-clair); color:var(--texte); }
+.btn-orange { background:var(--orange-clair); color:#854F0B; }
+.alert { padding:11px 14px; border-radius:8px; margin-bottom:10px; font-size:13px; display:flex; align-items:flex-start; gap:10px; }
+.alert-red { background:var(--rouge-clair); color:#A32D2D; }
+.alert-orange { background:var(--orange-clair); color:#854F0B; }
+.alert-green { background:var(--vert-clair); color:var(--vert-fonce); }
+.form-group { margin-bottom:14px; }
+.form-label { display:block; font-size:11px; font-weight:700; color:var(--gris); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px; }
+.form-input, .form-select, .form-textarea { width:100%; padding:9px 13px; border:1px solid #E8E8E5; border-radius:8px; font-size:14px; outline:none; font-family:inherit; background:white; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--vert); }
+.form-textarea { resize:vertical; min-height:80px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:white; border-radius:16px; padding:28px; width:500px; max-height:85vh; overflow-y:auto; }
+.modal-title { font-size:17px; font-weight:700; margin-bottom:20px; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid #E8E8E5; }
+.catalogue-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+.produit-card { background:white; border-radius:12px; border:1px solid #E8E8E5; overflow:hidden; }
+.produit-img { height:90px; background:var(--vert-clair); display:flex; align-items:center; justify-content:center; font-size:44px; }
+.produit-info { padding:12px; }
+.produit-nom { font-size:13px; font-weight:700; margin-bottom:3px; }
+.produit-cat { font-size:11px; color:var(--gris); margin-bottom:4px; }
+.produit-prix { font-size:14px; font-weight:700; color:var(--vert); }
+.produit-actions { display:flex; gap:6px; margin-top:8px; }
+.notif-composer { background:white; border-radius:12px; border:1px solid #E8E8E5; padding:20px; margin-bottom:20px; }
+.lang-tabs { display:flex; gap:8px; margin-bottom:14px; }
+.lang-tab { padding:6px 14px; border-radius:20px; font-size:13px; cursor:pointer; border:1px solid #E8E8E5; background:white; }
+.lang-tab.active { background:var(--vert); color:white; border-color:var(--vert); }
+.toast { position:fixed; bottom:24px; right:24px; background:var(--texte); color:white; padding:12px 20px; border-radius:10px; font-size:14px; z-index:999; transform:translateY(100px); opacity:0; transition:all 0.3s; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:var(--vert); }
+.toast.error { background:var(--rouge); }
+.refresh-btn { padding:6px 12px; border:1px solid #E8E8E5; border-radius:8px; background:white; cursor:pointer; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>💰 Tontine <span>BF</span></h1>
+      <p>Dashboard Administrateur</p>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-group">
+      <label class="form-label">Identifiant</label>
+      <input class="form-input" type="text" id="loginEmail" placeholder="admin@tontine-bf.com" value="admin@tontine-bf.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" value="admin123">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="login()">Se connecter</button>
+    <p style="text-align:center;color:var(--gris);font-size:11px;margin-top:14px;">admin@tontine-bf.com / admin123</p>
+  </div>
+</div>
+
+<div id="dashboard">
+<div class="layout">
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>💰 Tontine <span>BF</span></h1>
+    <p>Administration</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <button class="nav-item active" onclick="showPage('overview',this)">📊 Vue d'ensemble</button>
+    <button class="nav-item" onclick="showPage('users',this)">👥 Utilisateurs <span class="nav-badge" id="badgeUsers">—</span></button>
+    <button class="nav-item" onclick="showPage('tontines',this)">💰 Tontines <span class="nav-badge" id="badgeTontines">—</span></button>
+    <button class="nav-item" onclick="showPage('paiements',this)">💳 Paiements</button>
+    <div class="nav-section">Contenu</div>
+    <button class="nav-item" onclick="showPage('catalogue',this)">🛒 Catalogue</button>
+    <button class="nav-item" onclick="showPage('fournisseurs',this)">🏪 Fournisseurs</button>
+    <div class="nav-section">Communication</div>
+    <button class="nav-item" onclick="showPage('notifications',this)">🔔 Notifications <span class="nav-badge orange" id="badgeRetards">0</span></button>
+    <button class="nav-item" onclick="showPage('rapports',this)">📈 Rapports</button>
+    <div class="nav-section">Système</div>
+    <button class="nav-item" onclick="showPage('parametres',this)">⚙️ Paramètres</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="admin-info">
+      <div class="admin-avatar" id="adminInitials">AD</div>
+      <div>
+        <div class="admin-name" id="adminName">Admin</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Vue d'ensemble</div>
+    <div class="topbar-right">
+      <button class="refresh-btn" onclick="rechargerPage()">🔄 Actualiser</button>
+      <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <div class="page active" id="page-overview">
+      <div id="overviewContent"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+    </div>
+
+    <div class="page" id="page-users">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);" id="usersStats"></div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Tous les utilisateurs</div>
+          <div class="table-actions">
+            <input class="search-input" id="searchUsers" placeholder="🔍 Rechercher..." oninput="rechercherUsers()">
+            <select class="form-select" style="width:130px;" id="filterStatut" onchange="filtrerUsers()">
+              <option value="">Tous</option><option value="actif">Actifs</option><option value="inactif">Inactifs</option>
+            </select>
+            <button class="btn btn-primary" onclick="openModal('modalAddUser')">+ Ajouter</button>
+          </div>
+        </div>
+        <div id="usersTableContainer"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-tontines">
+      <div class="stats-grid" id="tontinesStats"></div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Toutes les tontines</div>
+          <div class="table-actions">
+            <select class="form-select" style="width:160px;" id="filterType" onchange="filtrerTontines()">
+              <option value="">Tous les types</option>
+              <option value="argent_liquide">Argent liquide</option>
+              <option value="objet">Objet / Bien</option>
+              <option value="caisse_fixe">Caisse commune</option>
+              <option value="evenementielle">Événement</option>
+              <option value="sante">Santé</option>
+              <option value="education">Éducation</option>
+              <option value="agriculture">Agriculture</option>
+            </select>
+          </div>
+        </div>
+        <div id="tontinesTableContainer"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-paiements">
+      <div class="stats-grid" id="paiementsStats"></div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Transactions</div>
+          <div class="table-actions">
+            <select class="form-select" style="width:160px;" id="filterMethode" onchange="filtrerPaiements()">
+              <option value="">Toutes méthodes</option>
+              <option value="orange_money">Orange Money</option>
+              <option value="moov_money">Moov Money</option>
+              <option value="depot_physique">Dépôt physique</option>
+            </select>
+          </div>
+        </div>
+        <div id="paiementsTableContainer"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-catalogue">
+      <div class="table-header" style="background:white;border-radius:12px;border:1px solid #E8E8E5;margin-bottom:16px;padding:14px 20px;">
+        <div class="table-title">Catalogue produits</div>
+        <div class="table-actions">
+          <input class="search-input" id="searchCatalogue" placeholder="🔍 Rechercher..." oninput="filtrerCatalogue()">
+          <button class="btn btn-primary" onclick="openModal('modalAddProduit')">+ Ajouter produit</button>
+        </div>
+      </div>
+      <div id="catalogueGrid" class="catalogue-grid">
+        <div class="loading" style="grid-column:span 4"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-fournisseurs">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Fournisseurs partenaires</div>
+          <button class="btn btn-primary" onclick="openModal('modalAddFournisseur')">+ Ajouter</button>
+        </div>
+        <div id="fournisseursTableContainer"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-notifications">
+      <div class="notif-composer">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">📢 Envoyer une notification</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Destinataires</label>
+            <select class="form-select" id="notifDestinataires">
+              <option value="tous">Tous les utilisateurs</option>
+              <option value="retards">Utilisateurs avec retard</option>
+              <option value="responsables">Responsables de tontine</option>
+              <option value="inactifs">Utilisateurs inactifs</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Canal</label>
+            <select class="form-select" id="notifCanal">
+              <option value="push">Push + SMS + WhatsApp</option>
+              <option value="sms">SMS uniquement</option>
+              <option value="whatsapp">WhatsApp uniquement</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Titre</label>
+          <input class="form-input" id="notifTitre" placeholder="Ex: Rappel cotisation">
+        </div>
+        <div class="lang-tabs">
+          <button class="lang-tab active" onclick="switchLang(this,'fr')">🇫🇷 Français</button>
+          <button class="lang-tab" onclick="switchLang(this,'moore')">🇧🇫 Mooré</button>
+          <button class="lang-tab" onclick="switchLang(this,'dioula')">🇧🇫 Dioula</button>
+        </div>
+        <div class="form-group">
+          <textarea class="form-textarea" id="notifFr" placeholder="Message en français..."></textarea>
+          <textarea class="form-textarea" id="notifMoore" placeholder="Tɩ sõsg mooré pʋgẽ..." style="display:none;"></textarea>
+          <textarea class="form-textarea" id="notifDioula" placeholder="Kunnafoni dioula kɔnɔ..." style="display:none;"></textarea>
+        </div>
+        <button class="btn btn-primary" style="padding:10px 24px;" onclick="envoyerNotification()">📤 Envoyer</button>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><div class="table-title">Historique</div></div>
+        <div id="notifHistoriqueContainer"><div class="table-empty">Aucune notification envoyée</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-rapports">
+      <div class="three-col">
+        <div class="chart-card"><div class="chart-title">Par langue</div><canvas id="chartLangues" height="180"></canvas></div>
+        <div class="chart-card"><div class="chart-title">Par méthode paiement</div><canvas id="chartMethods" height="180"></canvas></div>
+        <div class="chart-card"><div class="chart-title">Types de tontines</div><canvas id="chartTontineTypes" height="180"></canvas></div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Résumé transactions</div>
+          <button class="btn btn-primary" onclick="exporterRapport()">📥 Exporter CSV</button>
+        </div>
+        <div id="rapportsContainer"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-parametres">
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title">⚙️ Configuration API</div>
+          <div class="form-group"><label class="form-label">URL Backend</label><input class="form-input" id="paramApiUrl"></div>
+          <div class="form-group"><label class="form-label">Africa's Talking API Key</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">WhatsApp Token</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <button class="btn btn-primary" style="padding:10px 20px;" onclick="sauvegarderConfig()">Sauvegarder</button>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">💳 Mobile Money</div>
+          <div class="form-group"><label class="form-label">Orange Money Client ID</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">Orange Money Secret</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">Moov Money API Key</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <button class="btn btn-primary" style="padding:10px 20px;" onclick="showToast('Clés sauvegardées !','success')">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalAddUser">
+  <div class="modal">
+    <div class="modal-title">👤 Ajouter un utilisateur</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Prénom</label><input class="form-input" id="addUserPrenom" placeholder="Prénom"></div>
+      <div class="form-group"><label class="form-label">Nom</label><input class="form-input" id="addUserNom" placeholder="Nom"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Téléphone</label><input class="form-input" id="addUserTel" placeholder="+226 70 XX XX XX"></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Langue</label>
+        <select class="form-select" id="addUserLangue"><option value="fr">Français</option><option value="moore">Mooré</option><option value="dioula">Dioula</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Code PIN (4 chiffres)</label><input class="form-input" id="addUserPin" type="password" maxlength="4" placeholder="••••"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalAddUser')">Annuler</button>
+      <button class="btn btn-primary" onclick="ajouterUser()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAddProduit">
+  <div class="modal">
+    <div class="modal-title">📦 Ajouter un produit</div>
+    <div class="form-group"><label class="form-label">Nom du produit</label><input class="form-input" id="produitNom" placeholder="Ex: Frigo Samsung 250L"></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Catégorie</label>
+        <select class="form-select" id="produitCategorie">
+          <option value="electromenager">Électroménager</option><option value="meubles">Meubles</option>
+          <option value="cuisine">Cuisine</option><option value="bureau">Bureau</option>
+          <option value="agriculture">Agriculture</option><option value="transport">Transport</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Prix (F CFA)</label><input class="form-input" id="produitPrix" type="number" placeholder="150000"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Fournisseur</label><input class="form-input" id="produitFournisseur" placeholder="Nom"></div>
+      <div class="form-group"><label class="form-label">Contact</label><input class="form-input" id="produitContact" placeholder="+226 XX XX XX XX"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Emoji</label><input class="form-input" id="produitEmoji" placeholder="❄️"></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="produitDesc" placeholder="Description..."></textarea></div>
+    <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="produitLivraison"> <span style="font-size:14px;">Livraison disponible</span></label></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalAddProduit')">Annuler</button>
+      <button class="btn btn-primary" onclick="ajouterProduit()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAddFournisseur">
+  <div class="modal">
+    <div class="modal-title">🏪 Ajouter un fournisseur</div>
+    <div class="form-group"><label class="form-label">Nom</label><input class="form-input" id="fournisseurNom" placeholder="Nom du fournisseur"></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Téléphone</label><input class="form-input" id="fournisseurTel" placeholder="+226 XX XX XX XX"></div>
+      <div class="form-group"><label class="form-label">Catégorie</label>
+        <select class="form-select" id="fournisseurCat">
+          <option value="electromenager">Électroménager</option><option value="meubles">Meubles</option>
+          <option value="cuisine">Cuisine</option><option value="informatique">Informatique</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Adresse</label><input class="form-input" id="fournisseurAdresse" placeholder="Quartier, Ville"></div>
+    <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="fournisseurLivraison"> <span style="font-size:14px;">Livraison disponible</span></label></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalAddFournisseur')">Annuler</button>
+      <button class="btn btn-primary" onclick="ajouterFournisseur()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let API = localStorage.getItem('tontine_api_url') || 'https://tontine-bf.onrender.com/api';
+let TOKEN = localStorage.getItem('admin_token');
+let currentPage = 'overview';
+let usersPage = 1, tontinesPage = 1, paiementsPage = 1;
+let statsData = null, catalogueData = [];
+let chartsInit = false, rapportChartsInit = false;
+const COULEURS = ['#1D9E75','#378ADD','#EF9F27','#D4537E','#E24B4A','#534AB7','#639922','#888780'];
+
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const errDiv = document.getElementById('loginError');
+  if (!email || !password) { showLoginError('Remplissez tous les champs'); return; }
+  btn.disabled = true; btn.textContent = 'Connexion...'; errDiv.style.display = 'none';
+  try {
+    const resp = await fetch(`${API}/admin/login`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) { showLoginError(data.error || 'Identifiants incorrects'); return; }
+    TOKEN = data.token;
+    localStorage.setItem('admin_token', TOKEN);
+    const u = data.user || {};
+    document.getElementById('adminInitials').textContent = `${(u.prenom||'A')[0]}${(u.nom||'D')[0]}`.toUpperCase();
+    document.getElementById('adminName').textContent = `${u.prenom||''} ${u.nom||''}`.trim() || 'Admin';
+    document.getElementById('paramApiUrl').value = API;
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    await chargerOverview(); chargerBadges();
+  } catch(e) { showLoginError('Impossible de contacter le serveur.'); }
+  finally { btn.disabled = false; btn.textContent = 'Se connecter'; }
+}
+
+function showLoginError(msg) {
+  const e = document.getElementById('loginError'); e.textContent = msg; e.style.display = 'block';
+}
+
+function logout() {
+  TOKEN = null; localStorage.removeItem('admin_token');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  chartsInit = false; rapportChartsInit = false;
+}
+
+async function api(path, options={}) {
+  const resp = await fetch(`${API}${path}`, {
+    ...options, headers: {'Content-Type':'application/json','Authorization':`Bearer ${TOKEN}`, ...(options.headers||{})}
+  });
+  if (resp.status === 401) { logout(); return null; }
+  return resp.json();
+}
+
+const pageTitles = {overview:'Vue d\'ensemble',users:'Utilisateurs',tontines:'Tontines',paiements:'Paiements',catalogue:'Catalogue',fournisseurs:'Fournisseurs',notifications:'Notifications',rapports:'Rapports',parametres:'Paramètres'};
+
+async function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[name];
+  if (btn) btn.classList.add('active');
+  currentPage = name;
+  const actions = {overview:chargerOverview,users:chargerUsers,tontines:chargerTontines,paiements:chargerPaiements,catalogue:chargerCatalogue,fournisseurs:chargerFournisseurs,notifications:chargerNotifications,rapports:chargerRapports};
+  if (actions[name]) await actions[name]();
+}
+
+async function rechargerPage() { await showPage(currentPage, null); }
+
+async function chargerBadges() {
+  try {
+    const data = await api('/admin/stats');
+    if (!data?.success) return;
+    const s = data.data;
+    document.getElementById('badgeUsers').textContent = s.total_users || '—';
+    document.getElementById('badgeTontines').textContent = s.tontines_actives || '—';
+    document.getElementById('badgeRetards').textContent = s.retards || '0';
+  } catch(e) {}
+}
+
+async function chargerOverview() {
+  const c = document.getElementById('overviewContent');
+  c.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+  try {
+    const [sr, ar] = await Promise.all([api('/admin/stats'), api('/admin/alerts')]);
+    if (!sr?.success) { c.innerHTML = '<div class="loading">Erreur chargement stats</div>'; return; }
+    statsData = sr.data;
+    const alerts = ar?.data || {};
+    const fm = v => { v=parseFloat(v)||0; return v>=1000000?`${(v/1e6).toFixed(1)}M F`:v>=1000?`${(v/1000).toFixed(0)}k F`:`${v.toFixed(0)} F`; };
+    c.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Utilisateurs</div><div class="stat-value">${(statsData.total_users||0).toLocaleString()}</div><div class="stat-change stat-up">↑ +${statsData.nouveaux_users_semaine||0} cette semaine</div></div>
+        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Tontines actives</div><div class="stat-value">${statsData.tontines_actives||0}</div><div class="stat-change stat-up">↑ +${statsData.nouvelles_tontines_mois||0} ce mois</div></div>
+        <div class="stat-card"><div class="stat-icon">💳</div><div class="stat-label">Transactions (mois)</div><div class="stat-value" style="color:var(--vert)">${fm(statsData.transactions_mois)}</div><div class="stat-change stat-up">Ce mois</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-label">Retards</div><div class="stat-value" style="color:${statsData.retards>0?'var(--rouge)':'var(--vert)'}">${statsData.retards||0}</div><div class="stat-change ${statsData.retards>0?'stat-down':'stat-up'}">${statsData.retards>0?'⚠️ À traiter':'✅ OK'}</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card"><div class="chart-title">Transactions par mois</div><canvas id="chartTransactions" height="200"></canvas></div>
+        <div class="chart-card"><div class="chart-title">Types de tontines</div><canvas id="chartTypes" height="200"></canvas></div>
+      </div>
+      <div class="two-col">
+        <div class="table-card"><div class="table-header"><div class="table-title">⚠️ Alertes</div></div>
+          <div style="padding:16px">${genAlertes(alerts,fm)}</div>
+        </div>
+        <div class="table-card"><div class="table-header"><div class="table-title">📊 Taux paiement ce mois</div></div>
+          <div style="padding:20px;text-align:center">
+            <div style="font-size:48px;font-weight:800;color:${(alerts.taux_paiement||0)>=80?'var(--vert)':(alerts.taux_paiement||0)>=60?'var(--orange)':'var(--rouge)'}">${alerts.taux_paiement||0}%</div>
+            <div style="color:var(--gris);font-size:13px;margin:8px 0">Cotisations payées à temps</div>
+            <div style="height:8px;background:var(--gris-clair);border-radius:4px"><div style="width:${alerts.taux_paiement||0}%;height:100%;background:${(alerts.taux_paiement||0)>=80?'var(--vert)':(alerts.taux_paiement||0)>=60?'var(--orange)':'var(--rouge)'};border-radius:4px"></div></div>
+          </div>
+        </div>
+      </div>
+    `;
+    if (!chartsInit) {
+      const tx = statsData.transactions_par_mois||[];
+      new Chart(document.getElementById('chartTransactions'),{type:'bar',data:{labels:tx.map(t=>t.mois),datasets:[{label:'F CFA',data:tx.map(t=>parseFloat(t.total)),backgroundColor:'#1D9E75',borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+      const types = statsData.types_tontines||[];
+      new Chart(document.getElementById('chartTypes'),{type:'doughnut',data:{labels:types.map(t=>t.type),datasets:[{data:types.map(t=>parseInt(t.total)),backgroundColor:COULEURS}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+      chartsInit = true;
+    }
+  } catch(e) { c.innerHTML = `<div class="loading">Erreur: ${e.message}</div>`; }
+}
+
+function genAlertes(alerts, fm) {
+  if (!alerts.retards?.length && !alerts.echeances_proches?.length) return '<div class="alert alert-green">✅ Aucune alerte — tout va bien !</div>';
+  let h = '';
+  alerts.retards?.slice(0,3).forEach(r => { h += `<div class="alert alert-red">🔴 ${r.prenom} ${r.nom} — retard ${r.jours_retard}j sur "${r.tontine}" (${fm(r.montant)})</div>`; });
+  alerts.echeances_proches?.forEach(e => { h += `<div class="alert alert-orange">🟠 "${e.nom}" échéance dans ${e.jours_restants}j</div>`; });
+  return h;
+}
+
+let searchTimeout;
+function rechercherUsers() { clearTimeout(searchTimeout); searchTimeout=setTimeout(()=>{usersPage=1;chargerUsers();},400); }
+function filtrerUsers() { usersPage=1; chargerUsers(); }
+
+async function chargerUsers() {
+  const c = document.getElementById('usersTableContainer');
+  const search = document.getElementById('searchUsers')?.value||'';
+  const statut = document.getElementById('filterStatut')?.value||'';
+  c.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data = await api(`/admin/users?page=${usersPage}&limit=15&search=${encodeURIComponent(search)}&statut=${statut}`);
+    if (!data?.success) { c.innerHTML='<div class="table-empty">Erreur</div>'; return; }
+    const users = data.data; const total = data.total;
+    document.getElementById('badgeUsers').textContent = total||0;
+    const se = document.getElementById('usersStats');
+    if (se && statsData) se.innerHTML = `<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${total}</div></div><div class="stat-card"><div class="stat-label">Actifs</div><div class="stat-value" style="color:var(--vert)">${statsData.total_users||0}</div></div><div class="stat-card"><div class="stat-label">Nouveaux (semaine)</div><div class="stat-value">${statsData.nouveaux_users_semaine||0}</div></div>`;
+    if (!users?.length) { c.innerHTML='<div class="table-empty">Aucun utilisateur</div>'; return; }
+    const cols = ['#1D9E75','#378ADD','#EF9F27','#D4537E','#534AB7','#E24B4A'];
+    const pages = Math.ceil(total/15);
+    c.innerHTML = `<table><thead><tr><th>Utilisateur</th><th>Téléphone</th><th>Langue</th><th>Tontines</th><th>Score</th><th>Statut</th><th>Depuis</th><th>Actions</th></tr></thead><tbody>
+      ${users.map((u,i)=>{
+        const col=cols[i%cols.length]; const ini=`${(u.prenom||'?')[0]}${(u.nom||'?')[0]}`.toUpperCase();
+        const score=parseInt(u.score_fiabilite)||0; const sc=score>=80?'var(--vert)':score>=50?'var(--orange)':'var(--rouge)';
+        const date=u.created_at?new Date(u.created_at).toLocaleDateString('fr-FR'):'—';
+        return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="background:${col}">${ini}</div><div><div style="font-weight:600">${u.prenom} ${u.nom}</div><div style="font-size:11px;color:var(--gris)">${u.nb_retards>0?`⚠️ ${u.nb_retards} retard(s)`:''}</div></div></div></td>
+        <td>${u.telephone}</td>
+        <td>${u.langue==='moore'?'🇧🇫 Mooré':u.langue==='dioula'?'🇧🇫 Dioula':'🇫🇷 Français'}</td>
+        <td>${u.nb_tontines||0}</td>
+        <td><div class="score-bar"><div class="score-fill" style="width:${score}%;background:${sc}"></div></div><span style="color:${sc};font-weight:600">${score}%</span></td>
+        <td><span class="badge ${u.est_actif?'badge-green':'badge-gray'}">${u.est_actif?'Actif':'Inactif'}</span></td>
+        <td style="font-size:12px;color:var(--gris)">${date}</td>
+        <td>${u.est_actif?`<button class="btn btn-danger" onclick="bloquerUser('${u.id}')">Bloquer</button>`:`<button class="btn btn-orange" onclick="debloquerUser('${u.id}')">Débloquer</button>`}</td></tr>`;
+      }).join('')}
+    </tbody></table>
+    ${pages>1?`<div class="pagination"><span class="page-info">Page ${usersPage}/${pages} — ${total} utilisateurs</span><button class="page-btn" onclick="usersPage=${usersPage-1};chargerUsers()" ${usersPage<=1?'disabled':''}>←</button><button class="page-btn active">${usersPage}</button><button class="page-btn" onclick="usersPage=${usersPage+1};chargerUsers()" ${usersPage>=pages?'disabled':''}>→</button></div>`:''}`;
+  } catch(e) { c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`; }
+}
+
+async function bloquerUser(id) { if(!confirm('Bloquer ?')) return; const d=await api(`/admin/users/${id}/bloquer`,{method:'PUT'}); if(d?.success){showToast('Bloqué','success');chargerUsers();}else showToast('Erreur','error'); }
+async function debloquerUser(id) { const d=await api(`/admin/users/${id}/debloquer`,{method:'PUT'}); if(d?.success){showToast('Débloqué','success');chargerUsers();}else showToast('Erreur','error'); }
+async function ajouterUser() {
+  const body={prenom:document.getElementById('addUserPrenom').value,nom:document.getElementById('addUserNom').value,telephone:document.getElementById('addUserTel').value,langue:document.getElementById('addUserLangue').value,code_pin:document.getElementById('addUserPin').value,type_acces:'smartphone'};
+  if(!body.prenom||!body.nom||!body.telephone||!body.code_pin){showToast('Remplissez tous les champs','error');return;}
+  const d=await api('/auth/inscription',{method:'POST',body:JSON.stringify(body)});
+  if(d?.success){showToast('Utilisateur créé !','success');closeModal('modalAddUser');chargerUsers();}else showToast(d?.error||'Erreur','error');
+}
+
+function filtrerTontines() { tontinesPage=1; chargerTontines(); }
+async function chargerTontines() {
+  const c=document.getElementById('tontinesTableContainer'); const type=document.getElementById('filterType')?.value||'';
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data=await api(`/admin/tontines?page=${tontinesPage}&limit=15&type=${type}`);
+    if(!data?.success){c.innerHTML='<div class="table-empty">Erreur</div>';return;}
+    const tontines=data.data; const total=data.total;
+    const se=document.getElementById('tontinesStats');
+    if(se&&statsData) se.innerHTML=`<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${total}</div></div><div class="stat-card"><div class="stat-label">Actives</div><div class="stat-value" style="color:var(--vert)">${statsData.tontines_actives}</div></div><div class="stat-card"><div class="stat-label">Retards</div><div class="stat-value" style="color:var(--rouge)">${statsData.retards}</div></div><div class="stat-card"><div class="stat-label">Ce mois</div><div class="stat-value">${statsData.nouvelles_tontines_mois}</div></div>`;
+    if(!tontines?.length){c.innerHTML='<div class="table-empty">Aucune tontine</div>';return;}
+    const pages=Math.ceil(total/15);
+    const te={argent_liquide:'💰',objet:'📦',caisse_fixe:'🏦',evenementielle:'🎉',sante:'🏥',education:'🎓',agriculture:'🌾',construction:'🏗️',voyage:'✈️',commerce:'🛒'};
+    c.innerHTML=`<table><thead><tr><th>Nom</th><th>Type</th><th>Responsable</th><th>Membres</th><th>Cotisation</th><th>Collecté</th><th>Taux</th><th>Statut</th></tr></thead><tbody>
+      ${tontines.map(t=>{
+        const taux=t.total_cotisations>0?Math.round(t.cotisations_payees/t.total_cotisations*100):0;
+        const sc=taux>=80?'var(--vert)':taux>=60?'var(--orange)':'var(--rouge)';
+        const m=parseFloat(t.montant_cotisation)||0; const col=parseFloat(t.total_collecte)||0;
+        return `<tr><td><strong>${t.nom}</strong></td><td>${te[t.type]||'💰'} ${(t.type||'').replace('_',' ')}</td><td style="font-size:12px">${t.responsable_prenom||''} ${t.responsable_nom||''}</td><td>${t.total_membres||0}</td><td>${m.toLocaleString('fr-FR')} F</td><td style="color:var(--vert);font-weight:600">${col.toLocaleString('fr-FR')} F</td><td><div class="score-bar"><div class="score-fill" style="width:${taux}%;background:${sc}"></div></div><span style="color:${sc}">${taux}%</span></td><td><span class="badge ${t.statut==='active'?'badge-green':'badge-gray'}">${t.statut}</span></td></tr>`;
+      }).join('')}
+    </tbody></table>
+    ${pages>1?`<div class="pagination"><span class="page-info">Page ${tontinesPage}/${pages} — ${total}</span><button class="page-btn" onclick="tontinesPage=${tontinesPage-1};chargerTontines()" ${tontinesPage<=1?'disabled':''}>←</button><button class="page-btn active">${tontinesPage}</button><button class="page-btn" onclick="tontinesPage=${tontinesPage+1};chargerTontines()" ${tontinesPage>=pages?'disabled':''}>→</button></div>`:''}`;
+  } catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
+
+function filtrerPaiements() { paiementsPage=1; chargerPaiements(); }
+async function chargerPaiements() {
+  const c=document.getElementById('paiementsTableContainer'); const m=document.getElementById('filterMethode')?.value||'';
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data=await api(`/admin/paiements?page=${paiementsPage}&limit=20&methode=${m}`);
+    if(!data?.success){c.innerHTML='<div class="table-empty">Erreur</div>';return;}
+    const paiements=data.data;
+    const se=document.getElementById('paiementsStats');
+    if(se&&statsData){
+      const fm=v=>{v=parseFloat(v)||0;return v>=1e6?`${(v/1e6).toFixed(1)}M F`:v>=1000?`${(v/1000).toFixed(0)}k F`:`${v} F`;};
+      const methodes=statsData.methodes_paiement||[]; const total=methodes.reduce((s,x)=>s+parseInt(x.total),0)||1;
+      const pct=(nm)=>Math.round((parseInt(methodes.find(x=>x.methode_paiement===nm)?.total)||0)/total*100);
+      se.innerHTML=`<div class="stat-card"><div class="stat-label">Total ce mois</div><div class="stat-value" style="color:var(--vert)">${fm(statsData.transactions_mois)}</div></div><div class="stat-card"><div class="stat-label">Orange Money</div><div class="stat-value">${pct('orange_money')}%</div></div><div class="stat-card"><div class="stat-label">Moov Money</div><div class="stat-value">${pct('moov_money')}%</div></div><div class="stat-card"><div class="stat-label">Dépôt physique</div><div class="stat-value">${pct('depot_physique')}%</div></div>`;
+    }
+    if(!paiements?.length){c.innerHTML='<div class="table-empty">Aucun paiement</div>';return;}
+    c.innerHTML=`<table><thead><tr><th>Référence</th><th>Utilisateur</th><th>Montant</th><th>Méthode</th><th>Tontine</th><th>Date</th><th>Statut</th></tr></thead><tbody>
+      ${paiements.map(p=>{
+        const date=p.date_paiement?new Date(p.date_paiement).toLocaleDateString('fr-FR'):'—';
+        const ref=(p.reference_transaction||p.id?.substring(0,8)||'—').toUpperCase();
+        const meth=p.methode_paiement==='orange_money'?'🟠 Orange Money':p.methode_paiement==='moov_money'?'🔵 Moov Money':'💵 Dépôt';
+        return `<tr><td style="font-family:monospace;font-size:11px">${ref}</td><td>${p.prenom} ${p.nom}<br><span style="font-size:11px;color:var(--gris)">${p.telephone}</span></td><td style="font-weight:700;color:var(--vert)">${parseFloat(p.montant||0).toLocaleString('fr-FR')} F</td><td>${meth}</td><td>${p.nom_tontine}</td><td style="font-size:12px;color:var(--gris)">${date}</td><td><span class="badge ${p.statut==='paye'?'badge-green':p.statut==='en_retard'?'badge-red':p.statut==='en_attente'?'badge-orange':'badge-gray'}">${p.statut}</span></td></tr>`;
+      }).join('')}
+    </tbody></table>`;
+  } catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
+
+async function chargerCatalogue() {
+  const g=document.getElementById('catalogueGrid');
+  g.innerHTML='<div class="loading" style="grid-column:span 4"><div class="spinner"></div></div>';
+  try {
+    const data=await api('/admin/catalogue');
+    if(!data?.success){g.innerHTML='<div class="loading" style="grid-column:span 4">Erreur</div>';return;}
+    catalogueData=data.data||[]; renderCatalogue(catalogueData);
+  } catch(e){g.innerHTML=`<div class="loading" style="grid-column:span 4">Erreur: ${e.message}</div>`;}
+}
+
+function filtrerCatalogue() {
+  const s=document.getElementById('searchCatalogue')?.value?.toLowerCase()||'';
+  renderCatalogue(catalogueData.filter(p=>p.nom?.toLowerCase().includes(s)||p.categorie?.toLowerCase().includes(s)));
+}
+
+function renderCatalogue(produits) {
+  const g=document.getElementById('catalogueGrid');
+  if(!produits?.length){g.innerHTML='<div style="grid-column:span 4;text-align:center;padding:40px;color:var(--gris)">Aucun produit</div>';return;}
+  g.innerHTML=produits.map(p=>{
+    const photos=p.photos||[]; const emoji=Array.isArray(photos)&&photos.length>0?photos[0]:'📦';
+    const prix=parseFloat(p.prix||0); const ps=prix>=1000?`${(prix/1000).toFixed(0)}k F`:`${prix} F`;
+    return `<div class="produit-card"><div class="produit-img">${emoji}</div><div class="produit-info"><div class="produit-nom">${p.nom}</div><div class="produit-cat">${p.categorie}</div><div class="produit-prix">${ps}</div><div style="font-size:11px;color:var(--gris);margin-top:3px">${p.fournisseur_nom||''}</div><div class="produit-actions"><button class="btn btn-secondary" style="flex:1;font-size:11px" onclick="openModal('modalAddProduit')">✏️ Modifier</button><button class="btn btn-danger" style="font-size:11px" onclick="supprimerProduit('${p.id}')">🗑️</button></div></div></div>`;
+  }).join('');
+}
+
+async function ajouterProduit() {
+  const body={nom:document.getElementById('produitNom').value,categorie:document.getElementById('produitCategorie').value,prix:parseFloat(document.getElementById('produitPrix').value),description:document.getElementById('produitDesc').value,fournisseur_nom:document.getElementById('produitFournisseur').value,fournisseur_contact:document.getElementById('produitContact').value,livraison_disponible:document.getElementById('produitLivraison').checked,emoji:document.getElementById('produitEmoji').value||'📦'};
+  if(!body.nom||!body.prix){showToast('Nom et prix requis','error');return;}
+  const d=await api('/admin/catalogue',{method:'POST',body:JSON.stringify(body)});
+  if(d?.success){showToast('Produit ajouté !','success');closeModal('modalAddProduit');chargerCatalogue();}else showToast(d?.error||'Erreur','error');
+}
+
+async function supprimerProduit(id) {
+  if(!confirm('Supprimer ?')) return;
+  const d=await api(`/admin/catalogue/${id}`,{method:'DELETE'});
+  if(d?.success){showToast('Supprimé','success');chargerCatalogue();}else showToast('Erreur','error');
+}
+
+async function chargerFournisseurs() {
+  const c=document.getElementById('fournisseursTableContainer');
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data=await api('/admin/fournisseurs');
+    if(!data?.success){c.innerHTML='<div class="table-empty">Erreur</div>';return;}
+    const fournisseurs=data.data||[];
+    if(!fournisseurs.length){c.innerHTML='<div class="table-empty">Aucun fournisseur</div>';return;}
+    c.innerHTML=`<table><thead><tr><th>Fournisseur</th><th>Catégorie</th><th>Téléphone</th><th>Adresse</th><th>Livraison</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
+      ${fournisseurs.map(f=>`<tr><td><strong>${f.nom}</strong></td><td>${f.categorie||'—'}</td><td>${f.telephone||'—'}</td><td style="font-size:12px;color:var(--gris)">${f.adresse||'—'}</td><td>${f.livraison_disponible?'✅ Oui':'❌ Non'}</td><td><span class="badge ${f.est_actif?'badge-green':'badge-gray'}">${f.est_actif?'Actif':'Inactif'}</span></td><td><button class="btn btn-secondary">Modifier</button></td></tr>`).join('')}
+    </tbody></table>`;
+  } catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
+
+async function ajouterFournisseur() {
+  const body={nom:document.getElementById('fournisseurNom').value,categorie:document.getElementById('fournisseurCat').value,telephone:document.getElementById('fournisseurTel').value,adresse:document.getElementById('fournisseurAdresse').value,livraison_disponible:document.getElementById('fournisseurLivraison').checked};
+  if(!body.nom){showToast('Nom requis','error');return;}
+  const d=await api('/admin/fournisseurs',{method:'POST',body:JSON.stringify(body)});
+  if(d?.success){showToast('Fournisseur ajouté !','success');closeModal('modalAddFournisseur');chargerFournisseurs();}else showToast(d?.error||'Erreur','error');
+}
+
+async function chargerNotifications() {}
+
+async function envoyerNotification() {
+  const body={titre:document.getElementById('notifTitre').value,message_fr:document.getElementById('notifFr').value,message_moore:document.getElementById('notifMoore').value,message_dioula:document.getElementById('notifDioula').value,destinataires:document.getElementById('notifDestinataires').value,canal:document.getElementById('notifCanal').value};
+  if(!body.titre||!body.message_fr){showToast('Titre et message requis','error');return;}
+  const d=await api('/admin/notifications/envoyer',{method:'POST',body:JSON.stringify(body)});
+  if(d?.success){showToast(d.message||'Envoyé !','success');document.getElementById('notifTitre').value='';document.getElementById('notifFr').value='';}
+  else showToast(d?.error||'Erreur','error');
+}
+
+function switchLang(btn,lang) {
+  document.querySelectorAll('.lang-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active');
+  ['Fr','Moore','Dioula'].forEach(l=>document.getElementById('notif'+l).style.display='none');
+  document.getElementById('notif'+lang.charAt(0).toUpperCase()+lang.slice(1)).style.display='block';
+}
+
+async function chargerRapports() {
+  const c=document.getElementById('rapportsContainer');
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data=await api('/admin/stats');
+    if(!data?.success) return;
+    const stats=data.data;
+    c.innerHTML=`<table><thead><tr><th>Mois</th><th>Transactions</th></tr></thead><tbody>
+      ${(stats.transactions_par_mois||[]).map(t=>`<tr><td>${t.mois}</td><td style="color:var(--vert);font-weight:600">${parseFloat(t.total).toLocaleString('fr-FR')} F</td></tr>`).join('')}
+    </tbody></table>`;
+    if(!rapportChartsInit) {
+      const l=stats.langues||[],m=stats.methodes_paiement||[],ty=stats.types_tontines||[];
+      new Chart(document.getElementById('chartLangues'),{type:'pie',data:{labels:l.map(x=>x.langue),datasets:[{data:l.map(x=>parseInt(x.total)),backgroundColor:COULEURS}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+      new Chart(document.getElementById('chartMethods'),{type:'pie',data:{labels:m.map(x=>x.methode_paiement),datasets:[{data:m.map(x=>parseInt(x.total)),backgroundColor:['#FF6600','#0066CC','#1D9E75']}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+      new Chart(document.getElementById('chartTontineTypes'),{type:'pie',data:{labels:ty.map(x=>x.type),datasets:[{data:ty.map(x=>parseInt(x.total)),backgroundColor:COULEURS}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+      rapportChartsInit=true;
+    }
+  } catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
+
+function exporterRapport() {
+  if(!statsData){showToast('Pas de données','error');return;}
+  const rows=[['Mois','Total F CFA']];
+  (statsData.transactions_par_mois||[]).forEach(t=>rows.push([t.mois,t.total]));
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='rapport-tontine-bf.csv'; a.click();
+  showToast('Rapport exporté !','success');
+}
+
+function sauvegarderConfig() {
+  const url=document.getElementById('paramApiUrl').value;
+  if(url){API=url;localStorage.setItem('tontine_api_url',url);}
+  showToast('Configuration sauvegardée !','success');
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+function showToast(msg,type='') {
+  const t=document.getElementById('toast'); t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.className='toast',3000);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginPage').style.display!=='none')login();});
+
+if(TOKEN){
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('paramApiUrl').value=API;
+  chargerOverview(); chargerBadges();
+}
+</script>
+</body>
+</html>
