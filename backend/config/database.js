@@ -32,6 +32,7 @@ async function connectDB() {
 }
 
 async function createTables(client) {
+  // Étape 1 — Créer les tables
   await client.query(`
     CREATE TABLE IF NOT EXISTS utilisateurs (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -41,7 +42,6 @@ async function createTables(client) {
       code_pin VARCHAR(255) NOT NULL,
       langue VARCHAR(10) DEFAULT 'fr',
       type_acces VARCHAR(20) DEFAULT 'smartphone',
-      role VARCHAR(20) DEFAULT 'user',
       orange_money_numero VARCHAR(20),
       moov_money_numero VARCHAR(20),
       score_fiabilite INTEGER DEFAULT 100,
@@ -167,9 +167,16 @@ async function createTables(client) {
     CREATE INDEX IF NOT EXISTS idx_cotisations_membre ON cotisations(membre_id);
     CREATE INDEX IF NOT EXISTS idx_membres_tontine ON membres_tontine(tontine_id);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(utilisateur_id);
-    CREATE INDEX IF NOT EXISTS idx_utilisateurs_role ON utilisateurs(role);
+  `);
 
+  // Étape 2 — Ajouter les colonnes manquantes si elles n'existent pas
+  await client.query(`
     ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
+  `);
+
+  // Étape 3 — Créer l'index sur role après que la colonne existe
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_utilisateurs_role ON utilisateurs(role);
   `);
 
   await creerCompteAdmin(client);
