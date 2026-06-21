@@ -84,15 +84,28 @@ class _ProfilScreenState extends State<ProfilScreen> {
             _buildSection('Mon compte', [
               _buildItem(Icons.person_outline, 'Nom complet', '$prenom $nom'),
               _buildItem(Icons.phone_outlined, 'Téléphone', telephone),
-              _buildItem(Icons.language_outlined, 'Langue',
-                  langue == 'moore' ? 'Mooré' : langue == 'dioula' ? 'Dioula' : 'Français'),
+              _buildItem(
+                Icons.language_outlined,
+                'Langue',
+                langue == 'moore'
+                    ? 'Mooré'
+                    : langue == 'dioula'
+                        ? 'Dioula'
+                        : 'Français',
+              ),
             ]),
             const SizedBox(height: 12),
             _buildSection('Mobile Money', [
-              _buildItem(Icons.account_balance_wallet_outlined,
-                  'Orange Money', _user?['orange_money_numero'] ?? 'Non configuré'),
-              _buildItem(Icons.account_balance_wallet_outlined,
-                  'Moov Money', _user?['moov_money_numero'] ?? 'Non configuré'),
+              _buildItem(
+                Icons.account_balance_wallet_outlined,
+                'Orange Money',
+                _user?['orange_money_numero'] ?? 'Non configuré',
+              ),
+              _buildItem(
+                Icons.account_balance_wallet_outlined,
+                'Moov Money',
+                _user?['moov_money_numero'] ?? 'Non configuré',
+              ),
             ]),
             const SizedBox(height: 12),
             _buildSection('Paramètres', [
@@ -114,6 +127,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 '',
                 () => _vocal.parler(
                     'Bienvenue dans l\'aide. Pour créer une tontine, appuyez sur le bouton nouvelle tontine.'),
+              ),
+              // ✅ Réglages ajouté ici, dans la section Paramètres
+              _buildItemAction(
+                Icons.settings_outlined,
+                'Réglages',
+                '',
+                () => context.push('/reglages'),
               ),
             ]),
             const SizedBox(height: 12),
@@ -174,20 +194,24 @@ class _ProfilScreenState extends State<ProfilScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text('$prenom $nom',
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              )),
+          Text(
+            '$prenom $nom',
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(telephone,
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 14,
-                color: Colors.white70,
-              )),
+          Text(
+            telephone,
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 14,
+              color: Colors.white70,
+            ),
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -200,13 +224,15 @@ class _ProfilScreenState extends State<ProfilScreen> {
               children: [
                 const Icon(Icons.star, color: Colors.white, size: 16),
                 const SizedBox(width: 6),
-                Text('Score de fiabilité : $score/100',
-                    style: const TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    )),
+                Text(
+                  'Score de fiabilité : $score/100',
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
           ),
@@ -221,14 +247,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(titre.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.grisTexte,
-                letterSpacing: 0.8,
-              )),
+          Text(
+            titre.toUpperCase(),
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.grisTexte,
+              letterSpacing: 0.8,
+            ),
+          ),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -297,14 +325,14 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       fontSize: 13,
                       color: AppTheme.grisTexte)),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: AppTheme.grisTexte, size: 20),
+            const Icon(Icons.chevron_right,
+                color: AppTheme.grisTexte, size: 20),
           ],
         ),
       ),
     );
   }
- 
-  
+
   Widget _buildScoreCard(int score) {
     final couleur = score >= 80
         ? AppTheme.vert
@@ -335,32 +363,31 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text('$score/100',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: couleur,
-                  )),
+              Text(
+                '$score/100',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: couleur,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(message,
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 12,
-                color: AppTheme.grisTexte,
-              )),
+          Text(
+            message,
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 12,
+              color: AppTheme.grisTexte,
+            ),
+          ),
         ],
       ),
     );
   }
-  _buildItemAction(
-  Icons.settings_outlined,
-  'Réglages',
-  '',
-  () => context.push('/reglages'),
-), 
+
   @override
   void dispose() {
     _vocal.stop();

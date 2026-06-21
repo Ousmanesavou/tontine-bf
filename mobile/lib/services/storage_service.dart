@@ -51,15 +51,16 @@ class StorageService {
     return jsonDecode(data);
   }
 
+  // ✅ savePays et getPays déplacés à l'intérieur de la classe
+  static Future<void> savePays(String pays) async {
+    await _prefs.setString('pays', pays);
+  }
+
+  static String? getPays() => _prefs.getString('pays');
+
   static Future<void> clearAll() async {
     await _prefs.remove('auth_token');
     await _prefs.remove('user_data');
     await _prefs.remove('tontines_cache');
   }
 }
-
-static Future<void> savePays(String pays) async {
-  await _prefs.setString('pays', pays);
-}
-
-static String? getPays() => _prefs.getString('pays');

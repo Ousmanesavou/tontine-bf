@@ -1,262 +1,684 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import '../../utils/app_theme.dart';
-import '../../utils/pays_data.dart';
-import '../../utils/langues_data.dart';
-import '../../services/storage_service.dart';
-import '../../main.dart';
+// lib/utils/pays_data.dart
 
-class LangueScreen extends ConsumerStatefulWidget {
-  const LangueScreen({super.key});
+class PaysData {
+  static const List<Map<String, dynamic>> pays = [
 
-  @override
-  ConsumerState<LangueScreen> createState() => _LangueScreenState();
-}
+    // ─── AFRIQUE DE L'OUEST ───────────────────────────────────────────
+    {
+      'code': 'BF',
+      'nom': 'Burkina Faso',
+      'drapeau': '🇧🇫',
+      'indicatif': '+226',
+      'devise': 'XOF',
+      'langues': ['fr', 'mos', 'bm', 'ful'],
+      'mobile_money': ['Orange Money', 'Moov Money'],
+    },
+    {
+      'code': 'ML',
+      'nom': 'Mali',
+      'drapeau': '🇲🇱',
+      'indicatif': '+223',
+      'devise': 'XOF',
+      'langues': ['fr', 'bm', 'ful', 'snk'],
+      'mobile_money': ['Orange Money', 'Moov Money'],
+    },
+    {
+      'code': 'CI',
+      'nom': "Côte d'Ivoire",
+      'drapeau': '🇨🇮',
+      'indicatif': '+225',
+      'devise': 'XOF',
+      'langues': ['fr', 'bm', 'ful'],
+      'mobile_money': ['Orange Money', 'MTN Money', 'Wave', 'Moov Money'],
+    },
+    {
+      'code': 'SN',
+      'nom': 'Sénégal',
+      'drapeau': '🇸🇳',
+      'indicatif': '+221',
+      'devise': 'XOF',
+      'langues': ['fr', 'wo', 'ful', 'mnk'],
+      'mobile_money': ['Orange Money', 'Wave', 'Free Money', 'Expresso'],
+    },
+    {
+      'code': 'NE',
+      'nom': 'Niger',
+      'drapeau': '🇳🇪',
+      'indicatif': '+227',
+      'devise': 'XOF',
+      'langues': ['fr', 'ha', 'ful', 'dje'],
+      'mobile_money': ['Orange Money', 'Airtel Money', 'Moov Money'],
+    },
+    {
+      'code': 'TG',
+      'nom': 'Togo',
+      'drapeau': '🇹🇬',
+      'indicatif': '+228',
+      'devise': 'XOF',
+      'langues': ['fr', 'ee', 'kab'],
+      'mobile_money': ['Flooz', 'T-Money'],
+    },
+    {
+      'code': 'BJ',
+      'nom': 'Bénin',
+      'drapeau': '🇧🇯',
+      'indicatif': '+229',
+      'devise': 'XOF',
+      'langues': ['fr', 'fon', 'yo', 'baa'],
+      'mobile_money': ['MTN Money', 'Moov Money'],
+    },
+    {
+      'code': 'GN',
+      'nom': 'Guinée',
+      'drapeau': '🇬🇳',
+      'indicatif': '+224',
+      'devise': 'GNF',
+      'langues': ['fr', 'ful', 'bm', 'sus'],
+      'mobile_money': ['Orange Money', 'MTN Money'],
+    },
+    {
+      'code': 'GW',
+      'nom': 'Guinée-Bissau',
+      'drapeau': '🇬🇼',
+      'indicatif': '+245',
+      'devise': 'XOF',
+      'langues': ['pt', 'pov'],
+      'mobile_money': ['Orange Money', 'MTN Money'],
+    },
+    {
+      'code': 'GH',
+      'nom': 'Ghana',
+      'drapeau': '🇬🇭',
+      'indicatif': '+233',
+      'devise': 'GHS',
+      'langues': ['en', 'tw', 'ha', 'ee'],
+      'mobile_money': ['MTN MoMo', 'Vodafone Cash', 'AirtelTigo Money'],
+    },
+    {
+      'code': 'NG',
+      'nom': 'Nigeria',
+      'drapeau': '🇳🇬',
+      'indicatif': '+234',
+      'devise': 'NGN',
+      'langues': ['en', 'ha', 'yo', 'ig', 'ful'],
+      'mobile_money': ['Opay', 'Palmpay', 'MTN MoMo', 'Airtel Money'],
+    },
+    {
+      'code': 'SL',
+      'nom': 'Sierra Leone',
+      'drapeau': '🇸🇱',
+      'indicatif': '+232',
+      'devise': 'SLL',
+      'langues': ['en', 'kri', 'tem'],
+      'mobile_money': ['Orange Money', 'Africell Money'],
+    },
+    {
+      'code': 'LR',
+      'nom': 'Liberia',
+      'drapeau': '🇱🇷',
+      'indicatif': '+231',
+      'devise': 'LRD',
+      'langues': ['en'],
+      'mobile_money': ['Orange Money', 'Lonestar MTN'],
+    },
+    {
+      'code': 'GM',
+      'nom': 'Gambie',
+      'drapeau': '🇬🇲',
+      'indicatif': '+220',
+      'devise': 'GMD',
+      'langues': ['en', 'mnk', 'wo', 'ful'],
+      'mobile_money': ['Africell Money', 'QMoney'],
+    },
+    {
+      'code': 'MR',
+      'nom': 'Mauritanie',
+      'drapeau': '🇲🇷',
+      'indicatif': '+222',
+      'devise': 'MRU',
+      'langues': ['ar', 'fr', 'wo', 'ful'],
+      'mobile_money': ['Masrvi', 'Bankily'],
+    },
+    {
+      'code': 'CV',
+      'nom': 'Cap-Vert',
+      'drapeau': '🇨🇻',
+      'indicatif': '+238',
+      'devise': 'CVE',
+      'langues': ['pt', 'kea'],
+      'mobile_money': ['MCM', 'Unitel Money'],
+    },
 
-class _LangueScreenState extends ConsumerState<LangueScreen> {
-  String _paysSelectionne = 'BF';
-  String _langueSelectionnee = 'fr';
-  int _etape = 1;
-  final FlutterTts _tts = FlutterTts();
+    // ─── AFRIQUE CENTRALE ─────────────────────────────────────────────
+    {
+      'code': 'CM',
+      'nom': 'Cameroun',
+      'drapeau': '🇨🇲',
+      'indicatif': '+237',
+      'devise': 'XAF',
+      'langues': ['fr', 'en', 'ful', 'bum', 'bss'],
+      'mobile_money': ['MTN Money', 'Orange Money'],
+    },
+    {
+      'code': 'CD',
+      'nom': 'Congo (RDC)',
+      'drapeau': '🇨🇩',
+      'indicatif': '+243',
+      'devise': 'CDF',
+      'langues': ['fr', 'ln', 'sw', 'kg'],
+      'mobile_money': ['Airtel Money', 'M-Pesa', 'Orange Money'],
+    },
+    {
+      'code': 'CG',
+      'nom': 'Congo (Brazzaville)',
+      'drapeau': '🇨🇬',
+      'indicatif': '+242',
+      'devise': 'XAF',
+      'langues': ['fr', 'ln', 'kg'],
+      'mobile_money': ['MTN Money', 'Airtel Money'],
+    },
+    {
+      'code': 'GA',
+      'nom': 'Gabon',
+      'drapeau': '🇬🇦',
+      'indicatif': '+241',
+      'devise': 'XAF',
+      'langues': ['fr', 'myv'],
+      'mobile_money': ['Airtel Money', 'Moov Money'],
+    },
+    {
+      'code': 'CF',
+      'nom': 'Centrafrique',
+      'drapeau': '🇨🇫',
+      'indicatif': '+236',
+      'devise': 'XAF',
+      'langues': ['fr', 'sg'],
+      'mobile_money': ['Orange Money', 'Moov Money'],
+    },
+    {
+      'code': 'TD',
+      'nom': 'Tchad',
+      'drapeau': '🇹🇩',
+      'indicatif': '+235',
+      'devise': 'XAF',
+      'langues': ['fr', 'ar', 'ful'],
+      'mobile_money': ['Airtel Money', 'Moov Money'],
+    },
+    {
+      'code': 'GQ',
+      'nom': 'Guinée Équatoriale',
+      'drapeau': '🇬🇶',
+      'indicatif': '+240',
+      'devise': 'XAF',
+      'langues': ['fr', 'es', 'pt'],
+      'mobile_money': ['Moov Money'],
+    },
+    {
+      'code': 'ST',
+      'nom': 'São Tomé-et-Príncipe',
+      'drapeau': '🇸🇹',
+      'indicatif': '+239',
+      'devise': 'STN',
+      'langues': ['pt'],
+      'mobile_money': ['Unitel Money'],
+    },
 
-  List<String> get _languesDuPays =>
-      PaysData.getLanguesPays(_paysSelectionne);
+    // ─── AFRIQUE DE L'EST ─────────────────────────────────────────────
+    {
+      'code': 'KE',
+      'nom': 'Kenya',
+      'drapeau': '🇰🇪',
+      'indicatif': '+254',
+      'devise': 'KES',
+      'langues': ['en', 'sw'],
+      'mobile_money': ['M-Pesa', 'Airtel Money', 'T-Kash'],
+    },
+    {
+      'code': 'TZ',
+      'nom': 'Tanzanie',
+      'drapeau': '🇹🇿',
+      'indicatif': '+255',
+      'devise': 'TZS',
+      'langues': ['sw', 'en', 'suk'],
+      'mobile_money': ['M-Pesa', 'Airtel Money', 'Tigo Pesa'],
+    },
+    {
+      'code': 'UG',
+      'nom': 'Ouganda',
+      'drapeau': '🇺🇬',
+      'indicatif': '+256',
+      'devise': 'UGX',
+      'langues': ['en', 'sw', 'lg', 'ach'],
+      'mobile_money': ['MTN MoMo', 'Airtel Money'],
+    },
+    {
+      'code': 'RW',
+      'nom': 'Rwanda',
+      'drapeau': '🇷🇼',
+      'indicatif': '+250',
+      'devise': 'RWF',
+      'langues': ['rw', 'fr', 'en'],
+      'mobile_money': ['MTN MoMo', 'Airtel Money'],
+    },
+    {
+      'code': 'BI',
+      'nom': 'Burundi',
+      'drapeau': '🇧🇮',
+      'indicatif': '+257',
+      'devise': 'BIF',
+      'langues': ['fr', 'rn', 'sw'],
+      'mobile_money': ['Lumicash', 'Ecocash'],
+    },
+    {
+      'code': 'ET',
+      'nom': 'Éthiopie',
+      'drapeau': '🇪🇹',
+      'indicatif': '+251',
+      'devise': 'ETB',
+      'langues': ['am', 'or', 'ti', 'so'],
+      'mobile_money': ['Telebirr'],
+    },
+    {
+      'code': 'ER',
+      'nom': 'Érythrée',
+      'drapeau': '🇪🇷',
+      'indicatif': '+291',
+      'devise': 'ERN',
+      'langues': ['ti', 'ar', 'en'],
+      'mobile_money': [],
+    },
+    {
+      'code': 'DJ',
+      'nom': 'Djibouti',
+      'drapeau': '🇩🇯',
+      'indicatif': '+253',
+      'devise': 'DJF',
+      'langues': ['fr', 'ar', 'so', 'aa'],
+      'mobile_money': ['Waafi'],
+    },
+    {
+      'code': 'SO',
+      'nom': 'Somalie',
+      'drapeau': '🇸🇴',
+      'indicatif': '+252',
+      'devise': 'SOS',
+      'langues': ['so', 'ar'],
+      'mobile_money': ['Hormuud (EVC Plus)', 'Zaad'],
+    },
+    {
+      'code': 'SS',
+      'nom': 'Soudan du Sud',
+      'drapeau': '🇸🇸',
+      'indicatif': '+211',
+      'devise': 'SSP',
+      'langues': ['en', 'ar', 'nus'],
+      'mobile_money': ['MTN MoMo', 'Airtel Money'],
+    },
+    {
+      'code': 'SD',
+      'nom': 'Soudan',
+      'drapeau': '🇸🇩',
+      'indicatif': '+249',
+      'devise': 'SDG',
+      'langues': ['ar', 'en'],
+      'mobile_money': ['MTN Money', 'Zain Cash'],
+    },
 
-  @override
-  void initState() {
-    super.initState();
-    _parler('Bienvenue sur Tontine. Choisissez votre pays.');
-  }
+    // ─── AFRIQUE DU NORD ──────────────────────────────────────────────
+    {
+      'code': 'MA',
+      'nom': 'Maroc',
+      'drapeau': '🇲🇦',
+      'indicatif': '+212',
+      'devise': 'MAD',
+      'langues': ['ar', 'fr', 'ber', 'shi'],
+      'mobile_money': ['Orange Money', 'Inwi Money', 'CIH Pay'],
+    },
+    {
+      'code': 'DZ',
+      'nom': 'Algérie',
+      'drapeau': '🇩🇿',
+      'indicatif': '+213',
+      'devise': 'DZD',
+      'langues': ['ar', 'fr', 'ber', 'kab'],
+      'mobile_money': ['CCP Mobile', 'Baridi Pay'],
+    },
+    {
+      'code': 'TN',
+      'nom': 'Tunisie',
+      'drapeau': '🇹🇳',
+      'indicatif': '+216',
+      'devise': 'TND',
+      'langues': ['ar', 'fr'],
+      'mobile_money': ['Orange Money', 'Ooredoo Money'],
+    },
+    {
+      'code': 'LY',
+      'nom': 'Libye',
+      'drapeau': '🇱🇾',
+      'indicatif': '+218',
+      'devise': 'LYD',
+      'langues': ['ar', 'ber'],
+      'mobile_money': ['Mobi Cash'],
+    },
+    {
+      'code': 'EG',
+      'nom': 'Égypte',
+      'drapeau': '🇪🇬',
+      'indicatif': '+20',
+      'devise': 'EGP',
+      'langues': ['ar'],
+      'mobile_money': ['Vodafone Cash', 'Orange Money', 'Etisalat Cash'],
+    },
 
-  Future<void> _parler(String msg) async {
-    await _tts.setLanguage('fr-FR');
-    await _tts.setSpeechRate(0.85);
-    await _tts.speak(msg);
-  }
+    // ─── AFRIQUE AUSTRALE ─────────────────────────────────────────────
+    {
+      'code': 'ZA',
+      'nom': 'Afrique du Sud',
+      'drapeau': '🇿🇦',
+      'indicatif': '+27',
+      'devise': 'ZAR',
+      'langues': ['en', 'zu', 'xh', 'af', 'sot', 'tn', 'ss', 've', 'ts', 'nso', 'nr'],
+      'mobile_money': ['MTN MoMo', 'Vodacom M-Pesa'],
+    },
+    {
+      'code': 'ZW',
+      'nom': 'Zimbabwe',
+      'drapeau': '🇿🇼',
+      'indicatif': '+263',
+      'devise': 'ZWL',
+      'langues': ['en', 'sn', 'nd', 'tn'],
+      'mobile_money': ['EcoCash', 'OneMoney', 'Telecash'],
+    },
+    {
+      'code': 'ZM',
+      'nom': 'Zambie',
+      'drapeau': '🇿🇲',
+      'indicatif': '+260',
+      'devise': 'ZMW',
+      'langues': ['en', 'bem', 'ny', 'toi'],
+      'mobile_money': ['MTN MoMo', 'Airtel Money', 'Zamtel Money'],
+    },
+    {
+      'code': 'MW',
+      'nom': 'Malawi',
+      'drapeau': '🇲🇼',
+      'indicatif': '+265',
+      'devise': 'MWK',
+      'langues': ['en', 'ny', 'tum'],
+      'mobile_money': ['Airtel Money', 'TNM Mpamba'],
+    },
+    {
+      'code': 'MZ',
+      'nom': 'Mozambique',
+      'drapeau': '🇲🇿',
+      'indicatif': '+258',
+      'devise': 'MZN',
+      'langues': ['pt', 'sw', 'mgh'],
+      'mobile_money': ['M-Pesa', 'e-Mola', 'Mkesh'],
+    },
+    {
+      'code': 'AO',
+      'nom': 'Angola',
+      'drapeau': '🇦🇴',
+      'indicatif': '+244',
+      'devise': 'AOA',
+      'langues': ['pt', 'umb', 'kmb'],
+      'mobile_money': ['Unitel Money', 'Afrimoney'],
+    },
+    {
+      'code': 'BW',
+      'nom': 'Botswana',
+      'drapeau': '🇧🇼',
+      'indicatif': '+267',
+      'devise': 'BWP',
+      'langues': ['en', 'tn', 'kck'],
+      'mobile_money': ['Orange Money', 'MyZaka'],
+    },
+    {
+      'code': 'NA',
+      'nom': 'Namibie',
+      'drapeau': '🇳🇦',
+      'indicatif': '+264',
+      'devise': 'NAD',
+      'langues': ['en', 'af', 'kho'],
+      'mobile_money': ['MTC Mobile Money', 'EasyWallet'],
+    },
+    {
+      'code': 'LS',
+      'nom': 'Lesotho',
+      'drapeau': '🇱🇸',
+      'indicatif': '+266',
+      'devise': 'LSL',
+      'langues': ['en', 'sot'],
+      'mobile_money': ['M-Pesa', 'Econet Lesotho'],
+    },
+    {
+      'code': 'SZ',
+      'nom': 'Eswatini',
+      'drapeau': '🇸🇿',
+      'indicatif': '+268',
+      'devise': 'SZL',
+      'langues': ['en', 'ss'],
+      'mobile_money': ['MTN MoMo', 'E-Mali'],
+    },
+    {
+      'code': 'MG',
+      'nom': 'Madagascar',
+      'drapeau': '🇲🇬',
+      'indicatif': '+261',
+      'devise': 'MGA',
+      'langues': ['fr', 'mg'],
+      'mobile_money': ['Orange Money', 'Mvola', 'Airtel Money'],
+    },
+    {
+      'code': 'MU',
+      'nom': 'Maurice',
+      'drapeau': '🇲🇺',
+      'indicatif': '+230',
+      'devise': 'MUR',
+      'langues': ['en', 'fr', 'mfe'],
+      'mobile_money': ['MyT Money', 'Juice'],
+    },
+    {
+      'code': 'SC',
+      'nom': 'Seychelles',
+      'drapeau': '🇸🇨',
+      'indicatif': '+248',
+      'devise': 'SCR',
+      'langues': ['fr', 'en', 'crs'],
+      'mobile_money': ['Airtel Money'],
+    },
+    {
+      'code': 'KM',
+      'nom': 'Comores',
+      'drapeau': '🇰🇲',
+      'indicatif': '+269',
+      'devise': 'KMF',
+      'langues': ['fr', 'ar', 'zdj'],
+      'mobile_money': ['Huri', 'Mvola'],
+    },
+    {
+      'code': 'RE',
+      'nom': 'La Réunion',
+      'drapeau': '🇷🇪',
+      'indicatif': '+262',
+      'devise': 'EUR',
+      'langues': ['fr', 'rcf'],
+      'mobile_money': ['Orange Money'],
+    },
 
-  Future<void> _continuer() async {
-    if (_etape == 1) {
-      final langues = _languesDuPays;
-      if (langues.length == 1) {
-        _langueSelectionnee = langues.first;
-        await _sauvegarderEtContinuer();
-      } else {
-        setState(() => _etape = 2);
-        _parler('Choisissez votre langue.');
-      }
-    } else {
-      await _sauvegarderEtContinuer();
+    // ─── DIASPORA – EUROPE ────────────────────────────────────────────
+    {
+      'code': 'FR',
+      'nom': 'France',
+      'drapeau': '🇫🇷',
+      'indicatif': '+33',
+      'devise': 'EUR',
+      'langues': ['fr'],
+      'mobile_money': ['Lydia', 'PayLib', 'Virement SEPA'],
+    },
+    {
+      'code': 'BE',
+      'nom': 'Belgique',
+      'drapeau': '🇧🇪',
+      'indicatif': '+32',
+      'devise': 'EUR',
+      'langues': ['fr', 'nl', 'de'],
+      'mobile_money': ['Bancontact', 'Virement SEPA'],
+    },
+    {
+      'code': 'CH',
+      'nom': 'Suisse',
+      'drapeau': '🇨🇭',
+      'indicatif': '+41',
+      'devise': 'CHF',
+      'langues': ['fr', 'de', 'it'],
+      'mobile_money': ['TWINT', 'Virement SEPA'],
+    },
+    {
+      'code': 'IT',
+      'nom': 'Italie',
+      'drapeau': '🇮🇹',
+      'indicatif': '+39',
+      'devise': 'EUR',
+      'langues': ['it', 'fr'],
+      'mobile_money': ['Satispay', 'Virement SEPA'],
+    },
+    {
+      'code': 'ES',
+      'nom': 'Espagne',
+      'drapeau': '🇪🇸',
+      'indicatif': '+34',
+      'devise': 'EUR',
+      'langues': ['es', 'fr'],
+      'mobile_money': ['Bizum', 'Virement SEPA'],
+    },
+    {
+      'code': 'PT',
+      'nom': 'Portugal',
+      'drapeau': '🇵🇹',
+      'indicatif': '+351',
+      'devise': 'EUR',
+      'langues': ['pt', 'fr'],
+      'mobile_money': ['MB Way', 'Virement SEPA'],
+    },
+    {
+      'code': 'GB',
+      'nom': 'Royaume-Uni',
+      'drapeau': '🇬🇧',
+      'indicatif': '+44',
+      'devise': 'GBP',
+      'langues': ['en', 'fr'],
+      'mobile_money': ['Monzo', 'Revolut', 'Virement bancaire'],
+    },
+    {
+      'code': 'DE',
+      'nom': 'Allemagne',
+      'drapeau': '🇩🇪',
+      'indicatif': '+49',
+      'devise': 'EUR',
+      'langues': ['de', 'fr'],
+      'mobile_money': ['N26', 'Virement SEPA'],
+    },
+    {
+      'code': 'NL',
+      'nom': 'Pays-Bas',
+      'drapeau': '🇳🇱',
+      'indicatif': '+31',
+      'devise': 'EUR',
+      'langues': ['nl', 'fr'],
+      'mobile_money': ['iDEAL', 'Virement SEPA'],
+    },
+    {
+      'code': 'SE',
+      'nom': 'Suède',
+      'drapeau': '🇸🇪',
+      'indicatif': '+46',
+      'devise': 'SEK',
+      'langues': ['sv', 'fr'],
+      'mobile_money': ['Swish', 'Virement SEPA'],
+    },
+    {
+      'code': 'NO',
+      'nom': 'Norvège',
+      'drapeau': '🇳🇴',
+      'indicatif': '+47',
+      'devise': 'NOK',
+      'langues': ['no', 'fr'],
+      'mobile_money': ['Vipps', 'Virement SEPA'],
+    },
+
+    // ─── DIASPORA – AMÉRIQUE DU NORD ──────────────────────────────────
+    {
+      'code': 'CA',
+      'nom': 'Canada',
+      'drapeau': '🇨🇦',
+      'indicatif': '+1',
+      'devise': 'CAD',
+      'langues': ['fr', 'en'],
+      'mobile_money': ['Interac e-Transfer', 'PayPal'],
+    },
+    {
+      'code': 'US',
+      'nom': 'États-Unis',
+      'drapeau': '🇺🇸',
+      'indicatif': '+1',
+      'devise': 'USD',
+      'langues': ['en', 'fr', 'es'],
+      'mobile_money': ['Zelle', 'Cash App', 'PayPal', 'Venmo'],
+    },
+
+    // ─── DIASPORA – AUTRES ────────────────────────────────────────────
+    {
+      'code': 'AE',
+      'nom': 'Émirats Arabes Unis',
+      'drapeau': '🇦🇪',
+      'indicatif': '+971',
+      'devise': 'AED',
+      'langues': ['ar', 'fr', 'en'],
+      'mobile_money': ['Apple Pay', 'Samsung Pay'],
+    },
+    {
+      'code': 'CN',
+      'nom': 'Chine',
+      'drapeau': '🇨🇳',
+      'indicatif': '+86',
+      'devise': 'CNY',
+      'langues': ['zh', 'fr'],
+      'mobile_money': ['WeChat Pay', 'Alipay'],
+    },
+    {
+      'code': 'BR',
+      'nom': 'Brésil',
+      'drapeau': '🇧🇷',
+      'indicatif': '+55',
+      'devise': 'BRL',
+      'langues': ['pt', 'fr'],
+      'mobile_money': ['Pix', 'PicPay'],
+    },
+  ];
+
+  /// Retourne les infos d'un pays par son code (ex: 'BF')
+  static Map<String, dynamic>? getPays(String code) {
+    try {
+      return pays.firstWhere((p) => p['code'] == code);
+    } catch (_) {
+      return null;
     }
   }
 
-  Future<void> _sauvegarderEtContinuer() async {
-    await StorageService.saveLangue(_langueSelectionnee);
-    await StorageService.savePays(_paysSelectionne);
-    ref.read(langueProvider.notifier).state = _langueSelectionnee;
-    if (mounted) context.go('/inscription');
+  /// Retourne la liste des codes de langues parlées dans un pays
+  static List<String> getLanguesPays(String code) {
+    final p = getPays(code);
+    if (p == null) return ['fr'];
+    return List<String>.from(p['langues']);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.vert,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 32),
-              const Text('🌍', style: TextStyle(fontSize: 56)),
-              const SizedBox(height: 12),
-              const Text('Tontine BF',
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
-                      fontWeight: FontWeight.w700, color: Colors.white)),
-              const SizedBox(height: 8),
-              Text(
-                _etape == 1 ? 'Choisissez votre pays' : 'Choisissez votre langue',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: Colors.white70),
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: _etape == 1 ? _buildSelectPays() : _buildSelectLangue(),
-              ),
-              ElevatedButton(
-                onPressed: _continuer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.vert,
-                  minimumSize: const Size(double.infinity, 54),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Text(_etape == 1 ? 'Continuer →' : 'Commencer →',
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 17, fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectPays() {
-    return Column(
-      children: [
-        // Recherche
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: TextField(
-            style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              hintText: 'Rechercher un pays...',
-              hintStyle: TextStyle(color: Colors.white60),
-              prefixIcon: Icon(Icons.search, color: Colors.white60),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(14),
-            ),
-            onChanged: (v) => setState(() {}),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: ListView.builder(
-            itemCount: PaysData.pays.length,
-            itemBuilder: (ctx, i) {
-              final pays = PaysData.pays[i];
-              final selected = _paysSelectionne == pays['code'];
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _paysSelectionne = pays['code'];
-                    final langues = PaysData.getLanguesPays(pays['code']);
-                    _langueSelectionnee = langues.first;
-                  });
-                  _parler('${pays['nom']}. ${pays['indicatif']}');
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: selected ? Colors.white : Colors.white.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected ? Colors.white : Colors.white24,
-                      width: selected ? 2 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(pays['drapeau'], style: const TextStyle(fontSize: 24)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(pays['nom'],
-                                style: TextStyle(
-                                  fontFamily: 'Nunito', fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: selected ? AppTheme.vert : Colors.white,
-                                )),
-                            Text(pays['indicatif'],
-                                style: TextStyle(
-                                  fontFamily: 'Nunito', fontSize: 12,
-                                  color: selected ? AppTheme.grisTexte : Colors.white60,
-                                )),
-                          ],
-                        ),
-                      ),
-                      Text(pays['devise'],
-                          style: TextStyle(
-                            fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w600,
-                            color: selected ? AppTheme.vert : Colors.white60,
-                          )),
-                      if (selected)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(Icons.check_circle, color: AppTheme.vert, size: 20),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSelectLangue() {
-    final langues = _languesDuPays;
-    return Column(
-      children: langues.map((code) {
-        final selected = _langueSelectionnee == code;
-        return GestureDetector(
-          onTap: () {
-            setState(() => _langueSelectionnee = code);
-            _parler(LanguesData.getNatif(code));
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: selected ? Colors.white : Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: selected ? Colors.white : Colors.white38,
-                width: selected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(LanguesData.getDrapeau(code), style: const TextStyle(fontSize: 28)),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(LanguesData.getNom(code),
-                          style: TextStyle(
-                            fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w700,
-                            color: selected ? AppTheme.vert : Colors.white,
-                          )),
-                      Text(LanguesData.getNatif(code),
-                          style: TextStyle(
-                            fontFamily: 'Nunito', fontSize: 13,
-                            color: selected ? AppTheme.grisTexte : Colors.white70,
-                          )),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.volume_up_rounded,
-                      color: selected ? AppTheme.vert : Colors.white70),
-                  onPressed: () => _parler(LanguesData.getNatif(code)),
-                ),
-                if (selected)
-                  Container(
-                    width: 28, height: 28,
-                    decoration: const BoxDecoration(color: AppTheme.vert, shape: BoxShape.circle),
-                    child: const Icon(Icons.check, color: Colors.white, size: 18),
-                  ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _tts.stop();
-    super.dispose();
+  /// Retourne la liste des services Mobile Money disponibles dans un pays
+  static List<String> getMobileMoney(String code) {
+    final p = getPays(code);
+    if (p == null) return [];
+    return List<String>.from(p['mobile_money']);
   }
 }
