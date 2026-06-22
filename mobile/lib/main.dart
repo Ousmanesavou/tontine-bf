@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'screens/auth/splash_screen.dart';
 import 'screens/auth/langue_screen.dart';
@@ -16,32 +17,77 @@ import 'screens/paiement/paiement_screen.dart';
 import 'screens/paiement/succes_paiement_screen.dart';
 import 'screens/catalogue/catalogue_screen.dart';
 import 'screens/profil/profil_screen.dart';
+import 'screens/profil/reglages_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'utils/app_theme.dart';
 import 'services/storage_service.dart';
-import 'screens/profil/reglages_screen.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Orientation portrait uniquement
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // Barre de statut transparente
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+
   await StorageService.init();
-  runApp(const ProviderScope(child: TontineBFApp()));
+
+  // Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+  }
+
+  runApp(const ProviderScope(child: TontineAfricaApp()));
 }
 
+// ── PROVIDERS ─────────────────────────────────────────
 final langueProvider = StateProvider<String>((ref) {
   return StorageService.getLangue() ?? 'fr';
 });
 
-class TontineBFApp extends ConsumerWidget {
-  const TontineBFApp({super.key});
+final paysProvider = StateProvider<String>((ref) {
+  return StorageService.getPays() ?? 'BF';
+});
+
+final fontSizeProvider = StateProvider<double>((ref) {
+  return StorageService.getFontSize() ?? 14.0;
+});
+
+// ── APP ───────────────────────────────────────────────
+class TontineAfricaApp extends ConsumerWidget {
+  const TontineAfricaApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final langue = ref.watch(langueProvider);
+    final fontSize = ref.watch(fontSizeProvider);
+
+    // Locale selon la langue choisie
+    Locale locale;
+    switch (langue) {
+      case 'en': locale = const Locale('en'); break;
+      case 'ar': locale = const Locale('ar'); break;
+      case 'sw': locale = const Locale('sw'); break;
+      case 'pt': locale = const Locale('pt'); break;
+      default: locale = const Locale('fr');
+    }
+
     return MaterialApp.router(
-      title: 'Tontine BF',
+      title: 'Tontine Africa',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      key: ValueKey(langue), // Force rebuild quand langue change
+      theme: AppTheme.lightTheme.copyWith(
+        textTheme: AppTheme.lightTheme.textTheme.apply(
+          fontSizeFactor: (fontSize / 14.0).clamp(0.8, 1.4),
+        ),
+      ),
+      locale: locale,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -50,14 +96,33 @@ class TontineBFApp extends ConsumerWidget {
       supportedLocales: const [
         Locale('fr'),
         Locale('en'),
+        Locale('ar'),
+        Locale('sw'),
+        Locale('pt'),
       ],
       routerConfig: _router,
     );
   }
 }
 
+// ── ROUTER ────────────────────────────────────────────
 final _router = GoRouter(
   initialLocation: '/splash',
+  errorBuilder: (ctx, state) => Scaffold(
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Page introuvable', style: TextStyle(fontSize: 18)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => ctx.go('/home'),
+            child: const Text('Retour à l\'accueil'),
+          ),
+        ],
+      ),
+    ),
+  ),
   routes: [
     GoRoute(
       path: '/splash',
@@ -97,9 +162,6 @@ final _router = GoRouter(
       path: '/paiement/succes',
       builder: (ctx, state) => const SuccesPaiementScreen(),
     ),
-
-    // Dans les routes :
-    GoRoute(path: '/reglages', builder: (ctx, state) => const ReglagesScreen()),
     GoRoute(
       path: '/paiement/:cotisationId',
       builder: (ctx, state) =>
@@ -116,6 +178,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/profil',
       builder: (ctx, state) => const ProfilScreen(),
+    ),
+    GoRoute(
+      path: '/reglages',
+      builder: (ctx, state) => const ReglagesScreen(),
     ),
   ],
 );

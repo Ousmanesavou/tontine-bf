@@ -203,4 +203,24 @@ static Future<Map<String, dynamic>?> getCotisationEnCours(String tontineId) asyn
     }
     return 'Erreur inattendue. Réessayez.';
   }
+
+
+static Future<List<Map<String, dynamic>>> getTontinesPubliques({String search = ''}) async {
+    try {
+      final resp = await _dio.get('/tontines/publiques',
+          queryParameters: search.isNotEmpty ? {'search': search} : {});
+      return List<Map<String, dynamic>>.from(resp.data['data']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> demanderAdhesion(String tontineId, {String message = ''}) async {
+    try {
+      await _dio.post('/tontines/$tontineId/demander-adhesion',
+          data: {'message': message});
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }  
 }

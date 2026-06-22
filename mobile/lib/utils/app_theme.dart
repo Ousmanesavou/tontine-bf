@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'responsive.dart';
 
 class AppTheme {
   static const Color vert = Color(0xFF1D9E75);
@@ -20,6 +21,20 @@ class AppTheme {
   static const Color blanc = Color(0xFFFFFFFF);
   static const Color fond = Color(0xFFF5F5F5);
   static const Color texte = Color(0xFF2C2C2A);
+
+  // ── Taille de texte adaptative ────────────────────
+  static TextStyle textStyle(BuildContext context, {
+    double size = 14,
+    FontWeight weight = FontWeight.normal,
+    Color color = const Color(0xFF2C2C2A),
+  }) {
+    return TextStyle(
+      fontFamily: 'Nunito',
+      fontSize: Responsive.fontSize(context, size),
+      fontWeight: weight,
+      color: color,
+    );
+  }
 
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
@@ -49,7 +64,8 @@ class AppTheme {
             backgroundColor: vert,
             foregroundColor: blanc,
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
             textStyle: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 16,
@@ -63,7 +79,8 @@ class AppTheme {
             foregroundColor: vert,
             side: const BorderSide(color: vert, width: 1.5),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
             textStyle: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 16,
@@ -74,7 +91,8 @@ class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: blanc,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFFD3D1C7)),
@@ -91,15 +109,18 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: rouge),
           ),
-          labelStyle: const TextStyle(color: grisTexte, fontFamily: 'Nunito'),
-          hintStyle: const TextStyle(color: gris, fontFamily: 'Nunito'),
+          labelStyle: const TextStyle(
+              color: grisTexte, fontFamily: 'Nunito'),
+          hintStyle:
+              const TextStyle(color: gris, fontFamily: 'Nunito'),
         ),
         cardTheme: CardThemeData(
           color: blanc,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFE8E8E5), width: 0.5),
+            side: const BorderSide(
+                color: Color(0xFFE8E8E5), width: 0.5),
           ),
           margin: const EdgeInsets.only(bottom: 12),
         ),
@@ -107,22 +128,56 @@ class AppTheme {
           backgroundColor: blanc,
           selectedItemColor: vert,
           unselectedItemColor: gris,
-          selectedLabelStyle: TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: TextStyle(fontFamily: 'Nunito', fontSize: 11),
+          selectedLabelStyle: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 11,
+              fontWeight: FontWeight.w600),
+          unselectedLabelStyle:
+              TextStyle(fontFamily: 'Nunito', fontSize: 11),
           type: BottomNavigationBarType.fixed,
           elevation: 8,
         ),
         textTheme: const TextTheme(
-          displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: texte, fontFamily: 'Nunito'),
-          displayMedium: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: texte, fontFamily: 'Nunito'),
-          headlineLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: texte, fontFamily: 'Nunito'),
-          headlineMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: texte, fontFamily: 'Nunito'),
-          titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: texte, fontFamily: 'Nunito'),
-          titleMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: texte, fontFamily: 'Nunito'),
-          bodyLarge: TextStyle(fontSize: 15, color: texte, fontFamily: 'Nunito'),
-          bodyMedium: TextStyle(fontSize: 14, color: texte, fontFamily: 'Nunito'),
-          bodySmall: TextStyle(fontSize: 12, color: grisTexte, fontFamily: 'Nunito'),
-          labelSmall: TextStyle(fontSize: 11, color: gris, fontFamily: 'Nunito'),
+          displayLarge: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: texte,
+              fontFamily: 'Nunito'),
+          displayMedium: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: texte,
+              fontFamily: 'Nunito'),
+          headlineLarge: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: texte,
+              fontFamily: 'Nunito'),
+          headlineMedium: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: texte,
+              fontFamily: 'Nunito'),
+          titleLarge: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: texte,
+              fontFamily: 'Nunito'),
+          titleMedium: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: texte,
+              fontFamily: 'Nunito'),
+          bodyLarge: TextStyle(
+              fontSize: 15, color: texte, fontFamily: 'Nunito'),
+          bodyMedium: TextStyle(
+              fontSize: 14, color: texte, fontFamily: 'Nunito'),
+          bodySmall: TextStyle(
+              fontSize: 12,
+              color: grisTexte,
+              fontFamily: 'Nunito'),
+          labelSmall: TextStyle(
+              fontSize: 11, color: gris, fontFamily: 'Nunito'),
         ),
       );
 }

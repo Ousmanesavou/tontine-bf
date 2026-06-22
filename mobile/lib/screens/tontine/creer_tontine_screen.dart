@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:io';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/vocal_service.dart';
@@ -32,72 +31,52 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
 
   final List<Map<String, dynamic>> _types = [
     {
-      'code': 'argent_liquide',
-      'label': 'Argent liquide',
-      'emoji': '💰',
+      'code': 'argent_liquide', 'label': 'Argent liquide', 'emoji': '💰',
       'description': 'Chaque membre reçoit la cagnotte à son tour',
       'couleur': const Color(0xFF1D9E75),
     },
     {
-      'code': 'objet',
-      'label': 'Objet / Bien',
-      'emoji': '📦',
+      'code': 'objet', 'label': 'Objet / Bien', 'emoji': '📦',
       'description': 'Choisissez un objet dans le catalogue',
       'couleur': const Color(0xFF378ADD),
     },
     {
-      'code': 'caisse_fixe',
-      'label': 'Caisse commune',
-      'emoji': '🏦',
+      'code': 'caisse_fixe', 'label': 'Caisse commune', 'emoji': '🏦',
       'description': 'Épargne collective avec emprunts possibles',
       'couleur': const Color(0xFFBA7517),
     },
     {
-      'code': 'evenementielle',
-      'label': 'Événement',
-      'emoji': '🎉',
+      'code': 'evenementielle', 'label': 'Événement', 'emoji': '🎉',
       'description': 'Mariage, baptême, funérailles',
       'couleur': const Color(0xFFD4537E),
     },
     {
-      'code': 'sante',
-      'label': 'Santé',
-      'emoji': '🏥',
+      'code': 'sante', 'label': 'Santé', 'emoji': '🏥',
       'description': 'Fonds d\'urgence médicale pour le groupe',
       'couleur': const Color(0xFFE24B4A),
     },
     {
-      'code': 'education',
-      'label': 'Éducation',
-      'emoji': '🎓',
+      'code': 'education', 'label': 'Éducation', 'emoji': '🎓',
       'description': 'Scolarité et fournitures scolaires',
       'couleur': const Color(0xFF534AB7),
     },
     {
-      'code': 'agriculture',
-      'label': 'Agriculture',
-      'emoji': '🌾',
+      'code': 'agriculture', 'label': 'Agriculture', 'emoji': '🌾',
       'description': 'Semences, engrais, équipements agricoles',
       'couleur': const Color(0xFF639922),
     },
     {
-      'code': 'construction',
-      'label': 'Construction',
-      'emoji': '🏗️',
+      'code': 'construction', 'label': 'Construction', 'emoji': '🏗️',
       'description': 'Matériaux de construction et rénovation',
       'couleur': const Color(0xFF888780),
     },
     {
-      'code': 'voyage',
-      'label': 'Voyage',
-      'emoji': '✈️',
+      'code': 'voyage', 'label': 'Voyage', 'emoji': '✈️',
       'description': 'Transport et déplacements',
       'couleur': const Color(0xFF0F6E56),
     },
     {
-      'code': 'commerce',
-      'label': 'Commerce',
-      'emoji': '🛒',
+      'code': 'commerce', 'label': 'Commerce', 'emoji': '🛒',
       'description': 'Fonds de roulement pour petits commerces',
       'couleur': const Color(0xFFD85A30),
     },
@@ -128,7 +107,6 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
   Future<void> _creer() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _chargement = true);
-
     try {
       await ApiService.creerTontine({
         'nom': _nomCtrl.text.trim(),
@@ -141,13 +119,7 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
         'date_debut': _dateDebut.toIso8601String().split('T')[0],
         'ordre_rotation': 'tirage_sort',
       });
-
-      _vocal.parlerMultilingue(
-        fr: 'Tontine créée avec succès !',
-        moore: 'Tontine sɩnga sɩda !',
-        dioula: 'Tontine daminɛna ka kɛ sɛbɛn !',
-      );
-
+      _vocal.parler('Tontine créée avec succès !');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -160,9 +132,7 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: AppTheme.rouge),
+          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.rouge),
         );
       }
     } finally {
@@ -172,13 +142,26 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+    final isSmall = sw < 360;
+    final padding = isSmall ? 12.0 : 16.0;
+    final cardItemWidth = (sw - padding * 2 - 10) / 2.2;
+    final cardItemHeight = isSmall ? 110.0 : 130.0;
+
     return Scaffold(
       backgroundColor: AppTheme.fond,
       appBar: AppBar(
         backgroundColor: AppTheme.vert,
         foregroundColor: Colors.white,
-        title: const Text('Nouvelle tontine',
-            style: TextStyle(fontFamily: 'Nunito', color: Colors.white)),
+        title: Text(
+          'Nouvelle tontine',
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            color: Colors.white,
+            fontSize: isSmall ? 16 : 18,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.volume_up_rounded, color: Colors.white70),
@@ -190,10 +173,11 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── NOM ──────────────────────────────────────
               _buildSection('Nom de la tontine'),
               TextFormField(
                 controller: _nomCtrl,
@@ -202,14 +186,14 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   hintText: 'Ex: Tontine des amis du quartier',
                   prefixIcon: Icon(Icons.group_outlined),
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Requis' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Requis' : null,
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
+              // ── TYPE ──────────────────────────────────────
               _buildSection('Type de tontine'),
               SizedBox(
-                height: 140,
+                height: cardItemHeight,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: _types.length,
@@ -219,14 +203,13 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                     return GestureDetector(
                       onTap: () {
                         setState(() => _type = t['code']);
-                        _vocal.parler(
-                            '${t['label']}. ${t['description']}');
+                        _vocal.parler('${t['label']}. ${t['description']}');
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
-                        width: 120,
+                        width: cardItemWidth,
                         margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(isSmall ? 8 : 12),
                         decoration: BoxDecoration(
                           color: selected
                               ? (t['couleur'] as Color).withOpacity(0.15)
@@ -241,31 +224,34 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(t['emoji'],
-                                style: const TextStyle(fontSize: 32)),
-                            const SizedBox(height: 8),
+                                style: TextStyle(fontSize: isSmall ? 24 : 30)),
+                            SizedBox(height: isSmall ? 4 : 6),
                             Text(
                               t['label'],
                               textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: 'Nunito',
-                                fontSize: 12,
+                                fontSize: isSmall ? 10 : 12,
                                 fontWeight: FontWeight.w700,
                                 color: selected
                                     ? t['couleur'] as Color
                                     : AppTheme.texte,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: isSmall ? 2 : 4),
                             Text(
                               t['description'],
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Nunito',
-                                fontSize: 9,
+                                fontSize: isSmall ? 8 : 9,
                                 color: AppTheme.grisTexte,
                               ),
                             ),
@@ -278,26 +264,24 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
               ),
               const SizedBox(height: 8),
 
-              // Affiche le type sélectionné
+              // Type sélectionné
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: (_typeSelectionne['couleur'] as Color)
-                      .withOpacity(0.1),
+                  color: (_typeSelectionne['couleur'] as Color).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
                     Text(_typeSelectionne['emoji'],
-                        style: const TextStyle(fontSize: 18)),
+                        style: TextStyle(fontSize: isSmall ? 16 : 18)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _typeSelectionne['description'],
                         style: TextStyle(
                           fontFamily: 'Nunito',
-                          fontSize: 12,
+                          fontSize: isSmall ? 11 : 12,
                           color: _typeSelectionne['couleur'] as Color,
                         ),
                       ),
@@ -305,17 +289,22 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
-              _buildSection('Montant total (F CFA)'),
+              // ── MONTANT ───────────────────────────────────
+              _buildSection('Montant total'),
               TextFormField(
                 controller: _montantCtrl,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Ex: 150000',
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: const Icon(Icons.attach_money),
                   suffixText: 'F CFA',
+                  suffixStyle: TextStyle(
+                    fontSize: isSmall ? 11 : 13,
+                    color: AppTheme.grisTexte,
+                  ),
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
@@ -324,8 +313,9 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
+              // ── MEMBRES ───────────────────────────────────
               _buildSection('Nombre de membres'),
               TextFormField(
                 controller: _membresCtrl,
@@ -343,12 +333,13 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
+              // ── PERIODICITE ───────────────────────────────
               _buildSection('Périodicité des cotisations'),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: _periodicites.map((p) {
                   final selected = _periodicite == p['code'];
                   return GestureDetector(
@@ -358,22 +349,22 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                     }),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmall ? 10 : 14,
+                        vertical: isSmall ? 7 : 10,
+                      ),
                       decoration: BoxDecoration(
                         color: selected ? AppTheme.vert : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: selected
-                              ? AppTheme.vert
-                              : const Color(0xFFE8E8E5),
+                          color: selected ? AppTheme.vert : const Color(0xFFE8E8E5),
                         ),
                       ),
                       child: Text(
                         p['label'],
                         style: TextStyle(
                           fontFamily: 'Nunito',
-                          fontSize: 13,
+                          fontSize: isSmall ? 11 : 13,
                           fontWeight: FontWeight.w600,
                           color: selected ? Colors.white : AppTheme.texte,
                         ),
@@ -382,8 +373,9 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
+              // ── DATE DEBUT ────────────────────────────────
               _buildSection('Date de début'),
               GestureDetector(
                 onTap: () async {
@@ -391,12 +383,10 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                     context: context,
                     initialDate: _dateDebut,
                     firstDate: DateTime.now(),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
                     builder: (ctx, child) => Theme(
                       data: Theme.of(ctx).copyWith(
-                        colorScheme: const ColorScheme.light(
-                            primary: AppTheme.vert),
+                        colorScheme: const ColorScheme.light(primary: AppTheme.vert),
                       ),
                       child: child!,
                     ),
@@ -404,7 +394,7 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   if (date != null) setState(() => _dateDebut = date);
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(isSmall ? 12 : 14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -417,15 +407,18 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                       const SizedBox(width: 10),
                       Text(
                         '${_dateDebut.day}/${_dateDebut.month}/${_dateDebut.year}',
-                        style: const TextStyle(
-                            fontFamily: 'Nunito', fontSize: 15),
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: isSmall ? 13 : 15,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
+              // ── DESCRIPTION ───────────────────────────────
               _buildSection('Description (optionnel)'),
               TextFormField(
                 controller: _descriptionCtrl,
@@ -435,8 +428,9 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   prefixIcon: Icon(Icons.description_outlined),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
+              // ── MEDIA ─────────────────────────────────────
               _buildSection('Image ou vidéo (optionnel)'),
               MediaPickerWidget(
                 onMediaSelected: (imagePath, videoPath) {
@@ -446,21 +440,28 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: isSmall ? 14 : 20),
 
-              if (_montantCtrl.text.isNotEmpty &&
-                  _membresCtrl.text.isNotEmpty)
-                _buildRecapitulatif(),
+              // ── RECAP ─────────────────────────────────────
+              if (_montantCtrl.text.isNotEmpty && _membresCtrl.text.isNotEmpty)
+                _buildRecapitulatif(isSmall),
               const SizedBox(height: 24),
 
+              // ── BOUTON ────────────────────────────────────
               _chargement
                   ? const Center(
-                      child: CircularProgressIndicator(
-                          color: AppTheme.vert))
-                  : ElevatedButton.icon(
-                      onPressed: _creer,
-                      icon: const Icon(Icons.check),
-                      label: const Text('Créer la tontine'),
+                      child: CircularProgressIndicator(color: AppTheme.vert))
+                  : SizedBox(
+                      width: double.infinity,
+                      height: isSmall ? 48 : 54,
+                      child: ElevatedButton.icon(
+                        onPressed: _creer,
+                        icon: const Icon(Icons.check),
+                        label: Text(
+                          'Créer la tontine',
+                          style: TextStyle(fontSize: isSmall ? 14 : 16),
+                        ),
+                      ),
                     ),
               const SizedBox(height: 24),
             ],
@@ -471,13 +472,14 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
   }
 
   Widget _buildSection(String titre) {
+    final isSmall = MediaQuery.of(context).size.width < 360;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         titre,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Nunito',
-          fontSize: 13,
+          fontSize: isSmall ? 11 : 13,
           fontWeight: FontWeight.w600,
           color: AppTheme.grisTexte,
           letterSpacing: 0.5,
@@ -486,10 +488,10 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
     );
   }
 
-  Widget _buildRecapitulatif() {
+  Widget _buildRecapitulatif(bool isSmall) {
     final membres = int.tryParse(_membresCtrl.text) ?? 1;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmall ? 12 : 16),
       decoration: BoxDecoration(
         color: AppTheme.vertClair,
         borderRadius: BorderRadius.circular(14),
@@ -500,47 +502,70 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
           Row(
             children: [
               Text(_typeSelectionne['emoji'],
-                  style: const TextStyle(fontSize: 18)),
+                  style: TextStyle(fontSize: isSmall ? 16 : 18)),
               const SizedBox(width: 8),
-              const Text('Récapitulatif',
-                  style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.vertFonce)),
+              Text(
+                'Récapitulatif',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w700,
+                  fontSize: isSmall ? 13 : 15,
+                  color: AppTheme.vertFonce,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
           _buildRecapLigne(
-            'Cotisation par membre',
+            'Cotisation / membre',
             '${_cotisationParMembre.toStringAsFixed(0)} F / ${_periodicites.firstWhere((p) => p['code'] == _periodicite)['label']}',
+            isSmall,
           ),
           _buildRecapLigne(
-              'Durée totale', '${membres * _periodicitejours} jours'),
-          _buildRecapLigne('Date de fin',
-              '${_dateFin.day}/${_dateFin.month}/${_dateFin.year}'),
-          _buildRecapLigne('Nombre de tours', '$membres tours'),
+            'Durée totale',
+            '${membres * _periodicitejours} jours',
+            isSmall,
+          ),
+          _buildRecapLigne(
+            'Date de fin',
+            '${_dateFin.day}/${_dateFin.month}/${_dateFin.year}',
+            isSmall,
+          ),
+          _buildRecapLigne('Nombre de tours', '$membres tours', isSmall),
         ],
       ),
     );
   }
 
-  Widget _buildRecapLigne(String label, String valeur) {
+  Widget _buildRecapLigne(String label, String valeur, bool isSmall) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 13,
-                  color: AppTheme.grisTexte)),
-          Text(valeur,
-              style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.vertFonce)),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: isSmall ? 11 : 13,
+                color: AppTheme.grisTexte,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              valeur,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: isSmall ? 11 : 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.vertFonce,
+              ),
+            ),
+          ),
         ],
       ),
     );

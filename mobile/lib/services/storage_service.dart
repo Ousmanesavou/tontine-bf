@@ -8,6 +8,7 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
+  // ── AUTH ──────────────────────────────────────────────
   static Future<void> saveToken(String token) async {
     await _prefs.setString('auth_token', token);
   }
@@ -27,17 +28,42 @@ class StorageService {
     return jsonDecode(data);
   }
 
-  static String? getDernierTelephone() => _prefs.getString('dernier_telephone');
+  static String? getDernierTelephone() =>
+      _prefs.getString('dernier_telephone');
 
+  // ── LANGUE ────────────────────────────────────────────
   static Future<void> saveLangue(String langue) async {
     await _prefs.setString('langue', langue);
   }
 
   static String? getLangue() => _prefs.getString('langue');
 
+  // ── PAYS ──────────────────────────────────────────────
+  static Future<void> savePays(String pays) async {
+    await _prefs.setString('pays', pays);
+  }
+
+  static String? getPays() => _prefs.getString('pays');
+
+  // ── FONT SIZE ─────────────────────────────────────────
+  static Future<void> saveFontSize(double size) async {
+    await _prefs.setDouble('font_size', size);
+  }
+
+  static double? getFontSize() => _prefs.getDouble('font_size');
+
+  // ── FCM TOKEN ─────────────────────────────────────────
+  static Future<void> saveFcmToken(String token) async {
+    await _prefs.setString('fcm_token', token);
+  }
+
+  static String? getFcmToken() => _prefs.getString('fcm_token');
+
+  // ── TONTINES CACHE ────────────────────────────────────
   static Future<void> saveTontinesCache(List<dynamic> tontines) async {
     await _prefs.setString('tontines_cache', jsonEncode(tontines));
-    await _prefs.setString('tontines_cache_date', DateTime.now().toIso8601String());
+    await _prefs.setString(
+        'tontines_cache_date', DateTime.now().toIso8601String());
   }
 
   static List<dynamic>? getTontinesCache() {
@@ -51,16 +77,96 @@ class StorageService {
     return jsonDecode(data);
   }
 
-  // ✅ savePays et getPays déplacés à l'intérieur de la classe
-  static Future<void> savePays(String pays) async {
-    await _prefs.setString('pays', pays);
+  // ── NOTIFICATIONS ─────────────────────────────────────
+  static Future<void> saveNotificationsActives(bool actif) async {
+    await _prefs.setBool('notifications_actives', actif);
   }
 
-  static String? getPays() => _prefs.getString('pays');
+  static bool getNotificationsActives() =>
+      _prefs.getBool('notifications_actives') ?? true;
 
+  static Future<void> saveSonActif(bool actif) async {
+    await _prefs.setBool('son_actif', actif);
+  }
+
+  static bool getSonActif() => _prefs.getBool('son_actif') ?? true;
+
+  static Future<void> saveVocalActif(bool actif) async {
+    await _prefs.setBool('vocal_actif', actif);
+  }
+
+  static bool getVocalActif() => _prefs.getBool('vocal_actif') ?? true;
+
+  // ── THEME ─────────────────────────────────────────────
+  static Future<void> saveModeSombre(bool sombre) async {
+    await _prefs.setBool('mode_sombre', sombre);
+  }
+
+  static bool getModeSombre() => _prefs.getBool('mode_sombre') ?? false;
+
+  // ── INDICATIF ─────────────────────────────────────────
+  static Future<void> saveIndicatif(String indicatif) async {
+    await _prefs.setString('indicatif', indicatif);
+  }
+
+  static String getIndicatif() =>
+      _prefs.getString('indicatif') ?? '+226';
+
+  // ── DEVISE ────────────────────────────────────────────
+  static Future<void> saveDevise(String devise) async {
+    await _prefs.setString('devise', devise);
+  }
+
+  static String getDevise() => _prefs.getString('devise') ?? 'XOF';
+
+  // ── PREMIERE CONNEXION ────────────────────────────────
+  static Future<void> setPremiereConnexion(bool val) async {
+    await _prefs.setBool('premiere_connexion', val);
+  }
+
+  static bool isPremiereConnexion() =>
+      _prefs.getBool('premiere_connexion') ?? true;
+
+  // ── CLEAR ─────────────────────────────────────────────
   static Future<void> clearAll() async {
     await _prefs.remove('auth_token');
     await _prefs.remove('user_data');
     await _prefs.remove('tontines_cache');
+    await _prefs.remove('tontines_cache_date');
+    await _prefs.remove('fcm_token');
+  }
+
+  static Future<void> clearSession() async {
+    await _prefs.remove('auth_token');
+    await _prefs.remove('user_data');
+  }
+
+  // ── ALL SETTINGS ──────────────────────────────────────
+  static Map<String, dynamic> getAllSettings() {
+    return {
+      'langue': getLangue() ?? 'fr',
+      'pays': getPays() ?? 'BF',
+      'font_size': getFontSize() ?? 14.0,
+      'notifications_actives': getNotificationsActives(),
+      'son_actif': getSonActif(),
+      'vocal_actif': getVocalActif(),
+      'mode_sombre': getModeSombre(),
+      'indicatif': getIndicatif(),
+      'devise': getDevise(),
+    };
+  }
+
+  static Future<void> saveAllSettings(Map<String, dynamic> settings) async {
+    if (settings['langue'] != null) await saveLangue(settings['langue']);
+    if (settings['pays'] != null) await savePays(settings['pays']);
+    if (settings['font_size'] != null) await saveFontSize(settings['font_size']);
+    if (settings['notifications_actives'] != null) {
+      await saveNotificationsActives(settings['notifications_actives']);
+    }
+    if (settings['son_actif'] != null) await saveSonActif(settings['son_actif']);
+    if (settings['vocal_actif'] != null) await saveVocalActif(settings['vocal_actif']);
+    if (settings['mode_sombre'] != null) await saveModeSombre(settings['mode_sombre']);
+    if (settings['indicatif'] != null) await saveIndicatif(settings['indicatif']);
+    if (settings['devise'] != null) await saveDevise(settings['devise']);
   }
 }
