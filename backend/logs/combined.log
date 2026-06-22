@@ -82,3 +82,33 @@
 {"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-20 23:02:34"}
 {"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-20 23:02:34"}
 {"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-20 23:02:34"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-21 08:07:33"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-21 08:07:34"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-21 08:07:34"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-21 08:07:34"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-21 08:07:34"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-22 11:17:43"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-22 11:17:43"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 11:17:43"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 11:17:43"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 11:17:43"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-22 11:20:53"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-22 11:20:53"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 11:20:53"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 11:20:54"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 11:20:54"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-22 11:21:00"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-22 11:21:00"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 11:21:00"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 11:21:00"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 11:21:00"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-22 11:21:24"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-22 11:21:24"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 11:21:24"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 11:21:24"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 11:21:24"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-22 11:21:35"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-22 11:21:35"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 11:21:35"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 11:21:35"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 11:21:35"}

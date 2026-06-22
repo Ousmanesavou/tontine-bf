@@ -7,6 +7,7 @@ const { connectDB } = require('../config/database');
 const { connectRedis } = require('../config/redis');
 const logger = require('./utils/logger');
 const cronJobs = require('./services/cronJobs');
+const uploadRoutes = require('./routes/upload');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -30,7 +31,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
+app.use('/api/upload', uploadRoutes);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
