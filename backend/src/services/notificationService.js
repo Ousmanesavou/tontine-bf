@@ -1,217 +1,260 @@
-const AfricasTalking = require('africastalking');
+const africastalking = require('africastalking');
+const sgMail = require('@sendgrid/mail');
 const axios = require('axios');
+const admin = require('firebase-admin');
 const { pool } = require('../../config/database');
 const logger = require('../utils/logger');
 
-const AT = AfricasTalking({
+// ── INIT SERVICES ─────────────────────────────────────
+const AT = africastalking({
   apiKey: process.env.AT_API_KEY,
-  username: process.env.AT_USERNAME
+  username: process.env.AT_USERNAME || 'sandbox',
 });
-
 const sms = AT.SMS;
-const voice = AT.VOICE;
 
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Firebase Admin
+if (!admin.apps.length && process.env.FIREBASE_PROJECT_ID) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+// ── MESSAGES MULTILINGUES ─────────────────────────────
 const MESSAGES = {
   rappel_cotisation: {
-    fr: (nom, montant, tontine, jours) =>
-      `Bonjour ${nom} ! Votre cotisation de ${montant}F pour la tontine "${tontine}" est due dans ${jours} jour(s). Payez via Orange Money ou Moov Money.`,
-    moore: (nom, montant, tontine, jours) =>
-      `${nom}, f tontine "${tontine}" yaa kõ ${montant}F. Doge ${jours} lɛbg. Tɩ na Orange Money wall Moov Money.`,
-    dioula: (nom, montant, tontine, jours) =>
-      `${nom}, i ka tontine "${tontine}" kɔnɔ musaka ye ${montant}F ye. Tile ${jours} kɔ. O ka san Orange Money walima Moov Money fɛ.`
+    fr: (nom, montant, tontine) => `Bonjour ${nom} ! Votre cotisation de ${montant} F pour "${tontine}" est due. Payez maintenant sur Tontine Africa.`,
+    moore: (nom, montant, tontine) => `Aw laafi ${nom} ! F cotisation ${montant} F tontine "${tontine}" pʋgẽ yaa sɩda. Tontine Africa zugu f kõ.`,
+    dioula: (nom, montant, tontine) => `I ni sogoma ${nom} ! I ka wari ${montant} F bɔ tontine "${tontine}" kama. Tontine Africa kan i ka sara.`,
+    en: (nom, montant, tontine) => `Hello ${nom}! Your contribution of ${montant} for "${tontine}" is due. Pay now on Tontine Africa.`,
+    wolof: (nom, montant, tontine) => `Salut ${nom}! Sa cotisation ${montant} F pour "${tontine}" dafa des. Fay ci Tontine Africa.`,
+  },
+  retard_paiement: {
+    fr: (nom, montant, tontine) => `⚠️ ${nom}, vous avez un retard de paiement de ${montant} F pour "${tontine}". Régularisez au plus vite.`,
+    moore: (nom, montant, tontine) => `⚠️ ${nom}, f cotisation ${montant} F tontine "${tontine}" la yɩɩr. Maneg f kõ.`,
+    dioula: (nom, montant, tontine) => `⚠️ ${nom}, i ka wari ${montant} F tontine "${tontine}" ma bɔra. Hali joona i ka sara.`,
+    en: (nom, montant, tontine) => `⚠️ ${nom}, you have a late payment of ${montant} for "${tontine}". Please pay immediately.`,
   },
   paiement_confirme: {
-    fr: (nom, montant, tontine) =>
-      `✅ ${nom}, votre paiement de ${montant}F pour "${tontine}" est confirmé. Merci !`,
-    moore: (nom, montant, tontine) =>
-      `✅ ${nom}, f paiement ${montant}F tontine "${tontine}" yaa sɩd. A barka !`,
-    dioula: (nom, montant, tontine) =>
-      `✅ ${nom}, i ka sarali ${montant}F tontine "${tontine}" ye sɛbɛn. I ni ce !`
+    fr: (nom, montant, tontine) => `✅ Paiement confirmé ! ${montant} F reçu pour "${tontine}". Merci ${nom} !`,
+    moore: (nom, montant, tontine) => `✅ Paiement sɩnga ! ${montant} F tontine "${tontine}" pʋgẽ. Barka ${nom} !`,
+    dioula: (nom, montant, tontine) => `✅ Sarali ka kɛ sɛbɛn ! ${montant} F tontine "${tontine}" kama. Aw ni baara ${nom} !`,
+    en: (nom, montant, tontine) => `✅ Payment confirmed! ${montant} received for "${tontine}". Thank you ${nom}!`,
   },
-  tour_prochain: {
-    fr: (nom, tontine, date) =>
-      `🎉 ${nom}, c'est bientôt votre tour dans la tontine "${tontine}" ! Date prévue : ${date}.`,
-    moore: (nom, tontine, date) =>
-      `🎉 ${nom}, f yɩɩr yaa wa tontine "${tontine}" pʋgẽ ! Doge : ${date}.`,
-    dioula: (nom, tontine, date) =>
-      `🎉 ${nom}, i sisan bɛ se ka tontine "${tontine}" sɔrɔ ! Lɛ : ${date}.`
+  tour_recu: {
+    fr: (nom, montant, tontine) => `🎉 Félicitations ${nom} ! C'est votre tour de recevoir ${montant} F de la tontine "${tontine}" !`,
+    moore: (nom, montant, tontine) => `🎉 Barka ${nom} ! Rũnna f yɩɩra ${montant} F tontine "${tontine}" pʋgẽ !`,
+    dioula: (nom, montant, tontine) => `🎉 Aw ni ce ${nom} ! Bi i ka wari ${montant} F sɔrɔ tontine "${tontine}" la !`,
+    en: (nom, montant, tontine) => `🎉 Congratulations ${nom}! It's your turn to receive ${montant} from "${tontine}"!`,
   },
-  cotisation_en_retard: {
-    fr: (nom, montant, tontine) =>
-      `⚠️ ${nom}, votre cotisation de ${montant}F pour "${tontine}" est en retard. Veuillez régulariser rapidement.`,
-    moore: (nom, montant, tontine) =>
-      `⚠️ ${nom}, f cotisation ${montant}F tontine "${tontine}" yaa pɩng. Tɩ lɛɛg !`,
-    dioula: (nom, montant, tontine) =>
-      `⚠️ ${nom}, i ka musaka ${montant}F tontine "${tontine}" kɔsɛbɛ. I ka yen joona !`
+  nouveau_membre_tontine: {
+    fr: (nom, montant, tontine) => `👥 ${nom} a rejoint votre tontine "${tontine}".`,
+    moore: (nom, montant, tontine) => `👥 ${nom} kẽnga tontine "${tontine}" pʋgẽ.`,
+    dioula: (nom, montant, tontine) => `👥 ${nom} donna tontine "${tontine}" kɔnɔ.`,
+    en: (nom, montant, tontine) => `👥 ${nom} joined your tontine "${tontine}".`,
+  },
+  demande_adhesion: {
+    fr: (nom, montant, tontine) => `👤 ${nom} demande à rejoindre votre tontine "${tontine}". Acceptez ou refusez dans l'app.`,
+    moore: (nom, montant, tontine) => `👤 ${nom} dat tontine "${tontine}" pʋgẽ kẽng. A sɩd wall a bas.`,
+    dioula: (nom, montant, tontine) => `👤 ${nom} b'a fɛ tontine "${tontine}" sɔrɔ. I ka to ka dɔn walima ka ban.`,
+    en: (nom, montant, tontine) => `👤 ${nom} wants to join your tontine "${tontine}". Accept or decline in the app.`,
+  },
+  adhesion_acceptee: {
+    fr: (nom, montant, tontine) => `🎉 Votre demande pour rejoindre "${tontine}" a été acceptée ! Bienvenue !`,
+    moore: (nom, montant, tontine) => `🎉 F kẽngr tontine "${tontine}" pʋgẽ yaa sɩda ! Aw laafi !`,
+    dioula: (nom, montant, tontine) => `🎉 I tontine "${tontine}" kɔnɔ sɔrɔli ye sɛbɛn ! Bisimila !`,
+    en: (nom, montant, tontine) => `🎉 Your request to join "${tontine}" has been accepted! Welcome!`,
   },
   invitation_tontine: {
-    fr: (nomTontine, nomResponsable) =>
-      `Vous êtes invité(e) à rejoindre la tontine "${nomTontine}" créée par ${nomResponsable}. Téléchargez l'app Tontine BF pour accepter.`,
-    moore: (nomTontine, nomResponsable) =>
-      `A bool tontine "${nomTontine}" pʋgẽ - ${nomResponsable} n boola yãmb. Tontine BF app dẽeg !`,
-    dioula: (nomTontine, nomResponsable) =>
-      `An bɛ wele i ka tontine "${nomTontine}" sɔrɔ - ${nomResponsable} ye i wele. Tontine BF app sɔrɔ !`
-  }
+    fr: (nom, montant, tontine) => `💰 Vous êtes invité(e) à rejoindre la tontine "${tontine}". Téléchargez Tontine Africa !`,
+    moore: (nom, montant, tontine) => `💰 A bool yãmb tontine "${tontine}" pʋgẽ. Tontine Africa app kẽng !`,
+    dioula: (nom, montant, tontine) => `💰 I be wele tontine "${tontine}" kɔnɔ. Tontine Africa app sɔrɔ !`,
+    en: (nom, montant, tontine) => `💰 You are invited to join tontine "${tontine}". Download Tontine Africa!`,
+  },
 };
 
-const notificationService = {
+function getMessage(type, langue, nom, montant, tontine) {
+  const msgs = MESSAGES[type];
+  if (!msgs) return `Notification Tontine Africa`;
+  const fn = msgs[langue] || msgs['fr'];
+  return fn ? fn(nom, montant, tontine) : msgs['fr'](nom, montant, tontine);
+}
 
-  async notifierMembre(userId, options) {
-    try {
-      const { rows } = await pool.query(
-        'SELECT nom, prenom, telephone, langue, type_acces FROM utilisateurs WHERE id = $1',
-        [userId]
-      );
-      if (!rows[0]) return;
-
-      const user = rows[0];
-      const langue = user.langue || 'fr';
-      const { type } = options;
-
-      const messageTemplate = MESSAGES[type]?.[langue] || MESSAGES[type]?.fr;
-      if (!messageTemplate) return;
-
-      const message = messageTemplate(
-        `${user.prenom} ${user.nom}`,
-        options.montant,
-        options.nom_tontine,
-        options.jours_restants,
-        options.date
-      );
-
-      await pool.query(`
-        INSERT INTO notifications (utilisateur_id, tontine_id, type, message,
-          message_moore, message_dioula, canal)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
-      `, [
-        userId, options.tontine_id, type, message,
-        MESSAGES[type]?.moore?.(user.prenom, options.montant, options.nom_tontine, options.jours_restants),
-        MESSAGES[type]?.dioula?.(user.prenom, options.montant, options.nom_tontine, options.jours_restants),
-        user.type_acces === 'basic' ? 'sms' : 'push'
-      ]);
-
-      if (user.type_acces === 'basic') {
-        await this.envoyerSMS(user.telephone, message);
-      } else {
-        await this.envoyerPushNotification(userId, { title: type, body: message });
-        await this.envoyerWhatsApp(user.telephone, message);
-      }
-
-    } catch (err) {
-      logger.error('Erreur notifierMembre:', err);
+// ── ENVOI SMS ─────────────────────────────────────────
+async function envoyerSMS(telephone, message) {
+  try {
+    if (process.env.AT_USERNAME === 'sandbox') {
+      logger.info(`[SMS SANDBOX] → ${telephone}: ${message}`);
+      return { success: true, sandbox: true };
     }
-  },
+    const result = await sms.send({
+      to: [telephone],
+      message,
+      from: process.env.AT_SENDER_ID || 'TONTINE',
+    });
+    logger.info(`SMS envoyé à ${telephone}`);
+    return result;
+  } catch (err) {
+    logger.error(`Erreur SMS ${telephone}:`, err.message);
+    return { success: false, error: err.message };
+  }
+}
 
-  async envoyerSMS(telephone, message) {
-    try {
-      const result = await sms.send({
-        to: [telephone],
-        message: typeof message === 'string' ? message : message.fr,
-        from: process.env.AT_SENDER_ID || 'TONTINE'
-      });
-      logger.info(`SMS envoyé à ${telephone}:`, result);
-      return result;
-    } catch (err) {
-      logger.error('Erreur envoi SMS:', err);
-    }
-  },
+// ── ENVOI WHATSAPP ────────────────────────────────────
+async function envoyerWhatsApp(telephone, message) {
+  try {
+    if (!process.env.WHATSAPP_TOKEN) return { success: false };
 
-  async envoyerVocal(telephone, message, langue = 'fr') {
-    try {
-      const langueVoice = langue === 'moore' ? 'fr' : langue;
-      const result = await voice.call({
-        callFrom: process.env.AT_CALLER_ID,
-        callTo: [telephone]
-      });
-      logger.info(`Appel vocal initié vers ${telephone}`);
-      return result;
-    } catch (err) {
-      logger.error('Erreur appel vocal:', err);
-    }
-  },
-
-  async envoyerWhatsApp(telephone, message) {
-    try {
-      if (!process.env.WHATSAPP_TOKEN) return;
-      const formattedPhone = telephone.replace(/^0/, '226').replace(/\s/g, '');
-      await axios.post(
-        `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
-        {
-          messaging_product: 'whatsapp',
-          to: formattedPhone,
-          type: 'text',
-          text: { body: message }
+    const tel = telephone.startsWith('+') ? telephone.substring(1) : telephone;
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: tel,
+        type: 'text',
+        text: { body: message },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json',
         },
-        { headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` } }
-      );
-      logger.info(`WhatsApp envoyé à ${telephone}`);
-    } catch (err) {
-      logger.error('Erreur WhatsApp:', err);
-    }
-  },
-
-  async envoyerPushNotification(userId, { title, body }) {
-    logger.info(`Push notification pour ${userId}: ${title}`);
-  },
-
-  async notifierGroupeTontine(tontineId, options) {
-    try {
-      const { rows } = await pool.query(
-        'SELECT utilisateur_id FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true',
-        [tontineId]
-      );
-      await Promise.all(rows.map(m => this.notifierMembre(m.utilisateur_id, options)));
-    } catch (err) {
-      logger.error('Erreur notifierGroupe:', err);
-    }
-  },
-
-  async envoyerRappelsCotisations() {
-    try {
-      const demain = new Date();
-      demain.setDate(demain.getDate() + 1);
-      const dansDeuxJours = new Date();
-      dansDeuxJours.setDate(dansDeuxJours.getDate() + 2);
-
-      const { rows: cotisations } = await pool.query(`
-        SELECT c.*, t.nom as nom_tontine, u.nom, u.prenom, u.telephone, u.langue, u.type_acces
-        FROM cotisations c
-        JOIN tontines t ON t.id = c.tontine_id
-        JOIN utilisateurs u ON u.id = c.membre_id
-        WHERE c.statut = 'en_attente'
-          AND c.date_echeance BETWEEN NOW() AND $1
-      `, [dansDeuxJours]);
-
-      for (const cotisation of cotisations) {
-        const joursRestants = Math.ceil(
-          (new Date(cotisation.date_echeance) - new Date()) / (1000 * 60 * 60 * 24)
-        );
-        await this.notifierMembre(cotisation.membre_id, {
-          type: 'rappel_cotisation',
-          tontine_id: cotisation.tontine_id,
-          nom_tontine: cotisation.nom_tontine,
-          montant: cotisation.montant,
-          jours_restants: joursRestants
-        });
       }
-
-      logger.info(`${cotisations.length} rappels cotisation envoyés`);
-    } catch (err) {
-      logger.error('Erreur envoyerRappels:', err);
-    }
-  },
-
-  async marquerRetards() {
-    try {
-      const { rowCount } = await pool.query(`
-        UPDATE cotisations SET statut = 'en_retard'
-        WHERE statut = 'en_attente' AND date_echeance < NOW()
-      `);
-      logger.info(`${rowCount} cotisations marquées en retard`);
-    } catch (err) {
-      logger.error('Erreur marquerRetards:', err);
-    }
+    );
+    logger.info(`WhatsApp envoyé à ${telephone}`);
+    return { success: true };
+  } catch (err) {
+    logger.error(`Erreur WhatsApp ${telephone}:`, err.message);
+    return { success: false, error: err.message };
   }
-};
+}
 
-module.exports = notificationService;
+// ── ENVOI EMAIL ───────────────────────────────────────
+async function envoyerEmail(email, sujet, message) {
+  try {
+    if (!process.env.SENDGRID_API_KEY) return { success: false };
+
+    await sgMail.send({
+      to: email,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL,
+        name: process.env.SENDGRID_FROM_NAME || 'Tontine Africa',
+      },
+      subject: sujet,
+      text: message,
+      html: `<div style="font-family:Arial;padding:20px;background:#f5f5f5">
+        <div style="background:white;padding:24px;border-radius:12px;max-width:500px;margin:0 auto">
+          <h2 style="color:#1D9E75">💰 Tontine Africa</h2>
+          <p>${message}</p>
+          <hr style="border:1px solid #eee">
+          <p style="color:#888;font-size:12px">Tontine Africa — Épargne solidaire en Afrique</p>
+        </div>
+      </div>`,
+    });
+    logger.info(`Email envoyé à ${email}`);
+    return { success: true };
+  } catch (err) {
+    logger.error(`Erreur email ${email}:`, err.message);
+    return { success: false };
+  }
+}
+
+// ── ENVOI PUSH FCM ────────────────────────────────────
+async function envoyerPush(fcmToken, titre, message, data = {}) {
+  try {
+    if (!admin.apps.length || !fcmToken) return { success: false };
+
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: { title: titre, body: message },
+      data: { ...data, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+      android: {
+        notification: {
+          channelId: 'tontine_channel',
+          priority: 'high',
+          color: '#1D9E75',
+        },
+      },
+      apns: {
+        payload: {
+          aps: { badge: 1, sound: 'default' },
+        },
+      },
+    });
+    logger.info(`Push envoyé`);
+    return { success: true };
+  } catch (err) {
+    logger.error(`Erreur push:`, err.message);
+    return { success: false };
+  }
+}
+
+// ── NOTIFICATION MEMBRE (tous canaux) ─────────────────
+async function notifierMembre(userId, options) {
+  try {
+    const { rows } = await pool.query(
+      'SELECT nom, prenom, telephone, langue, email, fcm_token FROM utilisateurs WHERE id = $1',
+      [userId]
+    );
+    if (!rows[0]) return;
+
+    const u = rows[0];
+    const langue = u.langue || 'fr';
+    const nom = u.prenom || u.nom;
+    const message = getMessage(
+      options.type, langue, nom,
+      options.montant || '', options.nom_tontine || ''
+    );
+    const titre = 'Tontine Africa';
+
+    // Sauvegarder en base
+    await pool.query(`
+      INSERT INTO notifications (utilisateur_id, tontine_id, type, titre, message, canal)
+      VALUES ($1, $2, $3, $4, $5, 'push')
+    `, [userId, options.tontine_id || null, options.type, titre, message]);
+
+    // Envoyer sur tous les canaux en parallèle
+    await Promise.allSettled([
+      u.fcm_token ? envoyerPush(u.fcm_token, titre, message, { tontine_id: options.tontine_id || '' }) : null,
+      envoyerSMS(u.telephone, message),
+      envoyerWhatsApp(u.telephone, message),
+      u.email ? envoyerEmail(u.email, titre, message) : null,
+    ].filter(Boolean));
+
+    logger.info(`Notification envoyée à ${u.telephone} (${langue})`);
+  } catch (err) {
+    logger.error('Erreur notifierMembre:', err);
+  }
+}
+
+// ── NOTIFICATION GROUPE TONTINE ───────────────────────
+async function notifierGroupeTontine(tontineId, options) {
+  try {
+    const { rows } = await pool.query(`
+      SELECT u.id FROM membres_tontine mt
+      JOIN utilisateurs u ON u.id = mt.utilisateur_id
+      WHERE mt.tontine_id = $1 AND mt.est_actif = true
+    `, [tontineId]);
+
+    await Promise.allSettled(
+      rows.map(r => notifierMembre(r.id, options))
+    );
+  } catch (err) {
+    logger.error('Erreur notifierGroupeTontine:', err);
+  }
+}
+
+module.exports = {
+  envoyerSMS,
+  envoyerWhatsApp,
+  envoyerEmail,
+  envoyerPush,
+  notifierMembre,
+  notifierGroupeTontine,
+  getMessage,
+};
