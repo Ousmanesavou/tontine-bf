@@ -508,18 +508,20 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
   }
 
   Widget _buildInitials(String prenom, String nom, bool isSmall) {
-    return Center(
-      child: Text(
-        '${prenom.isNotEmpty ? prenom[0] : ''}${nom.isNotEmpty ? nom[0] : ''}',
-        style: TextStyle(
-          fontFamily: 'Nunito',
-          fontSize: isSmall ? 22 : 28,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
+  final p = prenom.isNotEmpty ? prenom[0] : '?';
+  final n = nom.isNotEmpty ? nom[0] : '';
+  return Center(
+    child: Text(
+      '$p$n',
+      style: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: isSmall ? 22 : 28,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSection(String titre, List<Widget> enfants) {
     return Padding(

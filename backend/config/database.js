@@ -173,7 +173,7 @@ async function createTables(client) {
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(tontine_id, demandeur_id)
 );
-
+ALTER TABLE tontines ADD COLUMN IF NOT EXISTS est_public BOOLEAN DEFAULT false;
 ALTER TABLE tontines ADD COLUMN IF NOT EXISTS est_publique BOOLEAN DEFAULT false;
 ALTER TABLE tontines ADD COLUMN IF NOT EXISTS photo_tontine TEXT;
 ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS photo_profil TEXT;
