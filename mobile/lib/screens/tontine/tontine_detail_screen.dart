@@ -356,6 +356,13 @@ class _TontineDetailScreenState extends ConsumerState<TontineDetailScreen>
                 onPressed: () => _vocal.parler(
                     '${_t(langue, 'vocal_detail')} ${t['nom']}. $totalMembres ${_t(langue, 'membres')}. ${t['montant_cotisation']} F.'),
               ),
+              // ✅ AJOUTE ICI
+              IconButton(
+                icon: const Icon(Icons.account_balance_wallet_outlined,
+                    color: Colors.white),
+                onPressed: () =>
+                    context.push('/tontine/${widget.id}/compte-virtuel'),
+              ),
               IconButton(
                 icon: const Icon(Icons.people_outline,
                     color: Colors.white),

@@ -287,4 +287,73 @@ class ApiService {
     }
     return 'Erreur inattendue. Réessayez.';
   }
+static Future<Map<String, dynamic>> getCompteVirtuel(
+    String tontineId) async {
+  try {
+    final resp =
+        await _dio.get('/tontines/$tontineId/compte-virtuel');
+    return resp.data['data'];
+  } on DioException catch (e) {
+    throw _handleError(e);
+  }
+}
+
+static Future<Map<String, dynamic>> effectuerDepotVirtuel({
+  required String tontineId,
+  required double montant,
+  required String methodePaiement,
+  String? telephonePaiement,
+}) async {
+  try {
+    final resp = await _dio.post(
+        '/tontines/$tontineId/compte-virtuel/depot',
+        data: {
+          'montant': montant,
+          'methode_paiement': methodePaiement,
+          if (telephonePaiement != null)
+            'telephone_paiement': telephonePaiement,
+        });
+    return resp.data['data'];
+  } on DioException catch (e) {
+    throw _handleError(e);
+  }
+}
+
+static Future<Map<String, dynamic>> initierRetraitVirtuel({
+  required String tontineId,
+  required double montant,
+  required String methodeRetrait,
+  String? telephoneRetrait,
+  String? motif,
+}) async {
+  try {
+    final resp = await _dio.post(
+        '/tontines/$tontineId/compte-virtuel/retrait/initier',
+        data: {
+          'montant': montant,
+          'methode_retrait': methodeRetrait,
+          if (telephoneRetrait != null)
+            'telephone_retrait': telephoneRetrait,
+          if (motif != null) 'motif': motif,
+        });
+    return resp.data['data'];
+  } on DioException catch (e) {
+    throw _handleError(e);
+  }
+}
+
+static Future<Map<String, dynamic>> voterRetrait({
+  required String tontineId,
+  required String retraitId,
+  required String vote,
+}) async {
+  try {
+    final resp = await _dio.post(
+        '/tontines/$tontineId/compte-virtuel/retrait/$retraitId/voter',
+        data: {'vote': vote});
+    return resp.data;
+  } on DioException catch (e) {
+    throw _handleError(e);
+  }
+}  
 }

@@ -183,5 +183,12 @@ final _router = GoRouter(
       path: '/reglages',
       builder: (ctx, state) => const ReglagesScreen(),
     ),
+    GoRoute(
+  path: '/tontine/:id/compte-virtuel',
+  builder: (ctx, state) => CompteVirtuelScreen(
+    tontineId: state.pathParameters['id']!,
+  ),
+),
   ],
+
 );
