@@ -1,144 +1,327 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../utils/app_theme.dart';
 import '../../services/vocal_service.dart';
+import '../../services/api_service.dart';
+import '../../main.dart';
 
-class NotificationsScreen extends StatefulWidget {
+// ── TRADUCTIONS ───────────────────────────────────────
+const Map<String, Map<String, String>> _tr = {
+  'fr': {
+    'titre': 'Alertes',
+    'tout_lire': 'Tout lire',
+    'ecouter': 'Écouter',
+    'aucune': 'Aucune alerte',
+    'aucune_desc': 'Vous recevrez ici toutes vos\nnotifications de tontine',
+    'vocal': 'nouvelles alertes. Vérifiez vos cotisations.',
+    'il_y_a': 'Il y a',
+    'hier': 'Hier',
+    'heures': 'heures',
+    'heure': 'heure',
+    'jours': 'jours',
+    'jour': 'jour',
+    'minutes': 'minutes',
+    'maintenant': 'À l\'instant',
+  },
+  'en': {
+    'titre': 'Alerts',
+    'tout_lire': 'Mark all read',
+    'ecouter': 'Listen',
+    'aucune': 'No alerts',
+    'aucune_desc': 'You will receive all your\ntontine notifications here',
+    'vocal': 'new alerts. Check your contributions.',
+    'il_y_a': 'ago',
+    'hier': 'Yesterday',
+    'heures': 'hours',
+    'heure': 'hour',
+    'jours': 'days',
+    'jour': 'day',
+    'minutes': 'minutes',
+    'maintenant': 'Just now',
+  },
+  'mos': {
+    'titre': 'Kõ-kaasã',
+    'tout_lire': 'Karm fãa',
+    'ecouter': 'Kelg',
+    'aucune': 'Kõ-kaas ka be ye',
+    'aucune_desc': 'F tontine kõ-kaasã lʋɩɩ ka',
+    'vocal': 'kõ-kaasã wʋsgã. Ges f cotisations.',
+    'il_y_a': 'Rasem',
+    'hier': 'Zaabre',
+    'heures': 'wʋkiri',
+    'heure': 'wʋkiri',
+    'jours': 'dãmba',
+    'jour': 'dãmba',
+    'minutes': 'miniti',
+    'maintenant': 'Rũnna',
+  },
+  'bm': {
+    'titre': 'Kibaru',
+    'tout_lire': 'Bɛɛ kalan',
+    'ecouter': 'Lamɛn',
+    'aucune': 'Kibaru si be',
+    'aucune_desc': 'I ka tontine kibaruye bɛ na yan',
+    'vocal': 'kibaru kura. I ka sarali kɔlɔsi.',
+    'il_y_a': 'Tuma min',
+    'hier': 'Kunu',
+    'heures': 'lɛrɛ',
+    'heure': 'lɛrɛ',
+    'jours': 'tile',
+    'jour': 'tile',
+    'minutes': 'miniti',
+    'maintenant': 'Sisan',
+  },
+  'wo': {
+    'titre': 'Xibaar yi',
+    'tout_lire': 'Jàng lëpp',
+    'ecouter': 'Dee',
+    'aucune': 'Xibaar amul',
+    'aucune_desc': 'Ay xibaar yu tontine dina ñëw fii',
+    'vocal': 'xibaar yu bees. Xool sa cotisations.',
+    'il_y_a': 'Ci kanam',
+    'hier': 'Démb',
+    'heures': 'waxtu',
+    'heure': 'waxtu',
+    'jours': 'fan',
+    'jour': 'fan',
+    'minutes': 'minit',
+    'maintenant': 'Leegi',
+  },
+};
+
+String _t(String langue, String key) {
+  final lang = _tr[langue] ?? _tr['fr']!;
+  return lang[key] ?? _tr['fr']![key] ?? key;
+}
+
+final notificationsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  try {
+    return await ApiService.getNotifications();
+  } catch (e) {
+    return [];
+  }
+});
+
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   final VocalService _vocal = VocalService();
+  final List<String> _notifLues = [];
 
-  final List<Map<String, dynamic>> _notifications = [
-    {
-      'type': 'paiement',
-      'titre': 'Paiement confirmé',
-      'message': 'Fatima a payé sa cotisation pour la tontine Frigo Samsung.',
-      'temps': 'Il y a 2 heures',
-      'lu': false,
-      'couleur': AppTheme.vert,
-      'icon': Icons.check_circle_outline,
-    },
-    {
-      'type': 'rappel',
-      'titre': 'Rappel cotisation',
-      'message': 'Votre cotisation de 15 000F pour "Salon complet" est due dans 2 jours.',
-      'temps': 'Il y a 4 heures',
-      'lu': false,
-      'couleur': AppTheme.orange,
-      'icon': Icons.timer_outlined,
-    },
-    {
-      'type': 'tour',
-      'titre': 'Bientôt votre tour !',
-      'message': 'Vous serez le prochain bénéficiaire de la tontine Frigo Samsung.',
-      'temps': 'Hier à 10:30',
-      'lu': true,
-      'couleur': AppTheme.vert,
-      'icon': Icons.emoji_events_outlined,
-    },
-    {
-      'type': 'membre',
-      'titre': 'Nouveau membre',
-      'message': 'Koumi Adama a rejoint votre tontine Caisse commune.',
-      'temps': 'Hier à 08:15',
-      'lu': true,
-      'couleur': AppTheme.gris,
-      'icon': Icons.person_add_outlined,
-    },
-    {
-      'type': 'rapport',
-      'titre': 'Rapport mensuel',
-      'message': 'Votre rapport de mai est disponible. Taux de paiement : 95%.',
-      'temps': 'Il y a 3 jours',
-      'lu': true,
-      'couleur': AppTheme.gris,
-      'icon': Icons.bar_chart_outlined,
-    },
-  ];
+  bool _estLue(Map<String, dynamic> notif) {
+    return notif['lu'] == true ||
+        _notifLues.contains(notif['id']?.toString());
+  }
+
+  IconData _getIcon(String type) {
+    switch (type) {
+      case 'paiement': return Icons.check_circle_outline;
+      case 'rappel': return Icons.timer_outlined;
+      case 'tour': return Icons.emoji_events_outlined;
+      case 'membre': return Icons.person_add_outlined;
+      case 'rapport': return Icons.bar_chart_outlined;
+      case 'adhesion': return Icons.group_add_outlined;
+      case 'retard': return Icons.warning_amber_outlined;
+      default: return Icons.notifications_outlined;
+    }
+  }
+
+  Color _getCouleur(String type) {
+    switch (type) {
+      case 'paiement': return AppTheme.vert;
+      case 'rappel': return AppTheme.orange;
+      case 'tour': return AppTheme.vert;
+      case 'retard': return AppTheme.rouge;
+      case 'adhesion': return AppTheme.vert;
+      default: return AppTheme.gris;
+    }
+  }
+
+  String _formatTemps(String? dateStr, String langue) {
+    if (dateStr == null) return _t(langue, 'maintenant');
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inMinutes < 1) return _t(langue, 'maintenant');
+      if (diff.inMinutes < 60) {
+        return langue == 'en'
+            ? '${diff.inMinutes} ${_t(langue, 'minutes')} ${_t(langue, 'il_y_a')}'
+            : '${_t(langue, 'il_y_a')} ${diff.inMinutes} ${_t(langue, 'minutes')}';
+      }
+      if (diff.inHours < 24) {
+        final h = diff.inHours;
+        return langue == 'en'
+            ? '$h ${h > 1 ? _t(langue, 'heures') : _t(langue, 'heure')} ${_t(langue, 'il_y_a')}'
+            : '${_t(langue, 'il_y_a')} $h ${h > 1 ? _t(langue, 'heures') : _t(langue, 'heure')}';
+      }
+      if (diff.inDays == 1) return _t(langue, 'hier');
+      final d = diff.inDays;
+      return langue == 'en'
+          ? '$d ${d > 1 ? _t(langue, 'jours') : _t(langue, 'jour')} ${_t(langue, 'il_y_a')}'
+          : '${_t(langue, 'il_y_a')} $d ${d > 1 ? _t(langue, 'jours') : _t(langue, 'jour')}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  Future<void> _marquerLue(String? id) async {
+    if (id == null) return;
+    setState(() => _notifLues.add(id));
+    try {
+      await ApiService.marquerNotificationLue(id);
+    } catch (_) {}
+  }
+
+  Future<void> _toutMarquerLu(List<Map<String, dynamic>> notifs) async {
+    for (final n in notifs) {
+      final id = n['id']?.toString();
+      if (id != null) setState(() => _notifLues.add(id));
+    }
+    try {
+      await ApiService.marquerToutesNotificationsLues();
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
-    final nonLues = _notifications.where((n) => !n['lu']).length;
+    final langue = ref.watch(langueProvider);
+    final notifsAsync = ref.watch(notificationsProvider);
+    final sw = MediaQuery.of(context).size.width;
+    final isSmall = sw < 360;
 
     return Scaffold(
       backgroundColor: AppTheme.fond,
       appBar: AppBar(
         backgroundColor: AppTheme.vert,
         foregroundColor: Colors.white,
-        title: Text('Alertes${nonLues > 0 ? ' ($nonLues)' : ''}',
-            style: const TextStyle(
-                fontFamily: 'Nunito', color: Colors.white)),
+        title: notifsAsync.when(
+          data: (notifs) {
+            final nonLues = notifs.where((n) => !_estLue(n)).length;
+            return Text(
+              '${_t(langue, 'titre')}${nonLues > 0 ? ' ($nonLues)' : ''}',
+              style: const TextStyle(
+                  fontFamily: 'Nunito', color: Colors.white),
+            );
+          },
+          loading: () => Text(_t(langue, 'titre'),
+              style: const TextStyle(
+                  fontFamily: 'Nunito', color: Colors.white)),
+          error: (_, __) => Text(_t(langue, 'titre'),
+              style: const TextStyle(
+                  fontFamily: 'Nunito', color: Colors.white)),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.volume_up_rounded, color: Colors.white70),
-            onPressed: () => _vocal.parler(
-                '$nonLues nouvelles alertes. Vérifiez vos cotisations.'),
+            icon: const Icon(Icons.volume_up_rounded,
+                color: Colors.white70),
+            onPressed: () {
+              notifsAsync.whenData((notifs) {
+                final nonLues =
+                    notifs.where((n) => !_estLue(n)).length;
+                _vocal.parler(
+                    '$nonLues ${_t(langue, 'vocal')}');
+              });
+            },
           ),
-          if (nonLues > 0)
-            TextButton(
-              onPressed: () => setState(() {
-                for (var n in _notifications) n['lu'] = true;
-              }),
-              child: const Text('Tout lire',
-                  style: TextStyle(
-                      fontFamily: 'Nunito',
-                      color: Colors.white70,
-                      fontSize: 13)),
-            ),
+          notifsAsync.when(
+            data: (notifs) {
+              final nonLues =
+                  notifs.where((n) => !_estLue(n)).length;
+              if (nonLues == 0) return const SizedBox();
+              return TextButton(
+                onPressed: () => _toutMarquerLu(notifs),
+                child: Text(
+                  _t(langue, 'tout_lire'),
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+              );
+            },
+            loading: () => const SizedBox(),
+            error: (_, __) => const SizedBox(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white70),
+            onPressed: () => ref.refresh(notificationsProvider),
+          ),
         ],
       ),
-      body: _notifications.isEmpty
-          ? _buildEtatVide()
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _notifications.length,
-              itemBuilder: (ctx, i) => _buildCarteNotif(_notifications[i], i),
-            ),
+      body: notifsAsync.when(
+        data: (notifs) => notifs.isEmpty
+            ? _buildEtatVide(langue)
+            : RefreshIndicator(
+                color: AppTheme.vert,
+                onRefresh: () =>
+                    ref.refresh(notificationsProvider.future),
+                child: ListView.builder(
+                  padding: EdgeInsets.all(isSmall ? 12 : 16),
+                  itemCount: notifs.length,
+                  itemBuilder: (ctx, i) =>
+                      _buildCarteNotif(notifs[i], langue, isSmall),
+                ),
+              ),
+        loading: () => _buildChargement(),
+        error: (_, __) => _buildEtatVide(langue),
+      ),
     );
   }
 
-  Widget _buildCarteNotif(Map<String, dynamic> notif, int index) {
-    final nonLu = !notif['lu'];
+  Widget _buildCarteNotif(Map<String, dynamic> notif,
+      String langue, bool isSmall) {
+    final lu = _estLue(notif);
+    final type = notif['type'] ?? 'info';
+    final couleur = _getCouleur(type);
+    final titre = notif['titre'] ?? notif['title'] ?? '';
+    final message = notif['message'] ?? notif['body'] ?? '';
+    final temps = _formatTemps(
+        notif['created_at'] ?? notif['date'], langue);
+    final id = notif['id']?.toString();
 
     return GestureDetector(
       onTap: () {
-        setState(() => notif['lu'] = true);
-        _vocal.parler(notif['message']);
+        _marquerLue(id);
+        _vocal.parler(message);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(isSmall ? 12 : 14),
         decoration: BoxDecoration(
-          color: nonLu ? AppTheme.vertTresClair : Colors.white,
+          color: lu ? Colors.white : AppTheme.vertTresClair,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: nonLu
-                ? AppTheme.vert.withOpacity(0.3)
-                : const Color(0xFFE8E8E5),
-            width: nonLu ? 1 : 0.5,
+            color: lu
+                ? const Color(0xFFE8E8E5)
+                : AppTheme.vert.withOpacity(0.3),
+            width: lu ? 0.5 : 1,
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 42,
-              height: 42,
+              width: isSmall ? 36 : 42,
+              height: isSmall ? 36 : 42,
               decoration: BoxDecoration(
-                color: (notif['couleur'] as Color).withOpacity(0.15),
+                color: couleur.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                notif['icon'] as IconData,
-                color: notif['couleur'] as Color,
-                size: 22,
+                _getIcon(type),
+                color: couleur,
+                size: isSmall ? 18 : 22,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: isSmall ? 10 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,21 +330,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          notif['titre'],
+                          titre,
                           style: TextStyle(
                             fontFamily: 'Nunito',
-                            fontSize: 14,
-                            fontWeight: nonLu
-                                ? FontWeight.w700
-                                : FontWeight.w600,
+                            fontSize: isSmall ? 13 : 14,
+                            fontWeight: lu
+                                ? FontWeight.w600
+                                : FontWeight.w700,
                             color: AppTheme.texte,
                           ),
                         ),
                       ),
-                      if (nonLu)
+                      if (!lu)
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 8, height: 8,
                           decoration: const BoxDecoration(
                             color: AppTheme.vert,
                             shape: BoxShape.circle,
@@ -171,10 +353,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    notif['message'],
-                    style: const TextStyle(
+                    message,
+                    style: TextStyle(
                       fontFamily: 'Nunito',
-                      fontSize: 13,
+                      fontSize: isSmall ? 11 : 13,
                       color: AppTheme.grisTexte,
                       height: 1.4,
                     ),
@@ -186,35 +368,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           size: 12, color: AppTheme.gris),
                       const SizedBox(width: 4),
                       Text(
-                        notif['temps'],
-                        style: const TextStyle(
+                        temps,
+                        style: TextStyle(
                           fontFamily: 'Nunito',
-                          fontSize: 11,
+                          fontSize: isSmall ? 10 : 11,
                           color: AppTheme.gris,
                         ),
                       ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () => _vocal.parler(notif['message']),
+                        onTap: () => _vocal.parler(message),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmall ? 6 : 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.vertClair,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(Icons.volume_up_rounded,
-                                  size: 12, color: AppTheme.vert),
-                              SizedBox(width: 3),
-                              Text('Écouter',
-                                  style: TextStyle(
-                                    fontFamily: 'Nunito',
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.vertFonce,
-                                  )),
+                                  size: isSmall ? 10 : 12,
+                                  color: AppTheme.vert),
+                              const SizedBox(width: 3),
+                              Text(
+                                _t(langue, 'ecouter'),
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: isSmall ? 9 : 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.vertFonce,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -230,30 +417,48 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEtatVide() {
-    return const Center(
+  Widget _buildEtatVide(String langue) {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('🔔', style: TextStyle(fontSize: 56)),
-          SizedBox(height: 16),
-          Text('Aucune alerte',
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.texte,
-              )),
-          SizedBox(height: 8),
+          const Text('🔔', style: TextStyle(fontSize: 56)),
+          const SizedBox(height: 16),
           Text(
-            'Vous recevrez ici toutes vos\nnotifications de tontine',
+            _t(langue, 'aucune'),
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.texte,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _t(langue, 'aucune_desc'),
             textAlign: TextAlign.center,
-            style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 13,
-                color: AppTheme.grisTexte),
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13,
+              color: AppTheme.grisTexte,
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildChargement() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 4,
+      itemBuilder: (ctx, i) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'storage_service.dart';
 import 'offline_service.dart';
 import 'connectivity_service.dart';
+
 class ApiService {
   static const String baseUrl = 'https://tontine-bf.onrender.com/api';
 
@@ -32,22 +33,27 @@ class ApiService {
     return dio;
   }
 
+  // ── AUTH ──────────────────────────────────────────
   static Future<Map<String, dynamic>> inscription({
     required String nom,
     required String prenom,
     required String telephone,
     required String codePin,
     required String langue,
+    required String pays,
     required String moyenPaiement,
+    String? indicatif,
   }) async {
     try {
+      final ind = indicatif ?? '+226';
       final resp = await _dio.post('/auth/inscription', data: {
         'nom': nom,
         'prenom': prenom,
-        'telephone': '+226$telephone',
+        'telephone': '$ind$telephone',
         'code_pin': codePin,
         'langue': langue,
-        '${moyenPaiement}_numero': '+226$telephone',
+        'pays': pays,
+        '${moyenPaiement}_numero': '$ind$telephone',
       });
       return resp.data['data'];
     } on DioException catch (e) {
@@ -58,10 +64,12 @@ class ApiService {
   static Future<Map<String, dynamic>> connexion({
     required String telephone,
     required String codePin,
+    String? indicatif,
   }) async {
     try {
+      final ind = indicatif ?? '+226';
       final resp = await _dio.post('/auth/connexion', data: {
-        'telephone': '+226$telephone',
+        'telephone': '$ind$telephone',
         'code_pin': codePin,
       });
       return resp.data['data'];
@@ -70,31 +78,40 @@ class ApiService {
     }
   }
 
+  // ── TONTINES ──────────────────────────────────────
   static Future<List<Map<String, dynamic>>> getMesTontines() async {
-  final connecte = await ConnectivityService.estConnecte();
-
-  if (!connecte) {
-    // Mode hors-ligne — données locales
-    final locales = await OfflineService.getTontinesLocales();
-    return locales.map((t) => Map<String, dynamic>.from(t)).toList();
-  }
-
-  try {
-    final resp = await _dio.get('/tontines');
-    final data = resp.data['data'] as List;
-    final tontines = data.map((e) => Map<String, dynamic>.from(e)).toList();
-    // Sauvegarder en cache
-    await OfflineService.sauvegarderTontines(tontines);
-    return tontines;
-  } on DioException catch (e) {
-    // Si erreur réseau → données locales
-    if (e.type == DioExceptionType.connectionError) {
+    final connecte = await ConnectivityService.estConnecte();
+    if (!connecte) {
       final locales = await OfflineService.getTontinesLocales();
-      if (locales.isNotEmpty) return locales;
+      return locales.map((t) => Map<String, dynamic>.from(t)).toList();
     }
-    throw _handleError(e);
+    try {
+      final resp = await _dio.get('/tontines');
+      final data = resp.data['data'] as List;
+      final tontines =
+          data.map((e) => Map<String, dynamic>.from(e)).toList();
+      await OfflineService.sauvegarderTontines(tontines);
+      return tontines;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError) {
+        final locales = await OfflineService.getTontinesLocales();
+        if (locales.isNotEmpty) return locales;
+      }
+      throw _handleError(e);
+    }
   }
-}
+
+  static Future<List<Map<String, dynamic>>> getTontinesPubliques(
+      {String search = ''}) async {
+    try {
+      final resp = await _dio.get('/tontines/publiques',
+          queryParameters:
+              search.isNotEmpty ? {'search': search} : {});
+      return List<Map<String, dynamic>>.from(resp.data['data']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 
   static Future<Map<String, dynamic>> getTontine(String id) async {
     try {
@@ -105,7 +122,8 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> creerTontine(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> creerTontine(
+      Map<String, dynamic> data) async {
     try {
       final resp = await _dio.post('/tontines', data: data);
       return resp.data['data'];
@@ -114,7 +132,19 @@ class ApiService {
     }
   }
 
-  static Future<void> inviterMembre(String tontineId, String telephone) async {
+  static Future<void> demanderAdhesion(String tontineId,
+      {String message = ''}) async {
+    try {
+      await _dio.post('/tontines/$tontineId/demander-adhesion',
+          data: {'message': message});
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ── MEMBRES ───────────────────────────────────────
+  static Future<void> inviterMembre(
+      String tontineId, String telephone) async {
     try {
       await _dio.post('/tontines/$tontineId/membres/inviter',
           data: {'telephone': telephone});
@@ -123,11 +153,34 @@ class ApiService {
     }
   }
 
+  // ── COTISATIONS ───────────────────────────────────
   static Future<List<Map<String, dynamic>>> getMesCotisations() async {
     try {
       final resp = await _dio.get('/cotisations/mes-cotisations');
       final data = resp.data['data'] as List;
       return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getCotisationEnCours(
+      String tontineId) async {
+    try {
+      final resp = await _dio.get('/cotisations/mes-cotisations');
+      final data = resp.data['data'] as List;
+      final cotisations =
+          data.map((e) => Map<String, dynamic>.from(e)).toList();
+      final enAttente = cotisations
+          .where((c) =>
+              c['tontine_id'] == tontineId &&
+              c['statut'] == 'en_attente')
+          .toList();
+      if (enAttente.isEmpty) return null;
+      enAttente.sort((a, b) =>
+          DateTime.parse(a['date_echeance'])
+              .compareTo(DateTime.parse(b['date_echeance'])));
+      return enAttente.first;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -150,6 +203,7 @@ class ApiService {
     }
   }
 
+  // ── CATALOGUE ─────────────────────────────────────
   static Future<List<Map<String, dynamic>>> getCatalogue(
       {String? categorie}) async {
     try {
@@ -163,33 +217,63 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getStatistiques(String tontineId) async {
+  // ── NOTIFICATIONS ─────────────────────────────────
+  static Future<List<Map<String, dynamic>>> getNotifications() async {
     try {
-      final resp = await _dio.get('/tontines/$tontineId/statistiques');
+      final resp = await _dio.get('/notifications');
+      return List<Map<String, dynamic>>.from(resp.data['data']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> marquerNotificationLue(String id) async {
+    try {
+      await _dio.put('/notifications/$id/lue');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> marquerToutesNotificationsLues() async {
+    try {
+      await _dio.put('/notifications/tout-lire');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ── PROFIL ────────────────────────────────────────
+  static Future<void> mettreAJourProfil(
+      Map<String, dynamic> data) async {
+    try {
+      await _dio.put('/users/profil', data: data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> enregistrerFcmToken(String token) async {
+    try {
+      await _dio.post('/users/fcm-token', data: {'fcm_token': token});
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ── STATISTIQUES ──────────────────────────────────
+  static Future<Map<String, dynamic>> getStatistiques(
+      String tontineId) async {
+    try {
+      final resp =
+          await _dio.get('/tontines/$tontineId/statistiques');
       return resp.data['data'];
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-static Future<Map<String, dynamic>?> getCotisationEnCours(String tontineId) async {
-  try {
-    final resp = await _dio.get('/cotisations/mes-cotisations');
-    final data = resp.data['data'] as List;
-    final cotisations = data.map((e) => Map<String, dynamic>.from(e)).toList();
-    final enAttente = cotisations.where((c) =>
-      c['tontine_id'] == tontineId &&
-      c['statut'] == 'en_attente'
-    ).toList();
-    if (enAttente.isEmpty) return null;
-    enAttente.sort((a, b) =>
-      DateTime.parse(a['date_echeance'])
-          .compareTo(DateTime.parse(b['date_echeance'])));
-    return enAttente.first;
-  } on DioException catch (e) {
-    throw _handleError(e);
-  }
-}
+  // ── ERREURS ───────────────────────────────────────
   static String _handleError(DioException e) {
     if (e.response?.data?['error'] != null) {
       return e.response!.data['error'];
@@ -203,24 +287,4 @@ static Future<Map<String, dynamic>?> getCotisationEnCours(String tontineId) asyn
     }
     return 'Erreur inattendue. Réessayez.';
   }
-
-
-static Future<List<Map<String, dynamic>>> getTontinesPubliques({String search = ''}) async {
-    try {
-      final resp = await _dio.get('/tontines/publiques',
-          queryParameters: search.isNotEmpty ? {'search': search} : {});
-      return List<Map<String, dynamic>>.from(resp.data['data']);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  static Future<void> demanderAdhesion(String tontineId, {String message = ''}) async {
-    try {
-      await _dio.post('/tontines/$tontineId/demander-adhesion',
-          data: {'message': message});
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }  
 }

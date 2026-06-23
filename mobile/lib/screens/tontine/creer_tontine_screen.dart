@@ -1,19 +1,296 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/vocal_service.dart';
 import '../../widgets/media_picker_widget.dart';
+import '../../main.dart';
 
-class CreerTontineScreen extends StatefulWidget {
+// ── TRADUCTIONS ───────────────────────────────────────
+const Map<String, Map<String, String>> _tr = {
+  'fr': {
+    'titre': 'Nouvelle tontine',
+    'nom': 'Nom de la tontine',
+    'nom_hint': 'Ex: Tontine des amis du quartier',
+    'type': 'Type de tontine',
+    'montant': 'Montant total',
+    'montant_hint': 'Ex: 150000',
+    'membres': 'Nombre de membres',
+    'membres_hint': 'Ex: 10',
+    'periodicite': 'Périodicité des cotisations',
+    'date_debut': 'Date de début',
+    'date_fin': 'Date de fin (optionnel)',
+    'description': 'Description (optionnel)',
+    'description_hint': 'Décrivez votre tontine...',
+    'media': 'Image ou vidéo (optionnel)',
+    'recap': 'Récapitulatif',
+    'cotisation_membre': 'Cotisation / membre',
+    'duree': 'Durée totale',
+    'jours': 'jours',
+    'tours': 'tours',
+    'creer': 'Créer la tontine',
+    'succes': 'Tontine créée avec succès !',
+    'requis': 'Requis',
+    'montant_invalide': 'Montant invalide',
+    'min_membres': 'Minimum 2 membres',
+    'vocal': 'Remplissez le nom, le type, le montant, le nombre de membres et la périodicité.',
+    'quotidien': 'Chaque jour',
+    '2_jours': 'Tous les 2 jours',
+    'hebdomadaire': 'Chaque semaine',
+    '2_semaines': 'Toutes les 2 semaines',
+    'mensuel': 'Chaque mois',
+    'trimestriel': 'Tous les 3 mois',
+    'argent_liquide': 'Argent liquide',
+    'argent_liquide_desc': 'Chaque membre reçoit la cagnotte à son tour',
+    'objet': 'Objet / Bien',
+    'objet_desc': 'Choisissez un objet dans le catalogue',
+    'caisse_fixe': 'Caisse commune',
+    'caisse_fixe_desc': 'Épargne collective avec emprunts possibles',
+    'evenementielle': 'Événement',
+    'evenementielle_desc': 'Mariage, baptême, funérailles',
+    'sante': 'Santé',
+    'sante_desc': 'Fonds d\'urgence médicale pour le groupe',
+    'education': 'Éducation',
+    'education_desc': 'Scolarité et fournitures scolaires',
+    'agriculture': 'Agriculture',
+    'agriculture_desc': 'Semences, engrais, équipements agricoles',
+    'construction': 'Construction',
+    'construction_desc': 'Matériaux de construction et rénovation',
+    'voyage': 'Voyage',
+    'voyage_desc': 'Transport et déplacements',
+    'commerce': 'Commerce',
+    'commerce_desc': 'Fonds de roulement pour petits commerces',
+  },
+  'en': {
+    'titre': 'New tontine',
+    'nom': 'Tontine name',
+    'nom_hint': 'Ex: Friends savings group',
+    'type': 'Tontine type',
+    'montant': 'Total amount',
+    'montant_hint': 'Ex: 150000',
+    'membres': 'Number of members',
+    'membres_hint': 'Ex: 10',
+    'periodicite': 'Contribution frequency',
+    'date_debut': 'Start date',
+    'date_fin': 'End date (optional)',
+    'description': 'Description (optional)',
+    'description_hint': 'Describe your tontine...',
+    'media': 'Image or video (optional)',
+    'recap': 'Summary',
+    'cotisation_membre': 'Contribution / member',
+    'duree': 'Total duration',
+    'jours': 'days',
+    'tours': 'rounds',
+    'creer': 'Create tontine',
+    'succes': 'Tontine created successfully!',
+    'requis': 'Required',
+    'montant_invalide': 'Invalid amount',
+    'min_membres': 'Minimum 2 members',
+    'vocal': 'Fill in the name, type, amount, number of members and frequency.',
+    'quotidien': 'Every day',
+    '2_jours': 'Every 2 days',
+    'hebdomadaire': 'Every week',
+    '2_semaines': 'Every 2 weeks',
+    'mensuel': 'Every month',
+    'trimestriel': 'Every 3 months',
+    'argent_liquide': 'Cash',
+    'argent_liquide_desc': 'Each member receives the pot in turn',
+    'objet': 'Object / Item',
+    'objet_desc': 'Choose an item from the catalogue',
+    'caisse_fixe': 'Common fund',
+    'caisse_fixe_desc': 'Collective savings with possible loans',
+    'evenementielle': 'Event',
+    'evenementielle_desc': 'Wedding, baptism, funeral',
+    'sante': 'Health',
+    'sante_desc': 'Group medical emergency fund',
+    'education': 'Education',
+    'education_desc': 'School fees and supplies',
+    'agriculture': 'Agriculture',
+    'agriculture_desc': 'Seeds, fertilizers, farm equipment',
+    'construction': 'Construction',
+    'construction_desc': 'Building materials and renovation',
+    'voyage': 'Travel',
+    'voyage_desc': 'Transport and travel',
+    'commerce': 'Commerce',
+    'commerce_desc': 'Working capital for small businesses',
+  },
+  'mos': {
+    'titre': 'Tontine paalga',
+    'nom': 'Tontine yʋʋre',
+    'nom_hint': 'Tõnd tontine',
+    'type': 'Tontine bõne',
+    'montant': 'Ligdi fãa',
+    'montant_hint': '150000',
+    'membres': 'Neb sõore',
+    'membres_hint': '10',
+    'periodicite': 'Kõ-wakatã',
+    'date_debut': 'Sɩng-dãmba',
+    'date_fin': 'Tɩɩm-dãmba',
+    'description': 'Sɩbgrã',
+    'description_hint': 'Wilg f tontine...',
+    'media': 'Foto wall vide',
+    'recap': 'Fãa-wilgr',
+    'cotisation_membre': 'Kõ / neb',
+    'duree': 'Wakatã fãa',
+    'jours': 'dãmba',
+    'tours': 'tɩɩse',
+    'creer': 'Bʋg tontine',
+    'succes': 'Tontine sɩng sɩda !',
+    'requis': 'Tõnd',
+    'montant_invalide': 'Ligdi ka sɩd ye',
+    'min_membres': 'Neb 2 tõnd',
+    'vocal': 'Tɩ sɩbg tontine yʋʋre, bõn-yende, ligdi la neb sõore.',
+    'quotidien': 'Dũnni fãa',
+    '2_jours': 'Dũnni 2',
+    'hebdomadaire': 'Wiki fãa',
+    '2_semaines': 'Wiki 2',
+    'mensuel': 'Kiuugã fãa',
+    'trimestriel': 'Kiuugu 3',
+    'argent_liquide': 'Ligdi',
+    'argent_liquide_desc': 'Ned fãa paamda a ligdi',
+    'objet': 'Bũmb',
+    'objet_desc': 'Tɩ yãk bũmb katalɔg pʋgẽ',
+    'caisse_fixe': 'Caisse',
+    'caisse_fixe_desc': 'Ligdi-kũuni la yõk-yõkrã',
+    'evenementielle': 'Barka',
+    'evenementielle_desc': 'Rog-m-tɩɩg, bapɛɛm, sɩbg',
+    'sante': 'Laafɩ',
+    'sante_desc': 'Ligdi laafɩ-yõkã yĩnga',
+    'education': 'Zãmsg',
+    'education_desc': 'Zãmsgã yĩnga',
+    'agriculture': 'Tɩɩs',
+    'agriculture_desc': 'Bẽedã la tɩɩs-neesr',
+    'construction': 'Weoogo',
+    'construction_desc': 'Weoogo bõn-dãmba',
+    'voyage': 'Viage',
+    'voyage_desc': 'Zig-yãkr',
+    'commerce': 'Toeega',
+    'commerce_desc': 'Ligdi toeeg yĩnga',
+  },
+  'bm': {
+    'titre': 'Tontine kura',
+    'nom': 'Tontine tɔgɔ',
+    'nom_hint': 'Tontine kura',
+    'type': 'Tontine sugandi',
+    'montant': 'Wari bɛɛ',
+    'montant_hint': '150000',
+    'membres': 'Mɔgɔ hakɛ',
+    'membres_hint': '10',
+    'periodicite': 'Sara waati',
+    'date_debut': 'Daminɛ tile',
+    'date_fin': 'Laban tile',
+    'description': 'Fɔtɔ',
+    'description_hint': 'I ka tontine fɔ...',
+    'media': 'Foto walima vide',
+    'recap': 'Jɛnsɛgɛli',
+    'cotisation_membre': 'Sara / mɔgɔ',
+    'duree': 'Waati bɛɛ',
+    'jours': 'tile',
+    'tours': 'yɔrɔw',
+    'creer': 'Tontine daminɛ',
+    'succes': 'Tontine daminɛna ka kɛ sɛbɛn !',
+    'requis': 'Ɲɛnabɔ',
+    'montant_invalide': 'Wari tɛ ɲɛ',
+    'min_membres': 'Mɔgɔ 2 ɲɛnabɔ',
+    'vocal': 'Tontine tɔgɔ, sugandi, wari ni mɔgɔ hakɛ sɛbɛn.',
+    'quotidien': 'Tile o tile',
+    '2_jours': 'Tile 2 o 2',
+    'hebdomadaire': 'Dɔgɔkun kelen',
+    '2_semaines': 'Dɔgɔkun fila',
+    'mensuel': 'Kalo kelen',
+    'trimestriel': 'Kalo saba',
+    'argent_liquide': 'Wari',
+    'argent_liquide_desc': 'Mɔgɔ o mɔgɔ bɛ wari sɔrɔ',
+    'objet': 'Fɛn',
+    'objet_desc': 'Fɛn sugandi katalogi la',
+    'caisse_fixe': 'Caisse',
+    'caisse_fixe_desc': 'Wari mara ni dalaw',
+    'evenementielle': 'Fɛsɛn',
+    'evenementielle_desc': 'Furuli, batisi, sɔgɔ',
+    'sante': 'Kɛnɛya',
+    'sante_desc': 'Kɛnɛya nafaw kama',
+    'education': 'Kalanso',
+    'education_desc': 'Kalansen nafaw kama',
+    'agriculture': 'Sarakaso',
+    'agriculture_desc': 'Jiriw ni sarakaso bolofɛnw',
+    'construction': 'Kɛnɛ',
+    'construction_desc': 'Kɛnɛ bolofɛnw',
+    'voyage': 'Taama',
+    'voyage_desc': 'Taama nafaw kama',
+    'commerce': 'Jaabi',
+    'commerce_desc': 'Jaabi wari kama',
+  },
+  'wo': {
+    'titre': 'Tontine bu bees',
+    'nom': 'Tontine bi tur',
+    'nom_hint': 'Tontine bu bees',
+    'type': 'Tontine bu fan',
+    'montant': 'Xaalis bu dëkk',
+    'montant_hint': '150000',
+    'membres': 'Nit yu am',
+    'membres_hint': '10',
+    'periodicite': 'Waxt bu fay',
+    'date_debut': 'Bët ci kanam',
+    'date_fin': 'Bët ci dëkk',
+    'description': 'Wandlu',
+    'description_hint': 'Wandlu sa tontine...',
+    'media': 'Nataal walla vide',
+    'recap': 'Jot ak jot',
+    'cotisation_membre': 'Cotisation / nit',
+    'duree': 'Waxt bu am',
+    'jours': 'fan',
+    'tours': 'yoon',
+    'creer': 'Def tontine',
+    'succes': 'Tontine defna ko !',
+    'requis': 'Waajib',
+    'montant_invalide': 'Xaalis bu baax',
+    'min_membres': 'Nit yu 2 waajib',
+    'vocal': 'Bind tur, xam-xam, xaalis ak nit yu am.',
+    'quotidien': 'Fan bu nekk',
+    '2_jours': 'Fan yu ñaar',
+    'hebdomadaire': 'Ayu bu nekk',
+    '2_semaines': 'Ayu yu ñaar',
+    'mensuel': 'Weer bu nekk',
+    'trimestriel': 'Weer yu ñett',
+    'argent_liquide': 'Xaalis',
+    'argent_liquide_desc': 'Nit bu nekk dafa jot xaalis bi',
+    'objet': 'Xam-xam',
+    'objet_desc': 'Tann xam-xam ci katalog bi',
+    'caisse_fixe': 'Caisse',
+    'caisse_fixe_desc': 'Xaalis bu am ak jël-jël',
+    'evenementielle': 'Fête',
+    'evenementielle_desc': 'Takk, dëkk, dëgg',
+    'sante': 'Wer-gi',
+    'sante_desc': 'Xaalis bu sant pour wer-gi',
+    'education': 'Jàng',
+    'education_desc': 'Jàng ak ay jëf',
+    'agriculture': 'Ndey-ji',
+    'agriculture_desc': 'Kanam ak ndey-ji',
+    'construction': 'Kër-gi',
+    'construction_desc': 'Ay jëf ci kër-gi',
+    'voyage': 'Dem-dem',
+    'voyage_desc': 'Dem-dem ak transport',
+    'commerce': 'Jaay-jaay',
+    'commerce_desc': 'Xaalis jaay-jaay kama',
+  },
+};
+
+String _t(String langue, String key) {
+  final lang = _tr[langue] ?? _tr['fr']!;
+  return lang[key] ?? _tr['fr']![key] ?? key;
+}
+
+class CreerTontineScreen extends ConsumerStatefulWidget {
   const CreerTontineScreen({super.key});
 
   @override
-  State<CreerTontineScreen> createState() => _CreerTontineScreenState();
+  ConsumerState<CreerTontineScreen> createState() =>
+      _CreerTontineScreenState();
 }
 
-class _CreerTontineScreenState extends State<CreerTontineScreen> {
+class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomCtrl = TextEditingController();
   final _montantCtrl = TextEditingController();
@@ -25,69 +302,51 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
   String _periodicite = 'hebdomadaire';
   int _periodicitejours = 7;
   DateTime _dateDebut = DateTime.now().add(const Duration(days: 1));
+  DateTime? _dateFin;
   bool _chargement = false;
   String? _mediaImagePath;
   String? _mediaVideoPath;
 
-  final List<Map<String, dynamic>> _types = [
-    {
-      'code': 'argent_liquide', 'label': 'Argent liquide', 'emoji': '💰',
-      'description': 'Chaque membre reçoit la cagnotte à son tour',
-      'couleur': const Color(0xFF1D9E75),
-    },
-    {
-      'code': 'objet', 'label': 'Objet / Bien', 'emoji': '📦',
-      'description': 'Choisissez un objet dans le catalogue',
-      'couleur': const Color(0xFF378ADD),
-    },
-    {
-      'code': 'caisse_fixe', 'label': 'Caisse commune', 'emoji': '🏦',
-      'description': 'Épargne collective avec emprunts possibles',
-      'couleur': const Color(0xFFBA7517),
-    },
-    {
-      'code': 'evenementielle', 'label': 'Événement', 'emoji': '🎉',
-      'description': 'Mariage, baptême, funérailles',
-      'couleur': const Color(0xFFD4537E),
-    },
-    {
-      'code': 'sante', 'label': 'Santé', 'emoji': '🏥',
-      'description': 'Fonds d\'urgence médicale pour le groupe',
-      'couleur': const Color(0xFFE24B4A),
-    },
-    {
-      'code': 'education', 'label': 'Éducation', 'emoji': '🎓',
-      'description': 'Scolarité et fournitures scolaires',
-      'couleur': const Color(0xFF534AB7),
-    },
-    {
-      'code': 'agriculture', 'label': 'Agriculture', 'emoji': '🌾',
-      'description': 'Semences, engrais, équipements agricoles',
-      'couleur': const Color(0xFF639922),
-    },
-    {
-      'code': 'construction', 'label': 'Construction', 'emoji': '🏗️',
-      'description': 'Matériaux de construction et rénovation',
-      'couleur': const Color(0xFF888780),
-    },
-    {
-      'code': 'voyage', 'label': 'Voyage', 'emoji': '✈️',
-      'description': 'Transport et déplacements',
-      'couleur': const Color(0xFF0F6E56),
-    },
-    {
-      'code': 'commerce', 'label': 'Commerce', 'emoji': '🛒',
-      'description': 'Fonds de roulement pour petits commerces',
-      'couleur': const Color(0xFFD85A30),
-    },
+  List<Map<String, dynamic>> _getTypes(String langue) => [
+    {'code': 'argent_liquide', 'label': _t(langue, 'argent_liquide'),
+      'emoji': '💰', 'description': _t(langue, 'argent_liquide_desc'),
+      'couleur': const Color(0xFF1D9E75)},
+    {'code': 'objet', 'label': _t(langue, 'objet'),
+      'emoji': '📦', 'description': _t(langue, 'objet_desc'),
+      'couleur': const Color(0xFF378ADD)},
+    {'code': 'caisse_fixe', 'label': _t(langue, 'caisse_fixe'),
+      'emoji': '🏦', 'description': _t(langue, 'caisse_fixe_desc'),
+      'couleur': const Color(0xFFBA7517)},
+    {'code': 'evenementielle', 'label': _t(langue, 'evenementielle'),
+      'emoji': '🎉', 'description': _t(langue, 'evenementielle_desc'),
+      'couleur': const Color(0xFFD4537E)},
+    {'code': 'sante', 'label': _t(langue, 'sante'),
+      'emoji': '🏥', 'description': _t(langue, 'sante_desc'),
+      'couleur': const Color(0xFFE24B4A)},
+    {'code': 'education', 'label': _t(langue, 'education'),
+      'emoji': '🎓', 'description': _t(langue, 'education_desc'),
+      'couleur': const Color(0xFF534AB7)},
+    {'code': 'agriculture', 'label': _t(langue, 'agriculture'),
+      'emoji': '🌾', 'description': _t(langue, 'agriculture_desc'),
+      'couleur': const Color(0xFF639922)},
+    {'code': 'construction', 'label': _t(langue, 'construction'),
+      'emoji': '🏗️', 'description': _t(langue, 'construction_desc'),
+      'couleur': const Color(0xFF888780)},
+    {'code': 'voyage', 'label': _t(langue, 'voyage'),
+      'emoji': '✈️', 'description': _t(langue, 'voyage_desc'),
+      'couleur': const Color(0xFF0F6E56)},
+    {'code': 'commerce', 'label': _t(langue, 'commerce'),
+      'emoji': '🛒', 'description': _t(langue, 'commerce_desc'),
+      'couleur': const Color(0xFFD85A30)},
   ];
 
-  final List<Map<String, dynamic>> _periodicites = [
-    {'code': 'quotidien', 'label': 'Chaque jour', 'jours': 1},
-    {'code': '2_jours', 'label': 'Tous les 2 jours', 'jours': 2},
-    {'code': 'hebdomadaire', 'label': 'Chaque semaine', 'jours': 7},
-    {'code': '2_semaines', 'label': 'Toutes les 2 semaines', 'jours': 14},
-    {'code': 'mensuel', 'label': 'Chaque mois', 'jours': 30},
+  List<Map<String, dynamic>> _getPeriodicites(String langue) => [
+    {'code': 'quotidien', 'label': _t(langue, 'quotidien'), 'jours': 1},
+    {'code': '2_jours', 'label': _t(langue, '2_jours'), 'jours': 2},
+    {'code': 'hebdomadaire', 'label': _t(langue, 'hebdomadaire'), 'jours': 7},
+    {'code': '2_semaines', 'label': _t(langue, '2_semaines'), 'jours': 14},
+    {'code': 'mensuel', 'label': _t(langue, 'mensuel'), 'jours': 30},
+    {'code': 'trimestriel', 'label': _t(langue, 'trimestriel'), 'jours': 90},
   ];
 
   double get _cotisationParMembre {
@@ -96,15 +355,13 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
     return membres > 0 ? montant / membres : 0;
   }
 
-  DateTime get _dateFin {
+  DateTime get _dateFinCalculee {
+    if (_dateFin != null) return _dateFin!;
     final membres = int.tryParse(_membresCtrl.text) ?? 1;
     return _dateDebut.add(Duration(days: _periodicitejours * membres));
   }
 
-  Map<String, dynamic> get _typeSelectionne =>
-      _types.firstWhere((t) => t['code'] == _type);
-
-  Future<void> _creer() async {
+  Future<void> _creer(String langue) async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _chargement = true);
     try {
@@ -117,13 +374,14 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
         'periodicite_jours': _periodicitejours,
         'nombre_membres': int.parse(_membresCtrl.text),
         'date_debut': _dateDebut.toIso8601String().split('T')[0],
+        'date_fin': _dateFinCalculee.toIso8601String().split('T')[0],
         'ordre_rotation': 'tirage_sort',
       });
-      _vocal.parler('Tontine créée avec succès !');
+      _vocal.parler(_t(langue, 'succes'));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tontine créée avec succès !'),
+          SnackBar(
+            content: Text(_t(langue, 'succes')),
             backgroundColor: AppTheme.vert,
           ),
         );
@@ -132,7 +390,9 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.rouge),
+          SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: AppTheme.rouge),
         );
       }
     } finally {
@@ -142,12 +402,16 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final langue = ref.watch(langueProvider);
     final sw = MediaQuery.of(context).size.width;
-    final sh = MediaQuery.of(context).size.height;
     final isSmall = sw < 360;
     final padding = isSmall ? 12.0 : 16.0;
     final cardItemWidth = (sw - padding * 2 - 10) / 2.2;
     final cardItemHeight = isSmall ? 110.0 : 130.0;
+    final types = _getTypes(langue);
+    final periodicites = _getPeriodicites(langue);
+    final typeSelectionne =
+        types.firstWhere((t) => t['code'] == _type);
 
     return Scaffold(
       backgroundColor: AppTheme.fond,
@@ -155,7 +419,7 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
         backgroundColor: AppTheme.vert,
         foregroundColor: Colors.white,
         title: Text(
-          'Nouvelle tontine',
+          _t(langue, 'titre'),
           style: TextStyle(
             fontFamily: 'Nunito',
             color: Colors.white,
@@ -164,9 +428,9 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.volume_up_rounded, color: Colors.white70),
-            onPressed: () => _vocal.parler(
-                'Remplissez le nom, le type, le montant total, le nombre de membres et la périodicité.'),
+            icon: const Icon(Icons.volume_up_rounded,
+                color: Colors.white70),
+            onPressed: () => _vocal.parler(_t(langue, 'vocal')),
           ),
         ],
       ),
@@ -178,32 +442,34 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── NOM ──────────────────────────────────────
-              _buildSection('Nom de la tontine'),
+              _buildSection(_t(langue, 'nom'), isSmall),
               TextFormField(
                 controller: _nomCtrl,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Ex: Tontine des amis du quartier',
-                  prefixIcon: Icon(Icons.group_outlined),
+                decoration: InputDecoration(
+                  hintText: _t(langue, 'nom_hint'),
+                  prefixIcon: const Icon(Icons.group_outlined),
                 ),
-                validator: (v) => v == null || v.isEmpty ? 'Requis' : null,
+                validator: (v) => v == null || v.isEmpty
+                    ? _t(langue, 'requis') : null,
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── TYPE ──────────────────────────────────────
-              _buildSection('Type de tontine'),
+              _buildSection(_t(langue, 'type'), isSmall),
               SizedBox(
                 height: cardItemHeight,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _types.length,
+                  itemCount: types.length,
                   itemBuilder: (ctx, i) {
-                    final t = _types[i];
+                    final t = types[i];
                     final selected = _type == t['code'];
                     return GestureDetector(
                       onTap: () {
                         setState(() => _type = t['code']);
-                        _vocal.parler('${t['label']}. ${t['description']}');
+                        _vocal.parler(
+                            '${t['label']}. ${t['description']}');
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
@@ -227,7 +493,8 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(t['emoji'],
-                                style: TextStyle(fontSize: isSmall ? 24 : 30)),
+                                style: TextStyle(
+                                    fontSize: isSmall ? 24 : 30)),
                             SizedBox(height: isSmall ? 4 : 6),
                             Text(
                               t['label'],
@@ -263,26 +530,27 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Type sélectionné
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: (_typeSelectionne['couleur'] as Color).withOpacity(0.1),
+                  color: (typeSelectionne['couleur'] as Color)
+                      .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
-                    Text(_typeSelectionne['emoji'],
-                        style: TextStyle(fontSize: isSmall ? 16 : 18)),
+                    Text(typeSelectionne['emoji'],
+                        style: TextStyle(
+                            fontSize: isSmall ? 16 : 18)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _typeSelectionne['description'],
+                        typeSelectionne['description'],
                         style: TextStyle(
                           fontFamily: 'Nunito',
                           fontSize: isSmall ? 11 : 12,
-                          color: _typeSelectionne['couleur'] as Color,
+                          color: typeSelectionne['couleur'] as Color,
                         ),
                       ),
                     ),
@@ -292,60 +560,65 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── MONTANT ───────────────────────────────────
-              _buildSection('Montant total'),
+              _buildSection(_t(langue, 'montant'), isSmall),
               TextFormField(
                 controller: _montantCtrl,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly
+                ],
                 decoration: InputDecoration(
-                  hintText: 'Ex: 150000',
+                  hintText: _t(langue, 'montant_hint'),
                   prefixIcon: const Icon(Icons.attach_money),
                   suffixText: 'F CFA',
-                  suffixStyle: TextStyle(
-                    fontSize: isSmall ? 11 : 13,
-                    color: AppTheme.grisTexte,
-                  ),
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Requis';
-                  if (double.tryParse(v) == null) return 'Montant invalide';
+                  if (v == null || v.isEmpty)
+                    return _t(langue, 'requis');
+                  if (double.tryParse(v) == null)
+                    return _t(langue, 'montant_invalide');
                   return null;
                 },
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── MEMBRES ───────────────────────────────────
-              _buildSection('Nombre de membres'),
+              _buildSection(_t(langue, 'membres'), isSmall),
               TextFormField(
                 controller: _membresCtrl,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  hintText: 'Ex: 10',
-                  prefixIcon: Icon(Icons.people_outline),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly
+                ],
+                decoration: InputDecoration(
+                  hintText: _t(langue, 'membres_hint'),
+                  prefixIcon: const Icon(Icons.people_outline),
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Requis';
+                  if (v == null || v.isEmpty)
+                    return _t(langue, 'requis');
                   final n = int.tryParse(v);
-                  if (n == null || n < 2) return 'Minimum 2 membres';
+                  if (n == null || n < 2)
+                    return _t(langue, 'min_membres');
                   return null;
                 },
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── PERIODICITE ───────────────────────────────
-              _buildSection('Périodicité des cotisations'),
+              _buildSection(_t(langue, 'periodicite'), isSmall),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children: _periodicites.map((p) {
+                children: periodicites.map((p) {
                   final selected = _periodicite == p['code'];
                   return GestureDetector(
                     onTap: () => setState(() {
                       _periodicite = p['code'];
                       _periodicitejours = p['jours'];
+                      _dateFin = null; // reset date fin manuelle
                     }),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
@@ -354,10 +627,14 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                         vertical: isSmall ? 7 : 10,
                       ),
                       decoration: BoxDecoration(
-                        color: selected ? AppTheme.vert : Colors.white,
+                        color: selected
+                            ? AppTheme.vert
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: selected ? AppTheme.vert : const Color(0xFFE8E8E5),
+                          color: selected
+                              ? AppTheme.vert
+                              : const Color(0xFFE8E8E5),
                         ),
                       ),
                       child: Text(
@@ -366,7 +643,9 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
                           fontFamily: 'Nunito',
                           fontSize: isSmall ? 11 : 13,
                           fontWeight: FontWeight.w600,
-                          color: selected ? Colors.white : AppTheme.texte,
+                          color: selected
+                              ? Colors.white
+                              : AppTheme.texte,
                         ),
                       ),
                     ),
@@ -376,62 +655,76 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── DATE DEBUT ────────────────────────────────
-              _buildSection('Date de début'),
-              GestureDetector(
+              _buildSection(_t(langue, 'date_debut'), isSmall),
+              _buildDatePicker(
+                date: _dateDebut,
                 onTap: () async {
                   final date = await showDatePicker(
                     context: context,
                     initialDate: _dateDebut,
                     firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    lastDate: DateTime.now()
+                        .add(const Duration(days: 365)),
                     builder: (ctx, child) => Theme(
                       data: Theme.of(ctx).copyWith(
-                        colorScheme: const ColorScheme.light(primary: AppTheme.vert),
+                        colorScheme: const ColorScheme.light(
+                            primary: AppTheme.vert),
                       ),
                       child: child!,
                     ),
                   );
-                  if (date != null) setState(() => _dateDebut = date);
+                  if (date != null) {
+                    setState(() {
+                      _dateDebut = date;
+                      _dateFin = null;
+                    });
+                  }
                 },
-                child: Container(
-                  padding: EdgeInsets.all(isSmall ? 12 : 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFD3D1C7)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined,
-                          color: AppTheme.grisTexte),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${_dateDebut.day}/${_dateDebut.month}/${_dateDebut.year}',
-                        style: TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: isSmall ? 13 : 15,
-                        ),
+                isSmall: isSmall,
+              ),
+              SizedBox(height: isSmall ? 14 : 20),
+
+              // ── DATE FIN ──────────────────────────────────
+              _buildSection(_t(langue, 'date_fin'), isSmall),
+              _buildDatePicker(
+                date: _dateFinCalculee,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _dateFinCalculee,
+                    firstDate: _dateDebut,
+                    lastDate: DateTime.now()
+                        .add(const Duration(days: 1825)),
+                    builder: (ctx, child) => Theme(
+                      data: Theme.of(ctx).copyWith(
+                        colorScheme: const ColorScheme.light(
+                            primary: AppTheme.vert),
                       ),
-                    ],
-                  ),
-                ),
+                      child: child!,
+                    ),
+                  );
+                  if (date != null) setState(() => _dateFin = date);
+                },
+                isSmall: isSmall,
+                isCalculee: _dateFin == null,
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── DESCRIPTION ───────────────────────────────
-              _buildSection('Description (optionnel)'),
+              _buildSection(_t(langue, 'description'), isSmall),
               TextFormField(
                 controller: _descriptionCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Décrivez votre tontine en quelques mots...',
-                  prefixIcon: Icon(Icons.description_outlined),
+                decoration: InputDecoration(
+                  hintText: _t(langue, 'description_hint'),
+                  prefixIcon:
+                      const Icon(Icons.description_outlined),
                 ),
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── MEDIA ─────────────────────────────────────
-              _buildSection('Image ou vidéo (optionnel)'),
+              _buildSection(_t(langue, 'media'), isSmall),
               MediaPickerWidget(
                 onMediaSelected: (imagePath, videoPath) {
                   setState(() {
@@ -443,23 +736,26 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── RECAP ─────────────────────────────────────
-              if (_montantCtrl.text.isNotEmpty && _membresCtrl.text.isNotEmpty)
-                _buildRecapitulatif(isSmall),
+              if (_montantCtrl.text.isNotEmpty &&
+                  _membresCtrl.text.isNotEmpty)
+                _buildRecapitulatif(langue, isSmall, periodicites),
               const SizedBox(height: 24),
 
               // ── BOUTON ────────────────────────────────────
               _chargement
                   ? const Center(
-                      child: CircularProgressIndicator(color: AppTheme.vert))
+                      child: CircularProgressIndicator(
+                          color: AppTheme.vert))
                   : SizedBox(
                       width: double.infinity,
                       height: isSmall ? 48 : 54,
                       child: ElevatedButton.icon(
-                        onPressed: _creer,
+                        onPressed: () => _creer(langue),
                         icon: const Icon(Icons.check),
                         label: Text(
-                          'Créer la tontine',
-                          style: TextStyle(fontSize: isSmall ? 14 : 16),
+                          _t(langue, 'creer'),
+                          style: TextStyle(
+                              fontSize: isSmall ? 14 : 16),
                         ),
                       ),
                     ),
@@ -471,8 +767,7 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
     );
   }
 
-  Widget _buildSection(String titre) {
-    final isSmall = MediaQuery.of(context).size.width < 360;
+  Widget _buildSection(String titre, bool isSmall) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
@@ -488,8 +783,82 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
     );
   }
 
-  Widget _buildRecapitulatif(bool isSmall) {
+  Widget _buildDatePicker({
+    required DateTime date,
+    required VoidCallback onTap,
+    required bool isSmall,
+    bool isCalculee = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(isSmall ? 12 : 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCalculee
+                ? const Color(0xFFD3D1C7)
+                : AppTheme.vert,
+            width: isCalculee ? 1 : 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              color: isCalculee
+                  ? AppTheme.grisTexte
+                  : AppTheme.vert,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '${date.day}/${date.month}/${date.year}',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: isSmall ? 13 : 15,
+                  color: isCalculee
+                      ? AppTheme.texte
+                      : AppTheme.vert,
+                  fontWeight: isCalculee
+                      ? FontWeight.normal
+                      : FontWeight.w600,
+                ),
+              ),
+            ),
+            if (isCalculee)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.grisClair,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Auto',
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: isSmall ? 10 : 11,
+                    color: AppTheme.grisTexte,
+                  ),
+                ),
+              )
+            else
+              const Icon(Icons.edit_outlined,
+                  color: AppTheme.vert, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecapitulatif(String langue, bool isSmall,
+      List<Map<String, dynamic>> periodicites) {
     final membres = int.tryParse(_membresCtrl.text) ?? 1;
+    final periodeLabel = periodicites
+        .firstWhere((p) => p['code'] == _periodicite)['label'];
+
     return Container(
       padding: EdgeInsets.all(isSmall ? 12 : 16),
       decoration: BoxDecoration(
@@ -501,11 +870,14 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
         children: [
           Row(
             children: [
-              Text(_typeSelectionne['emoji'],
-                  style: TextStyle(fontSize: isSmall ? 16 : 18)),
+              Text(
+                _getTypes(langue)
+                    .firstWhere((t) => t['code'] == _type)['emoji'],
+                style: TextStyle(fontSize: isSmall ? 16 : 18),
+              ),
               const SizedBox(width: 8),
               Text(
-                'Récapitulatif',
+                _t(langue, 'recap'),
                 style: TextStyle(
                   fontFamily: 'Nunito',
                   fontWeight: FontWeight.w700,
@@ -517,27 +889,37 @@ class _CreerTontineScreenState extends State<CreerTontineScreen> {
           ),
           const SizedBox(height: 10),
           _buildRecapLigne(
-            'Cotisation / membre',
-            '${_cotisationParMembre.toStringAsFixed(0)} F / ${_periodicites.firstWhere((p) => p['code'] == _periodicite)['label']}',
+            _t(langue, 'cotisation_membre'),
+            '${_cotisationParMembre.toStringAsFixed(0)} F / $periodeLabel',
             isSmall,
           ),
           _buildRecapLigne(
-            'Durée totale',
-            '${membres * _periodicitejours} jours',
+            _t(langue, 'duree'),
+            '${membres * _periodicitejours} ${_t(langue, 'jours')}',
             isSmall,
           ),
           _buildRecapLigne(
-            'Date de fin',
-            '${_dateFin.day}/${_dateFin.month}/${_dateFin.year}',
+            _t(langue, 'date_debut'),
+            '${_dateDebut.day}/${_dateDebut.month}/${_dateDebut.year}',
             isSmall,
           ),
-          _buildRecapLigne('Nombre de tours', '$membres tours', isSmall),
+          _buildRecapLigne(
+            _t(langue, 'date_fin'),
+            '${_dateFinCalculee.day}/${_dateFinCalculee.month}/${_dateFinCalculee.year}',
+            isSmall,
+          ),
+          _buildRecapLigne(
+            _t(langue, 'membres'),
+            '$membres ${_t(langue, 'tours')}',
+            isSmall,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRecapLigne(String label, String valeur, bool isSmall) {
+  Widget _buildRecapLigne(
+      String label, String valeur, bool isSmall) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(

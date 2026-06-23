@@ -127,3 +127,11 @@
 {"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 15:02:00"}
 {"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 15:02:00"}
 {"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 15:02:00"}
+{"level":"info","message":"PostgreSQL connecté avec succès","timestamp":"2026-06-22 17:42:32"}
+{"level":"info","message":"Tables créées / vérifiées avec succès","timestamp":"2026-06-22 17:42:32"}
+{"level":"info","message":"Redis connecté avec succès","timestamp":"2026-06-22 17:42:32"}
+{"level":"info","message":"Jobs cron initialisés avec succès","timestamp":"2026-06-22 17:42:33"}
+{"level":"info","message":"Serveur Tontine démarré sur le port 3000","timestamp":"2026-06-22 17:42:33"}
+{"level":"info","message":"CRON: Rappels urgents J-1...","timestamp":"2026-06-22 18:00:00"}
+{"level":"info","message":"0 rappels urgents envoyés","timestamp":"2026-06-22 18:00:00"}
+{"level":"info","message":"CRON: Marquage des cotisations en retard...","timestamp":"2026-06-23 00:00:00"}
