@@ -507,7 +507,7 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
     );
   }
 
-  Widget _buildInitials(String prenom, String nom, bool isSmall) {
+  Widget _buildInitiales(String prenom, String nom, bool isSmall) {
   final p = prenom.isNotEmpty ? prenom[0] : '?';
   final n = nom.isNotEmpty ? nom[0] : '';
   return Center(

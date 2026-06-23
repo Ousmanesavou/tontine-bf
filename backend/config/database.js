@@ -216,4 +216,50 @@ async function creerCompteAdmin(client) {
   }
 }
 
+// Comptes virtuels
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS comptes_virtuels (
+    id SERIAL PRIMARY KEY,
+    tontine_id INTEGER REFERENCES tontines(id) ON DELETE CASCADE UNIQUE,
+    solde DECIMAL(15,2) DEFAULT 0,
+    total_depots DECIMAL(15,2) DEFAULT 0,
+    total_retraits DECIMAL(15,2) DEFAULT 0,
+    numero_compte VARCHAR(50),
+    identifiants JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW()
+  )
+`);
+
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS transactions_virtuelles (
+    id SERIAL PRIMARY KEY,
+    compte_virtuel_id INTEGER REFERENCES comptes_virtuels(id) ON DELETE CASCADE,
+    utilisateur_id INTEGER REFERENCES utilisateurs(id),
+    type VARCHAR(20) NOT NULL CHECK (type IN ('depot','retrait','transfert')),
+    montant DECIMAL(15,2) NOT NULL,
+    methode_paiement VARCHAR(50),
+    telephone_paiement VARCHAR(20),
+    reference_externe VARCHAR(100),
+    statut VARCHAR(30) DEFAULT 'confirme'
+      CHECK (statut IN ('confirme','en_attente_vote','approuve','refuse','annule')),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+  )
+`);
+
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS votes_retrait (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER REFERENCES transactions_virtuelles(id) ON DELETE CASCADE,
+    compte_virtuel_id INTEGER REFERENCES comptes_virtuels(id),
+    utilisateur_id INTEGER REFERENCES utilisateurs(id),
+    vote VARCHAR(5) CHECK (vote IN ('oui','non')),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(transaction_id, utilisateur_id)
+  )
+`);
+
+await pool.query(`ALTER TABLE tontines ADD COLUMN IF NOT EXISTS est_public BOOLEAN DEFAULT false`);
+await pool.query(`ALTER TABLE tontines ADD COLUMN IF NOT EXISTS date_fin DATE`);
+await pool.query(`ALTER TABLE comptes_virtuels ADD COLUMN IF NOT EXISTS numero_compte VARCHAR(50)`);
 module.exports = { pool, connectDB };
