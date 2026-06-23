@@ -355,5 +355,14 @@ static Future<Map<String, dynamic>> voterRetrait({
   } on DioException catch (e) {
     throw _handleError(e);
   }
-}  
+} 
+
+static Future<List<Map<String, dynamic>>> getCommercants() async {
+  try {
+    final resp = await _dio.get('/admin/commercants?statut=valide');
+    return List<Map<String, dynamic>>.from(resp.data['data']);
+  } on DioException catch (e) {
+    throw _handleError(e);
+  }
+}
 }
