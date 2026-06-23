@@ -262,4 +262,54 @@ await pool.query(`
 await pool.query(`ALTER TABLE tontines ADD COLUMN IF NOT EXISTS est_public BOOLEAN DEFAULT false`);
 await pool.query(`ALTER TABLE tontines ADD COLUMN IF NOT EXISTS date_fin DATE`);
 await pool.query(`ALTER TABLE comptes_virtuels ADD COLUMN IF NOT EXISTS numero_compte VARCHAR(50)`);
+
+// Table commerçants
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS commercants (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(200) NOT NULL,
+    proprietaire VARCHAR(200),
+    telephone VARCHAR(20),
+    email VARCHAR(200),
+    categorie VARCHAR(100),
+    pays VARCHAR(5) DEFAULT 'BF',
+    adresse TEXT,
+    description TEXT,
+    livraison_disponible BOOLEAN DEFAULT false,
+    est_verifie BOOLEAN DEFAULT false,
+    utilisateur_id INTEGER REFERENCES utilisateurs(id),
+    statut VARCHAR(20) DEFAULT 'en_attente'
+      CHECK (statut IN ('en_attente','valide','refuse','suspendu')),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+  )
+`);
+
+// Colonne commercant_id sur catalogue_produits
+await pool.query(`
+  ALTER TABLE catalogue_produits ADD COLUMN IF NOT EXISTS commercant_id INTEGER REFERENCES commercants(id);
+  ALTER TABLE catalogue_produits ADD COLUMN IF NOT EXISTS emoji VARCHAR(10) DEFAULT '📦';
+  ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS est_bloque BOOLEAN DEFAULT false;
+  ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS email VARCHAR(200);
+  ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS pays VARCHAR(5) DEFAULT 'BF';
+  ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{}';
+  ALTER TABLE transactions_virtuelles ADD COLUMN IF NOT EXISTS traite_par INTEGER REFERENCES utilisateurs(id);
+  ALTER TABLE transactions_virtuelles ADD COLUMN IF NOT EXISTS traite_le TIMESTAMP;
+`);
+
+// Historique notifications admin
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS notifications_admin (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(200),
+    message_fr TEXT,
+    message_moore TEXT,
+    message_dioula TEXT,
+    destinataires VARCHAR(50),
+    canal VARCHAR(50),
+    nb_envoyes INTEGER DEFAULT 0,
+    envoye_par INTEGER REFERENCES utilisateurs(id),
+    created_at TIMESTAMP DEFAULT NOW()
+  )
+`);
 module.exports = { pool, connectDB };
