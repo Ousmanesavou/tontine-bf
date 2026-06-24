@@ -21,6 +21,9 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// ✅ TRUST PROXY EN PREMIER (avant rateLimit)
+app.set('trust proxy', 1);
+
 app.use(helmet({
   crossOriginResourcePolicy: false,
   contentSecurityPolicy: false,
@@ -31,13 +34,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use('/api/upload', uploadRoutes);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200,
   message: { error: 'Trop de requêtes. Réessayez dans 15 minutes.' }
 });
 app.use('/api/', limiter);
@@ -75,5 +79,4 @@ async function startServer() {
 }
 
 startServer();
-
 module.exports = app;

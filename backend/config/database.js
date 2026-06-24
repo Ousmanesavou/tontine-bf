@@ -312,6 +312,9 @@ async function createTables(client) {
     `ALTER TABLE transactions_virtuelles ADD COLUMN IF NOT EXISTS traite_par UUID`,
     `ALTER TABLE transactions_virtuelles ADD COLUMN IF NOT EXISTS traite_le TIMESTAMP`,
     `ALTER TABLE transactions_virtuelles ADD COLUMN IF NOT EXISTS statut VARCHAR(30) DEFAULT 'confirme'`,
+    `ALTER TABLE tontines ALTER COLUMN periodicite TYPE VARCHAR(100)`,
+    `ALTER TABLE tontines ALTER COLUMN ordre_rotation TYPE VARCHAR(100)`,
+    `ALTER TABLE tontines ALTER COLUMN type TYPE VARCHAR(100)`,
   ];
 
   for (const sql of alters) {

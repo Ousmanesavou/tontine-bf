@@ -20,6 +20,12 @@ const Map<String, Map<String, String>> _tr = {
     'membres': 'Nombre de membres',
     'membres_hint': 'Ex: 10',
     'periodicite': 'Périodicité des cotisations',
+    'periode_perso': 'Période personnalisée',
+    'periode_perso_hint': 'Nombre de jours',
+    'rapide': 'Rapide:',
+    'cotisation_apercu': 'Cotisation tous les',
+    'jour': 'jour',
+    'jours': 'jours',
     'date_debut': 'Date de début',
     'date_fin': 'Date de fin (optionnel)',
     'description': 'Description (optionnel)',
@@ -28,13 +34,13 @@ const Map<String, Map<String, String>> _tr = {
     'recap': 'Récapitulatif',
     'cotisation_membre': 'Cotisation / membre',
     'duree': 'Durée totale',
-    'jours': 'jours',
     'tours': 'tours',
     'creer': 'Créer la tontine',
     'succes': 'Tontine créée avec succès !',
     'requis': 'Requis',
     'montant_invalide': 'Montant invalide',
     'min_membres': 'Minimum 2 membres',
+    'min_jours': 'Minimum 1 jour',
     'vocal': 'Remplissez le nom, le type, le montant, le nombre de membres et la périodicité.',
     'quotidien': 'Chaque jour',
     '2_jours': 'Tous les 2 jours',
@@ -73,6 +79,12 @@ const Map<String, Map<String, String>> _tr = {
     'membres': 'Number of members',
     'membres_hint': 'Ex: 10',
     'periodicite': 'Contribution frequency',
+    'periode_perso': 'Custom period',
+    'periode_perso_hint': 'Number of days',
+    'rapide': 'Quick:',
+    'cotisation_apercu': 'Contribution every',
+    'jour': 'day',
+    'jours': 'days',
     'date_debut': 'Start date',
     'date_fin': 'End date (optional)',
     'description': 'Description (optional)',
@@ -81,13 +93,13 @@ const Map<String, Map<String, String>> _tr = {
     'recap': 'Summary',
     'cotisation_membre': 'Contribution / member',
     'duree': 'Total duration',
-    'jours': 'days',
     'tours': 'rounds',
     'creer': 'Create tontine',
     'succes': 'Tontine created successfully!',
     'requis': 'Required',
     'montant_invalide': 'Invalid amount',
     'min_membres': 'Minimum 2 members',
+    'min_jours': 'Minimum 1 day',
     'vocal': 'Fill in the name, type, amount, number of members and frequency.',
     'quotidien': 'Every day',
     '2_jours': 'Every 2 days',
@@ -126,6 +138,12 @@ const Map<String, Map<String, String>> _tr = {
     'membres': 'Neb sõore',
     'membres_hint': '10',
     'periodicite': 'Kõ-wakatã',
+    'periode_perso': 'Wakatã yembr',
+    'periode_perso_hint': 'Dãmba sõore',
+    'rapide': 'Tao-tao:',
+    'cotisation_apercu': 'Kõ dãmba',
+    'jour': 'dãmb',
+    'jours': 'dãmba',
     'date_debut': 'Sɩng-dãmba',
     'date_fin': 'Tɩɩm-dãmba',
     'description': 'Sɩbgrã',
@@ -134,13 +152,13 @@ const Map<String, Map<String, String>> _tr = {
     'recap': 'Fãa-wilgr',
     'cotisation_membre': 'Kõ / neb',
     'duree': 'Wakatã fãa',
-    'jours': 'dãmba',
     'tours': 'tɩɩse',
     'creer': 'Bʋg tontine',
     'succes': 'Tontine sɩng sɩda !',
     'requis': 'Tõnd',
     'montant_invalide': 'Ligdi ka sɩd ye',
     'min_membres': 'Neb 2 tõnd',
+    'min_jours': 'Dãmb 1 tõnd',
     'vocal': 'Tɩ sɩbg tontine yʋʋre, bõn-yende, ligdi la neb sõore.',
     'quotidien': 'Dũnni fãa',
     '2_jours': 'Dũnni 2',
@@ -179,6 +197,12 @@ const Map<String, Map<String, String>> _tr = {
     'membres': 'Mɔgɔ hakɛ',
     'membres_hint': '10',
     'periodicite': 'Sara waati',
+    'periode_perso': 'Waati sugandi',
+    'periode_perso_hint': 'Tile hakɛ',
+    'rapide': 'Joona:',
+    'cotisation_apercu': 'Sara tile',
+    'jour': 'tile',
+    'jours': 'tile',
     'date_debut': 'Daminɛ tile',
     'date_fin': 'Laban tile',
     'description': 'Fɔtɔ',
@@ -187,13 +211,13 @@ const Map<String, Map<String, String>> _tr = {
     'recap': 'Jɛnsɛgɛli',
     'cotisation_membre': 'Sara / mɔgɔ',
     'duree': 'Waati bɛɛ',
-    'jours': 'tile',
     'tours': 'yɔrɔw',
     'creer': 'Tontine daminɛ',
     'succes': 'Tontine daminɛna ka kɛ sɛbɛn !',
     'requis': 'Ɲɛnabɔ',
     'montant_invalide': 'Wari tɛ ɲɛ',
     'min_membres': 'Mɔgɔ 2 ɲɛnabɔ',
+    'min_jours': 'Tile 1 ɲɛnabɔ',
     'vocal': 'Tontine tɔgɔ, sugandi, wari ni mɔgɔ hakɛ sɛbɛn.',
     'quotidien': 'Tile o tile',
     '2_jours': 'Tile 2 o 2',
@@ -232,6 +256,12 @@ const Map<String, Map<String, String>> _tr = {
     'membres': 'Nit yu am',
     'membres_hint': '10',
     'periodicite': 'Waxt bu fay',
+    'periode_perso': 'Waxt bu tann',
+    'periode_perso_hint': 'Fan yi hakk',
+    'rapide': 'Bu set:',
+    'cotisation_apercu': 'Cotisation ci fan',
+    'jour': 'fan',
+    'jours': 'fan',
     'date_debut': 'Bët ci kanam',
     'date_fin': 'Bët ci dëkk',
     'description': 'Wandlu',
@@ -240,13 +270,13 @@ const Map<String, Map<String, String>> _tr = {
     'recap': 'Jot ak jot',
     'cotisation_membre': 'Cotisation / nit',
     'duree': 'Waxt bu am',
-    'jours': 'fan',
     'tours': 'yoon',
     'creer': 'Def tontine',
     'succes': 'Tontine defna ko !',
     'requis': 'Waajib',
     'montant_invalide': 'Xaalis bu baax',
     'min_membres': 'Nit yu 2 waajib',
+    'min_jours': 'Fan 1 waajib',
     'vocal': 'Bind tur, xam-xam, xaalis ak nit yu am.',
     'quotidien': 'Fan bu nekk',
     '2_jours': 'Fan yu ñaar',
@@ -296,11 +326,13 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   final _montantCtrl = TextEditingController();
   final _membresCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
+  final _joursCtrl = TextEditingController(); // ✅ dans la classe
   final VocalService _vocal = VocalService();
 
   String _type = 'argent_liquide';
   String _periodicite = 'hebdomadaire';
   int _periodicitejours = 7;
+  bool _periodePersonnalisee = false; // ✅ dans la classe
   DateTime _dateDebut = DateTime.now().add(const Duration(days: 1));
   DateTime? _dateFin;
   bool _chargement = false;
@@ -361,6 +393,18 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
     return _dateDebut.add(Duration(days: _periodicitejours * membres));
   }
 
+  // ✅ Label de période pour le récap (gère personnalisé)
+  String _getPeriodeLabel(String langue, List<Map<String, dynamic>> periodicites) {
+    if (_periodePersonnalisee) {
+      return '$_periodicitejours ${_periodicitejours > 1 ? _t(langue, 'jours') : _t(langue, 'jour')}';
+    }
+    final found = periodicites.firstWhere(
+      (p) => p['code'] == _periodicite,
+      orElse: () => {'label': '$_periodicitejours j'},
+    );
+    return found['label'];
+  }
+
   Future<void> _creer(String langue) async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _chargement = true);
@@ -370,12 +414,13 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         'type': _type,
         'description': _descriptionCtrl.text.trim(),
         'montant_cotisation': double.parse(_montantCtrl.text),
-        'periodicite': _periodicite,
+        // ✅ periodicite max 20 chars
+        'periodicite': _periodePersonnalisee ? 'custom' : _periodicite,
         'periodicite_jours': _periodicitejours,
         'nombre_membres': int.parse(_membresCtrl.text),
         'date_debut': _dateDebut.toIso8601String().split('T')[0],
         'date_fin': _dateFinCalculee.toIso8601String().split('T')[0],
-        'ordre_rotation': 'tirage_sort',
+        'ordre_rotation': 'sort',
       });
       _vocal.parler(_t(langue, 'succes'));
       if (mounted) {
@@ -410,8 +455,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
     final cardItemHeight = isSmall ? 110.0 : 130.0;
     final types = _getTypes(langue);
     final periodicites = _getPeriodicites(langue);
-    final typeSelectionne =
-        types.firstWhere((t) => t['code'] == _type);
+    final typeSelectionne = types.firstWhere((t) => t['code'] == _type);
 
     return Scaffold(
       backgroundColor: AppTheme.fond,
@@ -428,8 +472,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.volume_up_rounded,
-                color: Colors.white70),
+            icon: const Icon(Icons.volume_up_rounded, color: Colors.white70),
             onPressed: () => _vocal.parler(_t(langue, 'vocal')),
           ),
         ],
@@ -441,6 +484,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
               // ── NOM ──────────────────────────────────────
               _buildSection(_t(langue, 'nom'), isSmall),
               TextFormField(
@@ -455,7 +499,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
-              // ── TYPE ──────────────────────────────────────
+              // ── TYPE ─────────────────────────────────────
               _buildSection(_t(langue, 'type'), isSmall),
               SizedBox(
                 height: cardItemHeight,
@@ -468,8 +512,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                     return GestureDetector(
                       onTap: () {
                         setState(() => _type = t['code']);
-                        _vocal.parler(
-                            '${t['label']}. ${t['description']}');
+                        _vocal.parler('${t['label']}. ${t['description']}');
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
@@ -493,8 +536,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(t['emoji'],
-                                style: TextStyle(
-                                    fontSize: isSmall ? 24 : 30)),
+                                style: TextStyle(fontSize: isSmall ? 24 : 30)),
                             SizedBox(height: isSmall ? 4 : 6),
                             Text(
                               t['label'],
@@ -531,18 +573,15 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: (typeSelectionne['couleur'] as Color)
-                      .withOpacity(0.1),
+                  color: (typeSelectionne['couleur'] as Color).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
                     Text(typeSelectionne['emoji'],
-                        style: TextStyle(
-                            fontSize: isSmall ? 16 : 18)),
+                        style: TextStyle(fontSize: isSmall ? 16 : 18)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -564,9 +603,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               TextFormField(
                 controller: _montantCtrl,
                 keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
                   hintText: _t(langue, 'montant_hint'),
                   prefixIcon: const Icon(Icons.attach_money),
@@ -574,10 +611,8 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
-                  if (v == null || v.isEmpty)
-                    return _t(langue, 'requis');
-                  if (double.tryParse(v) == null)
-                    return _t(langue, 'montant_invalide');
+                  if (v == null || v.isEmpty) return _t(langue, 'requis');
+                  if (double.tryParse(v) == null) return _t(langue, 'montant_invalide');
                   return null;
                 },
               ),
@@ -588,37 +623,37 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               TextFormField(
                 controller: _membresCtrl,
                 keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
                   hintText: _t(langue, 'membres_hint'),
                   prefixIcon: const Icon(Icons.people_outline),
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
-                  if (v == null || v.isEmpty)
-                    return _t(langue, 'requis');
+                  if (v == null || v.isEmpty) return _t(langue, 'requis');
                   final n = int.tryParse(v);
-                  if (n == null || n < 2)
-                    return _t(langue, 'min_membres');
+                  if (n == null || n < 2) return _t(langue, 'min_membres');
                   return null;
                 },
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
-              // ── PERIODICITE ───────────────────────────────
+              // ── PÉRIODICITÉ ───────────────────────────────
               _buildSection(_t(langue, 'periodicite'), isSmall),
+
+              // Chips prédéfinis
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: periodicites.map((p) {
-                  final selected = _periodicite == p['code'];
+                  final selected = _periodicite == p['code'] && !_periodePersonnalisee;
                   return GestureDetector(
                     onTap: () => setState(() {
                       _periodicite = p['code'];
                       _periodicitejours = p['jours'];
-                      _dateFin = null; // reset date fin manuelle
+                      _periodePersonnalisee = false;
+                      _joursCtrl.clear();
+                      _dateFin = null;
                     }),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
@@ -627,14 +662,10 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                         vertical: isSmall ? 7 : 10,
                       ),
                       decoration: BoxDecoration(
-                        color: selected
-                            ? AppTheme.vert
-                            : Colors.white,
+                        color: selected ? AppTheme.vert : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: selected
-                              ? AppTheme.vert
-                              : const Color(0xFFE8E8E5),
+                          color: selected ? AppTheme.vert : const Color(0xFFE8E8E5),
                         ),
                       ),
                       child: Text(
@@ -643,15 +674,183 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                           fontFamily: 'Nunito',
                           fontSize: isSmall ? 11 : 13,
                           fontWeight: FontWeight.w600,
-                          color: selected
-                              ? Colors.white
-                              : AppTheme.texte,
+                          color: selected ? Colors.white : AppTheme.texte,
                         ),
                       ),
                     ),
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 10),
+
+              // Bouton période personnalisée
+              GestureDetector(
+                onTap: () => setState(() {
+                  _periodePersonnalisee = true;
+                  _periodicite = 'custom';
+                }),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: _periodePersonnalisee
+                        ? AppTheme.vert.withOpacity(0.05)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _periodePersonnalisee
+                          ? AppTheme.vert
+                          : const Color(0xFFE8E8E5),
+                      width: _periodePersonnalisee ? 2 : 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.tune_rounded,
+                        color: _periodePersonnalisee
+                            ? AppTheme.vert
+                            : AppTheme.grisTexte,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _t(langue, 'periode_perso'),
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: isSmall ? 13 : 14,
+                            fontWeight: FontWeight.w600,
+                            color: _periodePersonnalisee
+                                ? AppTheme.vert
+                                : AppTheme.texte,
+                          ),
+                        ),
+                      ),
+                      if (_periodePersonnalisee)
+                        const Icon(Icons.check_circle,
+                            color: AppTheme.vert, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Champ personnalisé
+              if (_periodePersonnalisee) ...[
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _joursCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        decoration: InputDecoration(
+                          hintText: _t(langue, 'periode_perso_hint'),
+                          prefixIcon: const Icon(Icons.calendar_today_outlined),
+                          suffixText: _t(langue, 'jours'),
+                        ),
+                        onChanged: (v) {
+                          final j = int.tryParse(v);
+                          if (j != null && j > 0) {
+                            setState(() {
+                              _periodicitejours = j;
+                              _dateFin = null;
+                            });
+                          }
+                        },
+                        validator: (v) {
+                          if (!_periodePersonnalisee) return null;
+                          if (v == null || v.isEmpty) return _t(langue, 'requis');
+                          final j = int.tryParse(v);
+                          if (j == null || j < 1) return _t(langue, 'min_jours');
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _t(langue, 'rapide'),
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 10,
+                            color: AppTheme.grisTexte,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: [3, 10, 15, 45, 60, 90].map((j) {
+                            final selected = _periodicitejours == j &&
+                                _periodePersonnalisee;
+                            return GestureDetector(
+                              onTap: () => setState(() {
+                                _joursCtrl.text = j.toString();
+                                _periodicitejours = j;
+                                _dateFin = null;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? AppTheme.vert
+                                      : AppTheme.grisClair,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${j}j',
+                                  style: TextStyle(
+                                    fontFamily: 'Nunito',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: selected
+                                        ? Colors.white
+                                        : AppTheme.texte,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_periodicitejours > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.vertClair,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline,
+                            color: AppTheme.vert, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_t(langue, 'cotisation_apercu')} $_periodicitejours ${_periodicitejours > 1 ? _t(langue, 'jours') : _t(langue, 'jour')}',
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.vertFonce,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── DATE DEBUT ────────────────────────────────
@@ -663,8 +862,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                     context: context,
                     initialDate: _dateDebut,
                     firstDate: DateTime.now(),
-                    lastDate: DateTime.now()
-                        .add(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
                     builder: (ctx, child) => Theme(
                       data: Theme.of(ctx).copyWith(
                         colorScheme: const ColorScheme.light(
@@ -693,8 +891,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                     context: context,
                     initialDate: _dateFinCalculee,
                     firstDate: _dateDebut,
-                    lastDate: DateTime.now()
-                        .add(const Duration(days: 1825)),
+                    lastDate: DateTime.now().add(const Duration(days: 1825)),
                     builder: (ctx, child) => Theme(
                       data: Theme.of(ctx).copyWith(
                         colorScheme: const ColorScheme.light(
@@ -717,8 +914,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: _t(langue, 'description_hint'),
-                  prefixIcon:
-                      const Icon(Icons.description_outlined),
+                  prefixIcon: const Icon(Icons.description_outlined),
                 ),
               ),
               SizedBox(height: isSmall ? 14 : 20),
@@ -736,16 +932,14 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               SizedBox(height: isSmall ? 14 : 20),
 
               // ── RECAP ─────────────────────────────────────
-              if (_montantCtrl.text.isNotEmpty &&
-                  _membresCtrl.text.isNotEmpty)
+              if (_montantCtrl.text.isNotEmpty && _membresCtrl.text.isNotEmpty)
                 _buildRecapitulatif(langue, isSmall, periodicites),
               const SizedBox(height: 24),
 
-              // ── BOUTON ────────────────────────────────────
+              // ── BOUTON CRÉER ──────────────────────────────
               _chargement
                   ? const Center(
-                      child: CircularProgressIndicator(
-                          color: AppTheme.vert))
+                      child: CircularProgressIndicator(color: AppTheme.vert))
                   : SizedBox(
                       width: double.infinity,
                       height: isSmall ? 48 : 54,
@@ -754,8 +948,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                         icon: const Icon(Icons.check),
                         label: Text(
                           _t(langue, 'creer'),
-                          style: TextStyle(
-                              fontSize: isSmall ? 14 : 16),
+                          style: TextStyle(fontSize: isSmall ? 14 : 16),
                         ),
                       ),
                     ),
@@ -797,9 +990,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isCalculee
-                ? const Color(0xFFD3D1C7)
-                : AppTheme.vert,
+            color: isCalculee ? const Color(0xFFD3D1C7) : AppTheme.vert,
             width: isCalculee ? 1 : 1.5,
           ),
         ),
@@ -807,9 +998,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
           children: [
             Icon(
               Icons.calendar_today_outlined,
-              color: isCalculee
-                  ? AppTheme.grisTexte
-                  : AppTheme.vert,
+              color: isCalculee ? AppTheme.grisTexte : AppTheme.vert,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -818,19 +1007,14 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 style: TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: isSmall ? 13 : 15,
-                  color: isCalculee
-                      ? AppTheme.texte
-                      : AppTheme.vert,
-                  fontWeight: isCalculee
-                      ? FontWeight.normal
-                      : FontWeight.w600,
+                  color: isCalculee ? AppTheme.texte : AppTheme.vert,
+                  fontWeight: isCalculee ? FontWeight.normal : FontWeight.w600,
                 ),
               ),
             ),
             if (isCalculee)
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppTheme.grisClair,
                   borderRadius: BorderRadius.circular(8),
@@ -845,8 +1029,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 ),
               )
             else
-              const Icon(Icons.edit_outlined,
-                  color: AppTheme.vert, size: 16),
+              const Icon(Icons.edit_outlined, color: AppTheme.vert, size: 16),
           ],
         ),
       ),
@@ -856,8 +1039,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   Widget _buildRecapitulatif(String langue, bool isSmall,
       List<Map<String, dynamic>> periodicites) {
     final membres = int.tryParse(_membresCtrl.text) ?? 1;
-    final periodeLabel = periodicites
-        .firstWhere((p) => p['code'] == _periodicite)['label'];
+    final periodeLabel = _getPeriodeLabel(langue, periodicites);
 
     return Container(
       padding: EdgeInsets.all(isSmall ? 12 : 16),
@@ -871,8 +1053,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
           Row(
             children: [
               Text(
-                _getTypes(langue)
-                    .firstWhere((t) => t['code'] == _type)['emoji'],
+                _getTypes(langue).firstWhere((t) => t['code'] == _type)['emoji'],
                 style: TextStyle(fontSize: isSmall ? 16 : 18),
               ),
               const SizedBox(width: 8),
@@ -918,8 +1099,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
     );
   }
 
-  Widget _buildRecapLigne(
-      String label, String valeur, bool isSmall) {
+  Widget _buildRecapLigne(String label, String valeur, bool isSmall) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -959,6 +1139,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
     _montantCtrl.dispose();
     _membresCtrl.dispose();
     _descriptionCtrl.dispose();
+    _joursCtrl.dispose(); // ✅
     _vocal.stop();
     super.dispose();
   }
