@@ -22,47 +22,56 @@ const validateInscription = validate(Joi.object({
   langue: Joi.string().optional().default('fr'),
   type_acces: Joi.string().valid('smartphone', 'basic').default('smartphone'),
   pays: Joi.string().optional().default('BF'),
-  indicatif: Joi.string().optional(),
-  orange_money_numero: Joi.string().optional().allow(''),
-  moov_money_numero: Joi.string().optional().allow(''),
-  photo_profil: Joi.string().optional().allow(''),
+  indicatif: Joi.string().optional().allow('', null),
+  orange_money_numero: Joi.string().optional().allow('', null),
+  moov_money_numero: Joi.string().optional().allow('', null),
+  photo_profil: Joi.string().optional().allow('', null),
 }));
 
 const validateConnexion = validate(Joi.object({
   telephone: Joi.string().min(6).max(20).required(),
-  code_pin: Joi.string().min(4).max(6).required()
+  code_pin: Joi.string().min(4).max(6).required(),
 }));
 
 const validateTontine = validate(Joi.object({
   nom: Joi.string().min(3).max(200).required(),
   type: Joi.string().required(),
-  description: Joi.string().max(1000).optional().allow(''),
+  description: Joi.string().max(1000).optional().allow('', null),
   montant_cotisation: Joi.number().positive().required(),
   periodicite: Joi.string().required(),
-  periodicite_jours: Joi.number().integer().min(1).max(365).default(1),
+  periodicite_jours: Joi.number().integer().min(1).max(3650).default(1),
   nombre_membres: Joi.number().integer().min(2).max(500).required(),
   date_debut: Joi.alternatives().try(
     Joi.date(),
     Joi.string()
   ).required(),
-  ordre_rotation: Joi.string().valid('tirage_sort', 'manuel', 'besoin').default('tirage_sort'),
+  date_fin: Joi.alternatives().try(
+    Joi.date(),
+    Joi.string()
+  ).optional().allow('', null),
+  ordre_rotation: Joi.string().optional().default('tirage_sort'),
   produit_catalogue_id: Joi.string().uuid().optional().allow('', null),
   photo_tontine: Joi.string().optional().allow('', null),
   video_tontine: Joi.string().optional().allow('', null),
   devise: Joi.string().optional().default('XOF'),
   pays: Joi.string().optional().default('BF'),
   est_publique: Joi.boolean().optional().default(false),
+  est_public: Joi.boolean().optional().default(false),
+  orange_money_numero: Joi.string().optional().allow('', null),
+  moov_money_numero: Joi.string().optional().allow('', null),
+  mtn_numero: Joi.string().optional().allow('', null),
+  wave_numero: Joi.string().optional().allow('', null),
 }));
 
 const validateCotisation = validate(Joi.object({
   cotisation_id: Joi.string().uuid().required(),
   methode_paiement: Joi.string().required(),
-  telephone_paiement: Joi.string().optional().allow('', null)
+  telephone_paiement: Joi.string().optional().allow('', null),
 }));
 
 const validateInvitation = validate(Joi.object({
   telephone: Joi.string().min(6).max(20).required(),
-  message: Joi.string().optional().allow(''),
+  message: Joi.string().optional().allow('', null),
 }));
 
 const validateProfil = validate(Joi.object({
@@ -71,6 +80,7 @@ const validateProfil = validate(Joi.object({
   langue: Joi.string().optional(),
   pays: Joi.string().optional(),
   photo_profil: Joi.string().optional().allow('', null),
+  photo_url: Joi.string().optional().allow('', null),
   orange_money_numero: Joi.string().optional().allow('', null),
   moov_money_numero: Joi.string().optional().allow('', null),
 }));
