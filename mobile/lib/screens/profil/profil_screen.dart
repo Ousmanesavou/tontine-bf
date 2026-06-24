@@ -432,11 +432,11 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
                               child: Image.network(
                                 _photoUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _buildInitials(
-                                    prenom, nom, isSmall),
+                                errorBuilder: (_, __, ___) => _buildInitiales(
+                                prenom, nom, isSmall),
                               ),
                             )
-                          : _buildInitials(prenom, nom, isSmall),
+                          : _buildInitiales(prenom, nom, isSmall),
                 ),
               ),
               // Bouton appareil photo

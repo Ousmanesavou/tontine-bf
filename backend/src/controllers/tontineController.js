@@ -43,12 +43,12 @@ const tontineController = {
   async getTontinesPubliques(req, res) {
     try {
       const { search = '' } = req.query;
-      let where = "WHERE t.statut = 'active' AND t.est_publique = true";
+      let where = "WHERE t.statut = 'active' AND (t.est_public = true OR t.est_publique = true)";
       const params = [];
 
       if (search) {
         params.push(`%${search}%`);
-        where += ` AND t.nom ILIKE $${params.length}`;
+        where += ` AND (t.nom ILIKE $${params.length} OR u.prenom ILIKE $${params.length})`;
       }
 
       const { rows } = await pool.query(`
@@ -81,7 +81,6 @@ const tontineController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
-
   async creerTontine(req, res) {
     const client = await pool.connect();
     try {
