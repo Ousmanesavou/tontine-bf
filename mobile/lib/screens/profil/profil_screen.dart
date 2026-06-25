@@ -24,11 +24,12 @@ class _ProfilScreenState extends ConsumerState<ProfilScreen> {
   String? _photoUrl;
 
   @override
-  void initState() {
-    super.initState();
-    _user = StorageService.getUser();
-    _photoUrl = _user?['photo_url'];
-  }
+void initState() {
+  super.initState();
+  _user = StorageService.getUser();
+  // ✅ Chercher photo_url ET photo_profil
+  _photoUrl = _user?['photo_url'] ?? _user?['photo_profil'];
+}
 
   Future<void> _changerPhoto() async {
     final langue = ref.read(langueProvider);

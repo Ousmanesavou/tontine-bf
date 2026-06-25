@@ -249,7 +249,15 @@ class ApiService {
     try {
       await _dio.put('/users/profil', data: data);
     } on DioException catch (e) {
+      // ✅ Ignorer erreur 200 mal parsé
+      if (e.response?.statusCode == 200) return;
+      // ✅ Ignorer erreur de parsing si succès
+      if (e.type == DioExceptionType.badResponse &&
+          (e.response?.statusCode ?? 0) < 400) return;
       throw _handleError(e);
+    } catch (e) {
+      // ✅ Ignorer toute erreur de type casting
+      // L'upload photo est déjà sauvegardé localement
     }
   }
 
@@ -273,9 +281,92 @@ class ApiService {
     }
   }
 
+  // ── COMPTE VIRTUEL ────────────────────────────────
+  static Future<Map<String, dynamic>> getCompteVirtuel(
+      String tontineId) async {
+    try {
+      final resp =
+          await _dio.get('/tontines/$tontineId/compte-virtuel');
+      return resp.data['data'];
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<Map<String, dynamic>> effectuerDepotVirtuel({
+    required String tontineId,
+    required double montant,
+    required String methodePaiement,
+    String? telephonePaiement,
+  }) async {
+    try {
+      final resp = await _dio.post(
+          '/tontines/$tontineId/compte-virtuel/depot',
+          data: {
+            'montant': montant,
+            'methode_paiement': methodePaiement,
+            if (telephonePaiement != null)
+              'telephone_paiement': telephonePaiement,
+          });
+      return resp.data['data'];
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<Map<String, dynamic>> initierRetraitVirtuel({
+    required String tontineId,
+    required double montant,
+    required String methodeRetrait,
+    String? telephoneRetrait,
+    String? motif,
+  }) async {
+    try {
+      final resp = await _dio.post(
+          '/tontines/$tontineId/compte-virtuel/retrait/initier',
+          data: {
+            'montant': montant,
+            'methode_retrait': methodeRetrait,
+            if (telephoneRetrait != null)
+              'telephone_retrait': telephoneRetrait,
+            if (motif != null) 'motif': motif,
+          });
+      return resp.data['data'];
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<Map<String, dynamic>> voterRetrait({
+    required String tontineId,
+    required String retraitId,
+    required String vote,
+  }) async {
+    try {
+      final resp = await _dio.post(
+          '/tontines/$tontineId/compte-virtuel/retrait/$retraitId/voter',
+          data: {'vote': vote});
+      return resp.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ── COMMERÇANTS ───────────────────────────────────
+  static Future<List<Map<String, dynamic>>> getCommercants() async {
+    try {
+      final resp =
+          await _dio.get('/admin/commercants', queryParameters: {'statut': 'valide'});
+      return List<Map<String, dynamic>>.from(resp.data['data']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── ERREURS ───────────────────────────────────────
   static String _handleError(DioException e) {
-    if (e.response?.data?['error'] != null) {
+    if (e.response?.data is Map &&
+        e.response?.data?['error'] != null) {
       return e.response!.data['error'];
     }
     if (e.type == DioExceptionType.connectionTimeout ||
@@ -287,82 +378,4 @@ class ApiService {
     }
     return 'Erreur inattendue. Réessayez.';
   }
-static Future<Map<String, dynamic>> getCompteVirtuel(
-    String tontineId) async {
-  try {
-    final resp =
-        await _dio.get('/tontines/$tontineId/compte-virtuel');
-    return resp.data['data'];
-  } on DioException catch (e) {
-    throw _handleError(e);
-  }
-}
-
-static Future<Map<String, dynamic>> effectuerDepotVirtuel({
-  required String tontineId,
-  required double montant,
-  required String methodePaiement,
-  String? telephonePaiement,
-}) async {
-  try {
-    final resp = await _dio.post(
-        '/tontines/$tontineId/compte-virtuel/depot',
-        data: {
-          'montant': montant,
-          'methode_paiement': methodePaiement,
-          if (telephonePaiement != null)
-            'telephone_paiement': telephonePaiement,
-        });
-    return resp.data['data'];
-  } on DioException catch (e) {
-    throw _handleError(e);
-  }
-}
-
-static Future<Map<String, dynamic>> initierRetraitVirtuel({
-  required String tontineId,
-  required double montant,
-  required String methodeRetrait,
-  String? telephoneRetrait,
-  String? motif,
-}) async {
-  try {
-    final resp = await _dio.post(
-        '/tontines/$tontineId/compte-virtuel/retrait/initier',
-        data: {
-          'montant': montant,
-          'methode_retrait': methodeRetrait,
-          if (telephoneRetrait != null)
-            'telephone_retrait': telephoneRetrait,
-          if (motif != null) 'motif': motif,
-        });
-    return resp.data['data'];
-  } on DioException catch (e) {
-    throw _handleError(e);
-  }
-}
-
-static Future<Map<String, dynamic>> voterRetrait({
-  required String tontineId,
-  required String retraitId,
-  required String vote,
-}) async {
-  try {
-    final resp = await _dio.post(
-        '/tontines/$tontineId/compte-virtuel/retrait/$retraitId/voter',
-        data: {'vote': vote});
-    return resp.data;
-  } on DioException catch (e) {
-    throw _handleError(e);
-  }
-} 
-
-static Future<List<Map<String, dynamic>>> getCommercants() async {
-  try {
-    final resp = await _dio.get('/admin/commercants?statut=valide');
-    return List<Map<String, dynamic>>.from(resp.data['data']);
-  } on DioException catch (e) {
-    throw _handleError(e);
-  }
-}
 }

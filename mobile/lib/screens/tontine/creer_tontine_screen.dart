@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../services/vocal_service.dart';
 import '../../widgets/media_picker_widget.dart';
 import '../../main.dart';
+import '../home/home_screen.dart'; // ✅ import pour tontinesProvider
 
 // ── TRADUCTIONS ───────────────────────────────────────
 const Map<String, Map<String, String>> _tr = {
@@ -48,6 +49,10 @@ const Map<String, Map<String, String>> _tr = {
     '2_semaines': 'Toutes les 2 semaines',
     'mensuel': 'Chaque mois',
     'trimestriel': 'Tous les 3 mois',
+    'publique': 'Tontine publique',
+    'publique_desc': 'Visible et rejoignable par tous',
+    'privee': 'Tontine privée',
+    'privee_desc': 'Sur invitation uniquement',
     'argent_liquide': 'Argent liquide',
     'argent_liquide_desc': 'Chaque membre reçoit la cagnotte à son tour',
     'objet': 'Objet / Bien',
@@ -107,6 +112,10 @@ const Map<String, Map<String, String>> _tr = {
     '2_semaines': 'Every 2 weeks',
     'mensuel': 'Every month',
     'trimestriel': 'Every 3 months',
+    'publique': 'Public tontine',
+    'publique_desc': 'Visible and joinable by everyone',
+    'privee': 'Private tontine',
+    'privee_desc': 'By invitation only',
     'argent_liquide': 'Cash',
     'argent_liquide_desc': 'Each member receives the pot in turn',
     'objet': 'Object / Item',
@@ -166,6 +175,10 @@ const Map<String, Map<String, String>> _tr = {
     '2_semaines': 'Wiki 2',
     'mensuel': 'Kiuugã fãa',
     'trimestriel': 'Kiuugu 3',
+    'publique': 'Tontine wʋsgã',
+    'publique_desc': 'Ned fãa tõe n kẽng',
+    'privee': 'Tontine sɩŋgã',
+    'privee_desc': 'Bool bɩ',
     'argent_liquide': 'Ligdi',
     'argent_liquide_desc': 'Ned fãa paamda a ligdi',
     'objet': 'Bũmb',
@@ -225,6 +238,10 @@ const Map<String, Map<String, String>> _tr = {
     '2_semaines': 'Dɔgɔkun fila',
     'mensuel': 'Kalo kelen',
     'trimestriel': 'Kalo saba',
+    'publique': 'Tontine yerelenman',
+    'publique_desc': 'Mɔgɔ bɛɛ bɛ se ka don',
+    'privee': 'Tontine gundo',
+    'privee_desc': 'Welewele dɔrɔn',
     'argent_liquide': 'Wari',
     'argent_liquide_desc': 'Mɔgɔ o mɔgɔ bɛ wari sɔrɔ',
     'objet': 'Fɛn',
@@ -284,6 +301,10 @@ const Map<String, Map<String, String>> _tr = {
     '2_semaines': 'Ayu yu ñaar',
     'mensuel': 'Weer bu nekk',
     'trimestriel': 'Weer yu ñett',
+    'publique': 'Tontine bu set',
+    'publique_desc': 'Nit yu bëgg dafa mën a dugg',
+    'privee': 'Tontine bu dëkk',
+    'privee_desc': 'Wele rekk',
     'argent_liquide': 'Xaalis',
     'argent_liquide_desc': 'Nit bu nekk dafa jot xaalis bi',
     'objet': 'Xam-xam',
@@ -326,13 +347,14 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   final _montantCtrl = TextEditingController();
   final _membresCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
-  final _joursCtrl = TextEditingController(); // ✅ dans la classe
+  final _joursCtrl = TextEditingController();
   final VocalService _vocal = VocalService();
 
   String _type = 'argent_liquide';
   String _periodicite = 'hebdomadaire';
   int _periodicitejours = 7;
-  bool _periodePersonnalisee = false; // ✅ dans la classe
+  bool _periodePersonnalisee = false;
+  bool _estPublique = true; // ✅ publique par défaut
   DateTime _dateDebut = DateTime.now().add(const Duration(days: 1));
   DateTime? _dateFin;
   bool _chargement = false;
@@ -393,7 +415,6 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
     return _dateDebut.add(Duration(days: _periodicitejours * membres));
   }
 
-  // ✅ Label de période pour le récap (gère personnalisé)
   String _getPeriodeLabel(String langue, List<Map<String, dynamic>> periodicites) {
     if (_periodePersonnalisee) {
       return '$_periodicitejours ${_periodicitejours > 1 ? _t(langue, 'jours') : _t(langue, 'jour')}';
@@ -414,16 +435,20 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         'type': _type,
         'description': _descriptionCtrl.text.trim(),
         'montant_cotisation': double.parse(_montantCtrl.text),
-        // ✅ periodicite max 20 chars
         'periodicite': _periodePersonnalisee ? 'custom' : _periodicite,
         'periodicite_jours': _periodicitejours,
         'nombre_membres': int.parse(_membresCtrl.text),
         'date_debut': _dateDebut.toIso8601String().split('T')[0],
         'date_fin': _dateFinCalculee.toIso8601String().split('T')[0],
-        'ordre_rotation': 'sort',
+        'ordre_rotation': 'tirage_sort',
+        'est_publique': _estPublique, // ✅
+        'est_public': _estPublique,   // ✅
       });
       _vocal.parler(_t(langue, 'succes'));
       if (mounted) {
+        // ✅ Rafraîchir les providers
+        ref.refresh(tontinesProvider);
+        ref.refresh(tontinesPubliquesProvider(''));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_t(langue, 'succes')),
@@ -640,8 +665,6 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
 
               // ── PÉRIODICITÉ ───────────────────────────────
               _buildSection(_t(langue, 'periodicite'), isSmall),
-
-              // Chips prédéfinis
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -683,7 +706,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Bouton période personnalisée
+              // Période personnalisée
               GestureDetector(
                 onTap: () => setState(() {
                   _periodePersonnalisee = true;
@@ -706,13 +729,10 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.tune_rounded,
-                        color: _periodePersonnalisee
-                            ? AppTheme.vert
-                            : AppTheme.grisTexte,
-                        size: 20,
-                      ),
+                      Icon(Icons.tune_rounded,
+                          color: _periodePersonnalisee
+                              ? AppTheme.vert : AppTheme.grisTexte,
+                          size: 20),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -722,8 +742,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                             fontSize: isSmall ? 13 : 14,
                             fontWeight: FontWeight.w600,
                             color: _periodePersonnalisee
-                                ? AppTheme.vert
-                                : AppTheme.texte,
+                                ? AppTheme.vert : AppTheme.texte,
                           ),
                         ),
                       ),
@@ -735,7 +754,6 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 ),
               ),
 
-              // Champ personnalisé
               if (_periodePersonnalisee) ...[
                 const SizedBox(height: 10),
                 Row(
@@ -745,9 +763,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                       child: TextFormField(
                         controller: _joursCtrl,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         decoration: InputDecoration(
                           hintText: _t(langue, 'periode_perso_hint'),
                           prefixIcon: const Icon(Icons.calendar_today_outlined),
@@ -775,21 +791,17 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _t(langue, 'rapide'),
-                          style: const TextStyle(
-                            fontFamily: 'Nunito',
-                            fontSize: 10,
-                            color: AppTheme.grisTexte,
-                          ),
-                        ),
+                        Text(_t(langue, 'rapide'),
+                            style: const TextStyle(
+                                fontFamily: 'Nunito',
+                                fontSize: 10,
+                                color: AppTheme.grisTexte)),
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 4,
                           runSpacing: 4,
                           children: [3, 10, 15, 45, 60, 90].map((j) {
-                            final selected = _periodicitejours == j &&
-                                _periodePersonnalisee;
+                            final sel = _periodicitejours == j && _periodePersonnalisee;
                             return GestureDetector(
                               onTap: () => setState(() {
                                 _joursCtrl.text = j.toString();
@@ -800,22 +812,16 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: selected
-                                      ? AppTheme.vert
-                                      : AppTheme.grisClair,
+                                  color: sel ? AppTheme.vert : AppTheme.grisClair,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(
-                                  '${j}j',
-                                  style: TextStyle(
-                                    fontFamily: 'Nunito',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: selected
-                                        ? Colors.white
-                                        : AppTheme.texte,
-                                  ),
-                                ),
+                                child: Text('${j}j',
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: sel ? Colors.white : AppTheme.texte,
+                                    )),
                               ),
                             );
                           }).toList(),
@@ -827,8 +833,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 const SizedBox(height: 8),
                 if (_periodicitejours > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppTheme.vertClair,
                       borderRadius: BorderRadius.circular(10),
@@ -865,18 +870,12 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                     builder: (ctx, child) => Theme(
                       data: Theme.of(ctx).copyWith(
-                        colorScheme: const ColorScheme.light(
-                            primary: AppTheme.vert),
+                        colorScheme: const ColorScheme.light(primary: AppTheme.vert),
                       ),
                       child: child!,
                     ),
                   );
-                  if (date != null) {
-                    setState(() {
-                      _dateDebut = date;
-                      _dateFin = null;
-                    });
-                  }
+                  if (date != null) setState(() { _dateDebut = date; _dateFin = null; });
                 },
                 isSmall: isSmall,
               ),
@@ -894,8 +893,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                     lastDate: DateTime.now().add(const Duration(days: 1825)),
                     builder: (ctx, child) => Theme(
                       data: Theme.of(ctx).copyWith(
-                        colorScheme: const ColorScheme.light(
-                            primary: AppTheme.vert),
+                        colorScheme: const ColorScheme.light(primary: AppTheme.vert),
                       ),
                       child: child!,
                     ),
@@ -904,6 +902,161 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                 },
                 isSmall: isSmall,
                 isCalculee: _dateFin == null,
+              ),
+              SizedBox(height: isSmall ? 14 : 20),
+
+              // ── VISIBILITÉ ────────────────────────────────
+              _buildSection(
+                langue == 'en' ? 'VISIBILITY' : 'VISIBILITÉ',
+                isSmall,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE8E8E5)),
+                ),
+                child: Column(
+                  children: [
+                    // Publique
+                    GestureDetector(
+                      onTap: () => setState(() => _estPublique = true),
+                      child: Container(
+                        padding: EdgeInsets.all(isSmall ? 12 : 14),
+                        decoration: BoxDecoration(
+                          color: _estPublique
+                              ? AppTheme.vert.withOpacity(0.05)
+                              : Colors.transparent,
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12)),
+                          border: _estPublique
+                              ? const Border(
+                                  left: BorderSide(
+                                      color: AppTheme.vert, width: 3))
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: _estPublique
+                                    ? AppTheme.vertClair
+                                    : AppTheme.grisClair,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.public_outlined,
+                                  color: _estPublique
+                                      ? AppTheme.vert
+                                      : AppTheme.grisTexte,
+                                  size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _t(langue, 'publique'),
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: isSmall ? 13 : 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: _estPublique
+                                          ? AppTheme.vert
+                                          : AppTheme.texte,
+                                    ),
+                                  ),
+                                  Text(
+                                    _t(langue, 'publique_desc'),
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: isSmall ? 10 : 11,
+                                      color: AppTheme.grisTexte,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_estPublique)
+                              const Icon(Icons.check_circle,
+                                  color: AppTheme.vert, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFE8E8E5)),
+                    // Privée
+                    GestureDetector(
+                      onTap: () => setState(() => _estPublique = false),
+                      child: Container(
+                        padding: EdgeInsets.all(isSmall ? 12 : 14),
+                        decoration: BoxDecoration(
+                          color: !_estPublique
+                              ? AppTheme.orangeClair.withOpacity(0.3)
+                              : Colors.transparent,
+                          borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(12)),
+                          border: !_estPublique
+                              ? const Border(
+                                  left: BorderSide(
+                                      color: AppTheme.orange, width: 3))
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: !_estPublique
+                                    ? AppTheme.orangeClair
+                                    : AppTheme.grisClair,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.lock_outline,
+                                  color: !_estPublique
+                                      ? AppTheme.orange
+                                      : AppTheme.grisTexte,
+                                  size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _t(langue, 'privee'),
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: isSmall ? 13 : 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: !_estPublique
+                                          ? AppTheme.orange
+                                          : AppTheme.texte,
+                                    ),
+                                  ),
+                                  Text(
+                                    _t(langue, 'privee_desc'),
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: isSmall ? 10 : 11,
+                                      color: AppTheme.grisTexte,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!_estPublique)
+                              const Icon(Icons.check_circle,
+                                  color: AppTheme.orange, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: isSmall ? 14 : 20),
 
@@ -996,10 +1149,8 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              color: isCalculee ? AppTheme.grisTexte : AppTheme.vert,
-            ),
+            Icon(Icons.calendar_today_outlined,
+                color: isCalculee ? AppTheme.grisTexte : AppTheme.vert),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -1019,14 +1170,12 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                   color: AppTheme.grisClair,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  'Auto',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: isSmall ? 10 : 11,
-                    color: AppTheme.grisTexte,
-                  ),
-                ),
+                child: Text('Auto',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: isSmall ? 10 : 11,
+                      color: AppTheme.grisTexte,
+                    )),
               )
             else
               const Icon(Icons.edit_outlined, color: AppTheme.vert, size: 16),
@@ -1064,6 +1213,39 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                   fontWeight: FontWeight.w700,
                   fontSize: isSmall ? 13 : 15,
                   color: AppTheme.vertFonce,
+                ),
+              ),
+              const Spacer(),
+              // Badge visibilité
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _estPublique
+                      ? AppTheme.vert.withOpacity(0.15)
+                      : AppTheme.orangeClair,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _estPublique ? Icons.public_outlined : Icons.lock_outline,
+                      size: 12,
+                      color: _estPublique ? AppTheme.vert : AppTheme.orange,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _estPublique
+                          ? _t(langue, 'publique')
+                          : _t(langue, 'privee'),
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: _estPublique ? AppTheme.vert : AppTheme.orange,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1106,27 +1288,23 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: isSmall ? 11 : 13,
-                color: AppTheme.grisTexte,
-              ),
-            ),
+            child: Text(label,
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: isSmall ? 11 : 13,
+                  color: AppTheme.grisTexte,
+                )),
           ),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(
-              valeur,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: isSmall ? 11 : 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.vertFonce,
-              ),
-            ),
+            child: Text(valeur,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: isSmall ? 11 : 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.vertFonce,
+                )),
           ),
         ],
       ),
@@ -1139,7 +1317,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
     _montantCtrl.dispose();
     _membresCtrl.dispose();
     _descriptionCtrl.dispose();
-    _joursCtrl.dispose(); // ✅
+    _joursCtrl.dispose();
     _vocal.stop();
     super.dispose();
   }
