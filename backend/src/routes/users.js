@@ -120,4 +120,43 @@ router.get('/score', async (req, res) => {
   }
 });
 
+
+// Changer PIN
+router.post('/changer-pin', async (req, res) => {
+  try {
+    const { ancien_pin, nouveau_pin } = req.body;
+    const userId = req.user.id;
+
+    if (!ancien_pin || !nouveau_pin) {
+      return res.status(400).json({ error: 'PIN requis' });
+    }
+    if (nouveau_pin.length !== 4 || !/^[0-9]{4}$/.test(nouveau_pin)) {
+      return res.status(400).json({ error: 'PIN doit avoir 4 chiffres' });
+    }
+
+    // Verifier ancien PIN
+    const { rows: [user] } = await pool.query(
+      'SELECT pin_hash FROM utilisateurs WHERE id = $1',
+      [userId]
+    );
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouve' });
+
+    const bcrypt = require('bcryptjs');
+    const pinOk = await bcrypt.compare(ancien_pin, user.pin_hash);
+    if (!pinOk) return res.status(400).json({ error: 'Code PIN actuel incorrect' });
+
+    // Hasher et sauvegarder nouveau PIN
+    const nouveauHash = await bcrypt.hash(nouveau_pin, 10);
+    await pool.query(
+      'UPDATE utilisateurs SET pin_hash = $1 WHERE id = $2',
+      [nouveauHash, userId]
+    );
+
+    res.json({ success: true, message: 'PIN change avec succes' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
