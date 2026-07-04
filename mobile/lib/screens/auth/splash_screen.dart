@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,18 +32,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       duration: const Duration(milliseconds: 1400),
     );
     _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-          parent: _controller,
+      CurvedAnimation(parent: _controller,
           curve: const Interval(0, 0.6, curve: Curves.easeIn)),
     );
     _scaleAnim = Tween<double>(begin: 0.7, end: 1).animate(
-      CurvedAnimation(
-          parent: _controller,
+      CurvedAnimation(parent: _controller,
           curve: const Interval(0, 0.7, curve: Curves.elasticOut)),
     );
     _slideAnim = Tween<double>(begin: 30, end: 0).animate(
-      CurvedAnimation(
-          parent: _controller,
+      CurvedAnimation(parent: _controller,
           curve: const Interval(0.3, 1, curve: Curves.easeOut)),
     );
     _controller.forward();
@@ -51,17 +48,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _navigateNext() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
+    await Future.delayed(const Duration(milliseconds: 3000));
     if (!mounted) return;
-
     final langue = StorageService.getLangue();
     final token = StorageService.getToken();
     final premiereVisite = StorageService.isPremiereConnexion();
-
     if (langue == null) {
       context.go('/langue');
     } else if (premiereVisite && token == null) {
-      // Afficher onboarding
       _showOnboarding();
     } else if (token == null) {
       context.go('/connexion');
@@ -96,13 +90,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       backgroundColor: AppTheme.vert,
       body: Stack(
         children: [
-          // Cercles décoratifs
           Positioned(
-            top: -sh * 0.1,
-            right: -sw * 0.2,
+            top: -sh * 0.1, right: -sw * 0.2,
             child: Container(
-              width: sw * 0.6,
-              height: sw * 0.6,
+              width: sw * 0.7, height: sw * 0.7,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 shape: BoxShape.circle,
@@ -110,18 +101,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ),
           ),
           Positioned(
-            bottom: -sh * 0.05,
-            left: -sw * 0.15,
+            bottom: -sh * 0.05, left: -sw * 0.15,
             child: Container(
-              width: sw * 0.5,
-              height: sw * 0.5,
+              width: sw * 0.55, height: sw * 0.55,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 shape: BoxShape.circle,
               ),
             ),
           ),
-          // Contenu principal
           Center(
             child: AnimatedBuilder(
               animation: _controller,
@@ -134,55 +122,80 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo
+                        // ✅ LOGO TontiLigdi
                         Container(
-                          width: sw * 0.28,
-                          height: sw * 0.28,
+                          width: sw * 0.38,
+                          height: sw * 0.38,
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(sw * 0.07),
+                            shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 20,
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Text('💰',
-                                style: TextStyle(
-                                    fontSize: sw * 0.13)),
+                          child: CustomPaint(
+                            size: Size(sw * 0.38, sw * 0.38),
+                            painter: _LogoPainter(),
                           ),
                         ),
-                        SizedBox(height: sh * 0.03),
-                        // Nom app
-                        const Text(
-                          'Tontine Africa',
+                        SizedBox(height: sh * 0.04),
+                        // ✅ Nom TontiLigdi bicolore
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Tonti',
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: sw * 0.09,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'Ligdi',
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: sw * 0.09,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFFF5A623),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Lagem Ligdi',
                           style: TextStyle(
                             fontFamily: 'Nunito',
-                            fontSize: 34,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
+                            fontSize: sw * 0.045,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFF5A623),
+                            letterSpacing: 1,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // Slogan multilingue
-                        _buildSlogan(),
-                        SizedBox(height: sh * 0.08),
-                        // Loader
+                        const SizedBox(height: 4),
+                        Text(
+                          _getSlogan(),
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: sw * 0.035,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        SizedBox(height: sh * 0.07),
                         const SizedBox(
-                          width: 30,
-                          height: 30,
+                          width: 28, height: 28,
                           child: CircularProgressIndicator(
-                            color: Colors.white54,
+                            color: Color(0xFFF5A623),
                             strokeWidth: 2.5,
                           ),
                         ),
-                        SizedBox(height: sh * 0.06),
-                        // Pays supportés
+                        SizedBox(height: sh * 0.05),
                         _buildPaysSupports(sw),
                       ],
                     ),
@@ -191,21 +204,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
             ),
           ),
-          // Version en bas
           Positioned(
-            bottom: 24,
-            left: 0,
-            right: 0,
+            bottom: 20, left: 0, right: 0,
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: const Text(
-                'v1.0.0 • 20+ pays africains',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 11,
-                  color: Colors.white38,
-                ),
+              child: Column(
+                children: [
+                  const Text(
+                    'by Toeeg Digital SARL',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 11,
+                      color: Colors.white38,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'v1.0.0 • 20+ pays africains',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 10,
+                      color: Colors.white24,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -214,52 +238,155 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 
-  Widget _buildSlogan() {
+  String _getSlogan() {
     final langue = StorageService.getLangue() ?? 'fr';
-    final slogans = {
-      'fr': 'Ensemble, on grandit 🌍',
-      'en': 'Together, we grow 🌍',
-      'mos': 'Tõnd fãa, tõnd zagsame 🌍',
-      'bm': 'An bɛɛ ye dɔn 🌍',
-      'wo': 'Ci dekk, danu dem yëgël 🌍',
-      'ar': 'معاً ننمو 🌍',
-      'sw': 'Pamoja tunakua 🌍',
+    const slogans = {
+      'fr': 'Rassemblons l\'argent',
+      'en': 'Let\'s gather money',
+      'mos': 'Tond na lagem ligdi',
+      'bm': 'An ka wari lagem',
+      'wo': 'Nan lagem xaalis',
     };
-    return Text(
-      slogans[langue] ?? slogans['fr']!,
-      style: const TextStyle(
-        fontFamily: 'Nunito',
-        fontSize: 16,
-        color: Colors.white70,
-        fontWeight: FontWeight.w500,
-      ),
-    );
+    return slogans[langue] ?? slogans['fr']!;
   }
 
   Widget _buildPaysSupports(double sw) {
-    const drapeaux = ['🇧🇫', '🇸🇳', '🇨🇮', '🇲🇱', '🇬🇳',
-                      '🇨🇲', '🇨🇩', '🇹🇬', '🇧🇯', '🇳🇪'];
+    const drapeaux = ['🇧🇫','🇸🇳','🇨🇮','🇲🇱','🇬🇳','🇨🇲','🇨🇩','🇹🇬','🇧🇯','🇳🇪'];
     return Column(
       children: [
-        const Text(
-          'Disponible dans',
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontSize: 11,
-            color: Colors.white38,
-          ),
-        ),
-        const SizedBox(height: 8),
+        const Text('Disponible dans',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 10, color: Colors.white38)),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 4,
-          children: drapeaux
-              .map((d) => Text(d,
-                  style: TextStyle(fontSize: sw * 0.045)))
-              .toList(),
+          children: drapeaux.map((d) =>
+              Text(d, style: TextStyle(fontSize: sw * 0.042))).toList(),
         ),
       ],
     );
   }
+}
+
+// ✅ PEINTRE DU LOGO TontiLigdi
+class _LogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = size.width / 2;
+
+    // Cercle or
+    canvas.drawCircle(Offset(cx, cy), r,
+        Paint()..color = const Color(0xFFF5A623));
+
+    // Anneaux verts
+    canvas.drawCircle(Offset(cx, cy), r,
+        Paint()..color = const Color(0xFF1D9E75)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.1);
+    canvas.drawCircle(Offset(cx, cy), r * 0.86,
+        Paint()..color = const Color(0xFF1D9E75)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.03);
+
+    // Cercle intérieur vert
+    canvas.drawCircle(Offset(cx, cy), r * 0.72,
+        Paint()..color = const Color(0xFF1D9E75));
+    canvas.drawCircle(Offset(cx, cy), r * 0.72,
+        Paint()..color = const Color(0xFFF5A623)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.025);
+
+    // Grand losange blanc
+    _drawLosange(canvas, cx, cy, r * 0.62,
+        Paint()..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.06
+          ..strokeJoin = StrokeJoin.round);
+
+    // Losange moyen or
+    _drawLosange(canvas, cx, cy, r * 0.50,
+        Paint()..color = const Color(0xFFF5A623)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.04
+          ..strokeJoin = StrokeJoin.round);
+
+    // Losange intérieur foncé
+    _drawLosange(canvas, cx, cy, r * 0.38,
+        Paint()..color = const Color(0xFF0D5C3A));
+    _drawLosange(canvas, cx, cy, r * 0.38,
+        Paint()..color = const Color(0xFFF5A623)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.025);
+
+    // 4 losanges aux coins
+    final pOr = Paint()..color = const Color(0xFF1D9E75);
+    _drawPetitLosange(canvas, Offset(cx, cy - r * 0.66), r * 0.07, pOr);
+    _drawPetitLosange(canvas, Offset(cx, cy + r * 0.66), r * 0.07, pOr);
+    _drawPetitLosange(canvas, Offset(cx - r * 0.66, cy), r * 0.07, pOr);
+    _drawPetitLosange(canvas, Offset(cx + r * 0.66, cy), r * 0.07, pOr);
+
+    // Etoile Burkina
+    _drawEtoile(canvas, Offset(cx, cy), r * 0.22,
+        Paint()..color = const Color(0xFFF5A623));
+  }
+
+  void _drawLosange(Canvas c, double cx, double cy, double r, Paint p) {
+    final path = Path()
+      ..moveTo(cx, cy - r)
+      ..lineTo(cx + r, cy)
+      ..lineTo(cx, cy + r)
+      ..lineTo(cx - r, cy)
+      ..close();
+    c.drawPath(path, p);
+  }
+
+  void _drawPetitLosange(Canvas c, Offset center, double s, Paint p) {
+    final path = Path()
+      ..moveTo(center.dx, center.dy - s)
+      ..lineTo(center.dx + s, center.dy)
+      ..lineTo(center.dx, center.dy + s)
+      ..lineTo(center.dx - s, center.dy)
+      ..close();
+    c.drawPath(path, p);
+  }
+
+  void _drawEtoile(Canvas c, Offset center, double r, Paint p) {
+    const branches = 5;
+    final petitR = r * 0.45;
+    final path = Path();
+    for (int i = 0; i < branches * 2; i++) {
+      final angle = (i * 3.14159 / branches) - 3.14159 / 2;
+      final ray = i.isEven ? r : petitR;
+      final x = center.dx + ray * _cos(angle);
+      final y = center.dy + ray * _sin(angle);
+      if (i == 0) path.moveTo(x, y);
+      else path.lineTo(x, y);
+    }
+    path.close();
+    c.drawPath(path, p);
+  }
+
+  double _cos(double x) {
+    double r = 1, t = 1;
+    for (int i = 1; i <= 10; i++) {
+      t *= -x * x / ((2 * i - 1) * (2 * i));
+      r += t;
+    }
+    return r;
+  }
+
+  double _sin(double x) {
+    double r = x, t = x;
+    for (int i = 1; i <= 10; i++) {
+      t *= -x * x / ((2 * i) * (2 * i + 1));
+      r += t;
+    }
+    return r;
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ── ONBOARDING ────────────────────────────────────────
@@ -278,192 +405,68 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<Map<String, dynamic>> _getPages(String langue) {
     final pages = {
       'fr': [
-        {
-          'emoji': '💰',
-          'titre': 'Bienvenue sur Tontine Africa',
-          'desc': 'Gérez vos tontines facilement avec votre téléphone, même sans connexion internet.',
-          'couleur': AppTheme.vert,
-        },
-        {
-          'emoji': '🌍',
-          'titre': '20+ pays africains',
-          'desc': 'Disponible au Burkina Faso, Sénégal, Côte d\'Ivoire, Mali, Guinée et bien plus encore.',
-          'couleur': const Color(0xFF378ADD),
-        },
-        {
-          'emoji': '📱',
-          'titre': 'Mobile Money intégré',
-          'desc': 'Payez vos cotisations avec Orange Money, Moov Money, MTN Money et d\'autres.',
-          'couleur': AppTheme.orange,
-        },
-        {
-          'emoji': '🔔',
-          'titre': 'Rappels automatiques',
-          'desc': 'Recevez des notifications par SMS, WhatsApp et vocal dans votre langue.',
-          'couleur': const Color(0xFF9B59B6),
-        },
-        {
-          'emoji': '🔒',
-          'titre': 'Sécurisé et fiable',
-          'desc': 'Vos données sont protégées. Accédez à votre compte avec votre code PIN secret.',
-          'couleur': AppTheme.vertFonce,
-        },
+        {'widget': 'logo', 'titre': 'Bienvenue sur TontiLigdi',
+          'desc': 'Gerez vos tontines facilement avec votre telephone, meme sans connexion internet.',
+          'couleur': AppTheme.vert},
+        {'emoji': '🌍', 'titre': '20+ pays africains',
+          'desc': 'Disponible au Burkina Faso, Senegal, Cote d\'Ivoire, Mali, Guinee et bien plus.',
+          'couleur': const Color(0xFF378ADD)},
+        {'emoji': '📱', 'titre': 'Mobile Money integre',
+          'desc': 'Payez vos cotisations avec Orange Money, Moov Money, Wave et d\'autres.',
+          'couleur': AppTheme.orange},
+        {'emoji': '🔔', 'titre': 'Rappels automatiques',
+          'desc': 'Recevez des notifications dans votre langue : francais, moore, bambara, wolof.',
+          'couleur': const Color(0xFF9B59B6)},
+        {'emoji': '🔒', 'titre': 'Securise et fiable',
+          'desc': 'Vos donnees sont protegees. Acces avec votre code PIN secret.',
+          'couleur': AppTheme.vertFonce},
       ],
       'en': [
-        {
-          'emoji': '💰',
-          'titre': 'Welcome to Tontine Africa',
+        {'widget': 'logo', 'titre': 'Welcome to TontiLigdi',
           'desc': 'Manage your tontines easily with your phone, even without internet.',
-          'couleur': AppTheme.vert,
-        },
-        {
-          'emoji': '🌍',
-          'titre': '20+ African countries',
+          'couleur': AppTheme.vert},
+        {'emoji': '🌍', 'titre': '20+ African countries',
           'desc': 'Available in Burkina Faso, Senegal, Ivory Coast, Mali, Guinea and more.',
-          'couleur': const Color(0xFF378ADD),
-        },
-        {
-          'emoji': '📱',
-          'titre': 'Integrated Mobile Money',
-          'desc': 'Pay your contributions with Orange Money, Moov Money, MTN Money and others.',
-          'couleur': AppTheme.orange,
-        },
-        {
-          'emoji': '🔔',
-          'titre': 'Automatic reminders',
-          'desc': 'Receive notifications by SMS, WhatsApp and voice in your language.',
-          'couleur': const Color(0xFF9B59B6),
-        },
-        {
-          'emoji': '🔒',
-          'titre': 'Secure and reliable',
-          'desc': 'Your data is protected. Access your account with your secret PIN code.',
-          'couleur': AppTheme.vertFonce,
-        },
+          'couleur': const Color(0xFF378ADD)},
+        {'emoji': '📱', 'titre': 'Integrated Mobile Money',
+          'desc': 'Pay with Orange Money, Moov Money, Wave and others.',
+          'couleur': AppTheme.orange},
+        {'emoji': '🔔', 'titre': 'Automatic reminders',
+          'desc': 'Get notifications in your language: French, Moore, Bambara, Wolof.',
+          'couleur': const Color(0xFF9B59B6)},
+        {'emoji': '🔒', 'titre': 'Secure and reliable',
+          'desc': 'Your data is protected. Access with your secret PIN code.',
+          'couleur': AppTheme.vertFonce},
       ],
       'mos': [
-        {
-          'emoji': '💰',
-          'titre': 'Aw laafi Tontine Africa',
-          'desc': 'Tɩ maand f tontines f tɛlɛfõ zugu, bɩɩ internet ka be ye.',
-          'couleur': AppTheme.vert,
-        },
-        {
-          'emoji': '🌍',
-          'titre': 'Tẽns 20+ Afrik pʋgẽ',
-          'desc': 'Bee Burkina, Senegaal, Côte d\'Ivoire, Mali la tẽns a taab.',
-          'couleur': const Color(0xFF378ADD),
-        },
-        {
-          'emoji': '📱',
-          'titre': 'Mobile Money',
-          'desc': 'Kõ f cotisation Orange Money, Moov Money wall a taab zugu.',
-          'couleur': AppTheme.orange,
-        },
-        {
-          'emoji': '🔔',
-          'titre': 'Kõ-kaasã',
-          'desc': 'Paam kõ-kaasã SMS, WhatsApp la vocal pʋgẽ f bʋʋdo.',
-          'couleur': const Color(0xFF9B59B6),
-        },
-        {
-          'emoji': '🔒',
-          'titre': 'Zɩɩl la kaseto',
-          'desc': 'F yɛla maana sɩda. Zãgs f kaont f PIN code zugu.',
-          'couleur': AppTheme.vertFonce,
-        },
-      ],
-      'bm': [
-        {
-          'emoji': '💰',
-          'titre': 'Bisimila Tontine Africa',
-          'desc': 'I ka tontinew mara i ka telefɔni la, internet tɛ ni fana.',
-          'couleur': AppTheme.vert,
-        },
-        {
-          'emoji': '🌍',
-          'titre': 'Jamana 20+ Afiriki',
-          'desc': 'Burkina, Senegali, Kódiwari, Mali, Gine ni olu.',
-          'couleur': const Color(0xFF378ADD),
-        },
-        {
-          'emoji': '📱',
-          'titre': 'Mobile Money',
-          'desc': 'I ka sarali sara Orange Money, Moov Money ni olu la.',
-          'couleur': AppTheme.orange,
-        },
-        {
-          'emoji': '🔔',
-          'titre': 'Kibaruye',
-          'desc': 'Kibaru sɔrɔ SMS, WhatsApp ni kuma la i ka kan na.',
-          'couleur': const Color(0xFF9B59B6),
-        },
-        {
-          'emoji': '🔒',
-          'titre': 'Dɔnni ni danbe',
-          'desc': 'I ka kunnafoni bɛ kɔlɔsi. I ka konto sɔrɔ PIN la.',
-          'couleur': AppTheme.vertFonce,
-        },
-      ],
-      'wo': [
-        {
-          'emoji': '💰',
-          'titre': 'Dalal Tontine Africa',
-          'desc': 'Tëral sa tontine yi ak sa telefon, internet amul ni fana.',
-          'couleur': AppTheme.vert,
-        },
-        {
-          'emoji': '🌍',
-          'titre': 'Dëkk 20+ Afrik',
-          'desc': 'Am na Burkina, Senegaal, Kodiwaar, Mali, Gine ak yeneen.',
-          'couleur': const Color(0xFF378ADD),
-        },
-        {
-          'emoji': '📱',
-          'titre': 'Mobile Money',
-          'desc': 'Fay sa cotisations ak Orange Money, Moov Money ak yeneen.',
-          'couleur': AppTheme.orange,
-        },
-        {
-          'emoji': '🔔',
-          'titre': 'Xibaar yi',
-          'desc': 'Jot xibaar SMS, WhatsApp ak kàddu ci sa làkk.',
-          'couleur': const Color(0xFF9B59B6),
-        },
-        {
-          'emoji': '🔒',
-          'titre': 'Dëgër ak laaj',
-          'desc': 'Say données yi dëgër na. Dugg sa kont ak PIN bi.',
-          'couleur': AppTheme.vertFonce,
-        },
+        {'widget': 'logo', 'titre': 'Aw laafi TontiLigdi',
+          'desc': 'Ti maand f tontines f telefon zugu, biiy internet ka be ye.',
+          'couleur': AppTheme.vert},
+        {'emoji': '🌍', 'titre': 'Tens 20+ Afrik pugẽ',
+          'desc': 'Bee Burkina, Senegaal, Cote d\'Ivoire, Mali la tens a taab.',
+          'couleur': const Color(0xFF378ADD)},
+        {'emoji': '📱', 'titre': 'Mobile Money',
+          'desc': 'Ko f cotisation Orange Money, Moov Money wall a taab zugu.',
+          'couleur': AppTheme.orange},
+        {'emoji': '🔔', 'titre': 'Ko-kaasa',
+          'desc': 'Paam ko-kaasa SMS, WhatsApp la vocal pugẽ f buudo.',
+          'couleur': const Color(0xFF9B59B6)},
+        {'emoji': '🔒', 'titre': 'Ziil la kaseto',
+          'desc': 'F yela maana sida. Zags f kaont f PIN code zugu.',
+          'couleur': AppTheme.vertFonce},
       ],
     };
     return pages[langue] ?? pages['fr']!;
   }
 
-  String _getBtnSuivant(String langue) {
-    const labels = {
-      'fr': 'Suivant', 'en': 'Next', 'mos': 'Tɩ zãg',
-      'bm': 'Taa ɲɛ', 'wo': 'Dem ëntë',
-    };
-    return labels[langue] ?? 'Suivant';
-  }
+  String _getBtnSuivant(String l) =>
+      {'fr':'Suivant','en':'Next','mos':'Ti zag','bm':'Taa nɛ','wo':'Dem ëntë'}[l] ?? 'Suivant';
 
-  String _getBtnCommencer(String langue) {
-    const labels = {
-      'fr': 'Commencer', 'en': 'Get started',
-      'mos': 'Sɩng', 'bm': 'Daminɛ', 'wo': 'Dëkk',
-    };
-    return labels[langue] ?? 'Commencer';
-  }
+  String _getBtnCommencer(String l) =>
+      {'fr':'Commencer','en':'Get started','mos':'Sing','bm':'Daminɛ','wo':'Dëkk'}[l] ?? 'Commencer';
 
-  String _getBtnIgnorer(String langue) {
-    const labels = {
-      'fr': 'Ignorer', 'en': 'Skip',
-      'mos': 'Bas', 'bm': 'Tɛmɛ', 'wo': 'Làq',
-    };
-    return labels[langue] ?? 'Ignorer';
-  }
+  String _getBtnIgnorer(String l) =>
+      {'fr':'Ignorer','en':'Skip','mos':'Bas','bm':'Tɛmɛ','wo':'Làq'}[l] ?? 'Ignorer';
 
   Future<void> _terminer() async {
     await StorageService.setPremiereConnexion(false);
@@ -484,7 +487,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header avec ignorer
             Padding(
               padding: EdgeInsets.symmetric(
                   horizontal: isSmall ? 16 : 20,
@@ -492,98 +494,71 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Indicateurs de page
                   Row(
-                    children: List.generate(pages.length, (i) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(right: 6),
-                        width: i == _page ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: i == _page
-                              ? Colors.white
-                              : Colors.white38,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
+                    children: List.generate(pages.length, (i) =>
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.only(right: 6),
+                          width: i == _page ? 28 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: i == _page ? Colors.white : Colors.white38,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        )),
                   ),
                   if (!dernierePage)
                     TextButton(
                       onPressed: _terminer,
-                      child: Text(
-                        _getBtnIgnorer(langue),
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
+                      child: Text(_getBtnIgnorer(langue),
+                          style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              color: Colors.white70, fontSize: 14)),
                     ),
                 ],
               ),
             ),
-
-            // Pages
             Expanded(
               child: PageView.builder(
                 controller: _pageCtrl,
                 onPageChanged: (i) => setState(() => _page = i),
                 itemCount: pages.length,
-                itemBuilder: (ctx, i) {
-                  final p = pages[i];
-                  return _buildPage(p, sw, sh, isSmall);
-                },
+                itemBuilder: (ctx, i) =>
+                    _buildPage(pages[i], sw, sh, isSmall),
               ),
             ),
-
-            // Bouton suivant/commencer
             Padding(
               padding: EdgeInsets.fromLTRB(
-                  isSmall ? 20 : 24,
-                  0,
-                  isSmall ? 20 : 24,
-                  isSmall ? 24 : 32),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: isSmall ? 48 : 54,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (dernierePage) {
-                          _terminer();
-                        } else {
-                          _pageCtrl.nextPage(
-                            duration:
-                                const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor:
-                            pages[_page]['couleur'] as Color,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        dernierePage
-                            ? _getBtnCommencer(langue)
-                            : _getBtnSuivant(langue),
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+                  isSmall ? 20 : 24, 0,
+                  isSmall ? 20 : 24, isSmall ? 24 : 32),
+              child: SizedBox(
+                width: double.infinity,
+                height: isSmall ? 48 : 54,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (dernierePage) {
+                      _terminer();
+                    } else {
+                      _pageCtrl.nextPage(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOut);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: pages[_page]['couleur'] as Color,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
                   ),
-                ],
+                  child: Text(
+                    dernierePage ? _getBtnCommencer(langue) : _getBtnSuivant(langue),
+                    style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
             ),
           ],
@@ -593,41 +568,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(Map p, double sw, double sh, bool isSmall) {
+    final isLogoPage = p['widget'] == 'logo';
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isSmall ? 24 : 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Emoji dans cercle
-          Container(
-            width: sw * 0.35,
-            height: sw * 0.35,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              shape: BoxShape.circle,
+          if (isLogoPage)
+            CustomPaint(
+              size: Size(sw * 0.42, sw * 0.42),
+              painter: _LogoPainter(),
+            )
+          else
+            Container(
+              width: sw * 0.35, height: sw * 0.35,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Center(child: Text(p['emoji'],
+                  style: TextStyle(fontSize: sw * 0.18))),
             ),
-            child: Center(
-              child: Text(p['emoji'],
-                  style: TextStyle(fontSize: sw * 0.18)),
-            ),
-          ),
-          SizedBox(height: sh * 0.06),
-          // Titre
-          Text(
-            p['titre'],
+          SizedBox(height: sh * 0.05),
+          Text(p['titre'],
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Nunito',
               fontSize: isSmall ? 22 : 26,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 1.2,
+              color: Colors.white, height: 1.2,
             ),
           ),
-          SizedBox(height: sh * 0.025),
-          // Description
-          Text(
-            p['desc'],
+          SizedBox(height: sh * 0.02),
+          if (isLogoPage) ...[
+            const Text('Lagem Ligdi',
+              style: TextStyle(
+                fontFamily: 'Nunito', fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFF5A623), letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text('Rassemblons l\'argent',
+              style: TextStyle(
+                  fontFamily: 'Nunito', fontSize: 12,
+                  color: Colors.white60),
+            ),
+            const SizedBox(height: 12),
+          ],
+          Text(p['desc'],
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Nunito',

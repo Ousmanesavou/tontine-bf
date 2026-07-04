@@ -1,4 +1,4 @@
-// lib/utils/pays_data.dart
+﻿// lib/utils/pays_data.dart
 
 class PaysData {
   static const List<Map<String, dynamic>> pays = [

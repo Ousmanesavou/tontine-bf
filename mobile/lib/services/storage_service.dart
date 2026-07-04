@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
@@ -8,7 +8,6 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // ── AUTH ──────────────────────────────────────────────
   static Future<void> saveToken(String token) async {
     await _prefs.setString('auth_token', token);
   }
@@ -28,42 +27,35 @@ class StorageService {
     return jsonDecode(data);
   }
 
-  static String? getDernierTelephone() =>
-      _prefs.getString('dernier_telephone');
+  static String? getDernierTelephone() => _prefs.getString('dernier_telephone');
 
-  // ── LANGUE ────────────────────────────────────────────
   static Future<void> saveLangue(String langue) async {
     await _prefs.setString('langue', langue);
   }
 
   static String? getLangue() => _prefs.getString('langue');
 
-  // ── PAYS ──────────────────────────────────────────────
   static Future<void> savePays(String pays) async {
     await _prefs.setString('pays', pays);
   }
 
   static String? getPays() => _prefs.getString('pays');
 
-  // ── FONT SIZE ─────────────────────────────────────────
   static Future<void> saveFontSize(double size) async {
     await _prefs.setDouble('font_size', size);
   }
 
   static double? getFontSize() => _prefs.getDouble('font_size');
 
-  // ── FCM TOKEN ─────────────────────────────────────────
   static Future<void> saveFcmToken(String token) async {
     await _prefs.setString('fcm_token', token);
   }
 
   static String? getFcmToken() => _prefs.getString('fcm_token');
 
-  // ── TONTINES CACHE ────────────────────────────────────
   static Future<void> saveTontinesCache(List<dynamic> tontines) async {
     await _prefs.setString('tontines_cache', jsonEncode(tontines));
-    await _prefs.setString(
-        'tontines_cache_date', DateTime.now().toIso8601String());
+    await _prefs.setString('tontines_cache_date', DateTime.now().toIso8601String());
   }
 
   static List<dynamic>? getTontinesCache() {
@@ -77,13 +69,11 @@ class StorageService {
     return jsonDecode(data);
   }
 
-  // ── NOTIFICATIONS ─────────────────────────────────────
   static Future<void> saveNotificationsActives(bool actif) async {
     await _prefs.setBool('notifications_actives', actif);
   }
 
-  static bool getNotificationsActives() =>
-      _prefs.getBool('notifications_actives') ?? true;
+  static bool getNotificationsActives() => _prefs.getBool('notifications_actives') ?? true;
 
   static Future<void> saveSonActif(bool actif) async {
     await _prefs.setBool('son_actif', actif);
@@ -97,37 +87,30 @@ class StorageService {
 
   static bool getVocalActif() => _prefs.getBool('vocal_actif') ?? true;
 
-  // ── THEME ─────────────────────────────────────────────
   static Future<void> saveModeSombre(bool sombre) async {
     await _prefs.setBool('mode_sombre', sombre);
   }
 
   static bool getModeSombre() => _prefs.getBool('mode_sombre') ?? false;
 
-  // ── INDICATIF ─────────────────────────────────────────
   static Future<void> saveIndicatif(String indicatif) async {
     await _prefs.setString('indicatif', indicatif);
   }
 
-  static String getIndicatif() =>
-      _prefs.getString('indicatif') ?? '+226';
+  static String getIndicatif() => _prefs.getString('indicatif') ?? '+226';
 
-  // ── DEVISE ────────────────────────────────────────────
   static Future<void> saveDevise(String devise) async {
     await _prefs.setString('devise', devise);
   }
 
   static String getDevise() => _prefs.getString('devise') ?? 'XOF';
 
-  // ── PREMIERE CONNEXION ────────────────────────────────
   static Future<void> setPremiereConnexion(bool val) async {
     await _prefs.setBool('premiere_connexion', val);
   }
 
-  static bool isPremiereConnexion() =>
-      _prefs.getBool('premiere_connexion') ?? true;
+  static bool isPremiereConnexion() => _prefs.getBool('premiere_connexion') ?? true;
 
-  // ── CLEAR ─────────────────────────────────────────────
   static Future<void> clearAll() async {
     await _prefs.remove('auth_token');
     await _prefs.remove('user_data');
@@ -141,7 +124,6 @@ class StorageService {
     await _prefs.remove('user_data');
   }
 
-  // ── ALL SETTINGS ──────────────────────────────────────
   static Map<String, dynamic> getAllSettings() {
     return {
       'langue': getLangue() ?? 'fr',

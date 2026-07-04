@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -200,7 +200,7 @@ class _ConnexionScreenState extends ConsumerState<ConnexionScreen> {
                       style: TextStyle(fontSize: 52)),
                   const SizedBox(height: 10),
                   const Text(
-                    'Tontine Africa',
+                    'TontiLigdi',
                     style: TextStyle(
                       fontFamily: 'Nunito',
                       fontSize: 28,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -26,7 +26,7 @@ class _LangueScreenState extends ConsumerState<LangueScreen> {
   @override
   void initState() {
     super.initState();
-    _parler('Bienvenue sur Tontine Africa. Choisissez votre pays.');
+    _parler('Bienvenue sur TontiLigdi. Choisissez votre pays.');
   }
 
   Future<void> _parler(String msg) async {
@@ -111,7 +111,7 @@ class _LangueScreenState extends ConsumerState<LangueScreen> {
         ),
         const SizedBox(height: 10),
         const Text(
-          'Tontine Africa',
+          'TontiLigdi',
           style: TextStyle(
             fontFamily: 'Nunito', fontSize: 26,
             fontWeight: FontWeight.w800, color: Colors.white,

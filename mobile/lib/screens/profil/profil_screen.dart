@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -388,7 +388,7 @@ void initState() {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Tontine Africa v1.0.0',
+              'TontiLigdi v1.0.0',
               style: TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 12,

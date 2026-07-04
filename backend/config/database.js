@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 const logger = require('../src/utils/logger');
 
 const pool = new Pool(
@@ -15,7 +15,7 @@ const pool = new Pool(
         password: process.env.DB_PASSWORD,
         max: 20,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 10000,
       }
 );
 
@@ -315,6 +315,7 @@ async function createTables(client) {
     `ALTER TABLE tontines ALTER COLUMN periodicite TYPE VARCHAR(100)`,
     `ALTER TABLE tontines ALTER COLUMN ordre_rotation TYPE VARCHAR(100)`,
     `ALTER TABLE tontines ALTER COLUMN type TYPE VARCHAR(100)`,
+    `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS fcm_token TEXT`,
   ];
 
   for (const sql of alters) {
@@ -341,7 +342,7 @@ async function creerCompteAdmin(client) {
         INSERT INTO utilisateurs
           (nom, prenom, telephone, code_pin, langue, role)
         VALUES
-          ('Admin', 'Tontine Africa', 'admin@tontine-bf.com', $1, 'fr', 'admin')
+          ('Admin', 'TontiLigdi', 'admin@tontine-bf.com', $1, 'fr', 'admin')
         ON CONFLICT (telephone) DO UPDATE SET role = 'admin'
       `, [hashedPin]);
       logger.info('✅ Compte admin créé : admin@tontine-bf.com / admin123');

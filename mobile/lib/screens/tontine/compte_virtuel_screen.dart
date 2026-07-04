@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
@@ -875,6 +875,11 @@ class _CompteVirtuelScreenState
 
     // Pré-remplir numéro
     final user = StorageService.getUser();
+    // Pré-remplir avec le montant de cotisation
+    final cotisation = _compte?['montant_cotisation'];
+    if (cotisation != null) {
+    montantCtrl.text = cotisation.toString();
+    }
     if (user?['telephone'] != null) {
       telCtrl.text = user!['telephone']
           .toString()
@@ -976,6 +981,9 @@ class _CompteVirtuelScreenState
   // ── SHEET RETRAIT ─────────────────────────────────
   void _showRetraitSheet(String langue, String pays) {
     final montantCtrl = TextEditingController();
+        // Pré-remplir avec le solde total
+    final solde = _compte?['solde']?.toString() ?? '0';
+    montantCtrl.text = solde;
     final telCtrl = TextEditingController();
     final motifCtrl = TextEditingController();
     String methode = 'orange_money';
@@ -1111,51 +1119,57 @@ class _CompteVirtuelScreenState
   }
 
   Widget _buildMethodesSheet(String methodeSelectionnee,
-      String pays, Function(String) onSelect) {
-    final methodes = [
-      {'code': 'orange_money', 'label': 'Orange Money',
-       'couleur': const Color(0xFFFF6600)},
-      {'code': 'moov_money', 'label': 'Moov Money',
-       'couleur': const Color(0xFF0066CC)},
-      {'code': 'wave', 'label': 'Wave',
-       'couleur': const Color(0xFF1DC1C8)},
-    ];
+    String pays, Function(String) onSelect) {
+  final methodes = <Map<String, dynamic>>[
+    {'code': 'orange_money', 'label': 'Orange Money',
+     'couleur': const Color(0xFFFF6600)},
+    {'code': 'moov_money', 'label': 'Moov Money',
+     'couleur': const Color(0xFF0066CC)},
+    {'code': 'wave', 'label': 'Wave',
+     'couleur': const Color(0xFF1DC1C8)},
+    if (pays == 'SN' || pays == 'CI' || pays == 'ML')
+      {'code': 'free_money', 'label': 'Free Money',
+       'couleur': const Color(0xFF00A651)},
+    if (pays == 'CM' || pays == 'CD' || pays == 'GH')
+      {'code': 'mtn_money', 'label': 'MTN Money',
+       'couleur': const Color(0xFFFFCC00)},
+  ];
 
-    return Wrap(
-      spacing: 8,
-      children: methodes.map((m) {
-        final selected = methodeSelectionnee == m['code'];
-        final couleur = m['couleur'] as Color;
-        return GestureDetector(
-          onTap: () => onSelect(m['code'] as String),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected
-                  ? couleur.withOpacity(0.1)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                  color: selected ? couleur : AppTheme.grisClair,
-                  width: selected ? 2 : 1),
-            ),
-            child: Text(
-              m['label'] as String,
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: selected ? couleur : AppTheme.texte,
-              ),
+  return Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: methodes.map((m) {
+      final selected = methodeSelectionnee == m['code'];
+      final couleur = m['couleur'] as Color;
+      return GestureDetector(
+        onTap: () => onSelect(m['code'] as String),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? couleur.withOpacity(0.1)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: selected ? couleur : AppTheme.grisClair,
+                width: selected ? 2 : 1),
+          ),
+          child: Text(
+            m['label'] as String,
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? couleur : AppTheme.texte,
             ),
           ),
-        );
-      }).toList(),
-    );
-  }
-
+        ),
+      );
+    }).toList(),
+  );
+}
   // ── ACTIONS API ───────────────────────────────────
   Future<void> _effectuerDepot(String langue, double montant,
       String methode, String telephone) async {

@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/pays_data.dart';
 import '../../utils/langues_data.dart';
@@ -10,18 +11,17 @@ import '../../services/vocal_service.dart';
 import '../../services/api_service.dart';
 import '../../main.dart';
 
-// ── TRADUCTIONS ───────────────────────────────────────
 const Map<String, Map<String, String>> _tr = {
   'fr': {
-    'titre': 'Réglages',
+    'titre': 'Reglages',
     'enregistrer': 'Enregistrer',
-    'pays': '🌍 Pays et région',
-    'langue': '🗣️ Langue',
-    'taille_texte': '🔤 Taille du texte',
-    'notifications': '🔔 Notifications',
-    'mobile_money': '💳 Mobile Money',
-    'compte': '👤 Compte',
-    'a_propos': 'ℹ️ À propos',
+    'pays': 'Pays et region',
+    'langue': 'Langue',
+    'taille_texte': 'Taille du texte',
+    'notifications': 'Notifications',
+    'mobile_money': 'Mobile Money',
+    'compte': 'Compte',
+    'a_propos': 'A propos',
     'push': 'Notifications push',
     'push_desc': 'Rappels et alertes cotisations',
     'sons': 'Sons',
@@ -29,45 +29,50 @@ const Map<String, Map<String, String>> _tr = {
     'vocal': 'Aide vocale',
     'vocal_desc': 'Lecture audio des alertes',
     'changer_pin': 'Changer le code PIN',
-    'deconnecter': 'Se déconnecter',
+    'deconnecter': 'Se deconnecter',
     'supprimer': 'Supprimer mon compte',
     'version': 'Version',
     'contact': 'Nous contacter',
-    'politique': 'Politique de confidentialité',
-    'conditions': 'Conditions d\'utilisation',
+    'politique': 'Politique de confidentialite',
+    'conditions': 'Conditions d utilisation',
     'disponible': 'Disponible',
-    'applique': 'Réglages appliqués !',
+    'applique': 'Reglages appliques !',
     'pin_ancien': 'Code PIN actuel',
     'pin_nouveau': 'Nouveau code PIN',
     'pin_confirmer': 'Confirmer le nouveau PIN',
     'pin_changer': 'Changer le PIN',
-    'pin_succes': 'Code PIN changé avec succès !',
-    'pin_erreur': 'Code PIN incorrect',
+    'pin_succes': 'Code PIN change avec succes !',
+    'pin_erreur': 'Code PIN actuel incorrect',
     'pin_match': 'Les codes PIN ne correspondent pas',
     'pin_4': 'PIN doit avoir 4 chiffres',
     'annuler': 'Annuler',
-    'deconnexion_titre': 'Déconnexion',
-    'deconnexion_msg': 'Voulez-vous vraiment vous déconnecter ?',
+    'deconnexion_titre': 'Deconnexion',
+    'deconnexion_msg': 'Voulez-vous vraiment vous deconnecter ?',
     'supprimer_titre': 'Supprimer le compte',
-    'supprimer_msg': 'Cette action est irréversible. Toutes vos données seront supprimées.',
+    'supprimer_msg': 'Cette action est irreversible. Toutes vos donnees seront supprimees.',
     'supprimer_btn': 'Supprimer',
-    'apercu': 'Aperçu du texte',
+    'apercu': 'Apercu du texte',
     'taille_petit': 'Petit',
     'taille_normal': 'Normal',
     'taille_grand': 'Grand',
     'taille_tgrand': 'T.Grand',
     'taille_maxi': 'Maxi',
+    'indicatif': 'Indicatif telephonique',
+    'devise': 'Devise',
+    'theme': 'Theme',
+    'theme_clair': 'Clair',
+    'theme_sombre': 'Sombre',
   },
   'en': {
     'titre': 'Settings',
     'enregistrer': 'Save',
-    'pays': '🌍 Country & region',
-    'langue': '🗣️ Language',
-    'taille_texte': '🔤 Text size',
-    'notifications': '🔔 Notifications',
-    'mobile_money': '💳 Mobile Money',
-    'compte': '👤 Account',
-    'a_propos': 'ℹ️ About',
+    'pays': 'Country and region',
+    'langue': 'Language',
+    'taille_texte': 'Text size',
+    'notifications': 'Notifications',
+    'mobile_money': 'Mobile Money',
+    'compte': 'Account',
+    'a_propos': 'About',
     'push': 'Push notifications',
     'push_desc': 'Reminders and contribution alerts',
     'sons': 'Sounds',
@@ -82,18 +87,18 @@ const Map<String, Map<String, String>> _tr = {
     'politique': 'Privacy policy',
     'conditions': 'Terms of use',
     'disponible': 'Available',
-    'applique': 'Settings applied!',
+    'applique': 'Settings saved!',
     'pin_ancien': 'Current PIN code',
     'pin_nouveau': 'New PIN code',
     'pin_confirmer': 'Confirm new PIN',
     'pin_changer': 'Change PIN',
     'pin_succes': 'PIN code changed successfully!',
-    'pin_erreur': 'Incorrect PIN code',
+    'pin_erreur': 'Current PIN code incorrect',
     'pin_match': 'PIN codes do not match',
     'pin_4': 'PIN must have 4 digits',
     'annuler': 'Cancel',
     'deconnexion_titre': 'Sign out',
-    'deconnexion_msg': 'Do you really want to sign out?',
+    'deconnexion_msg': 'Are you sure you want to sign out?',
     'supprimer_titre': 'Delete account',
     'supprimer_msg': 'This action is irreversible. All your data will be deleted.',
     'supprimer_btn': 'Delete',
@@ -103,151 +108,67 @@ const Map<String, Map<String, String>> _tr = {
     'taille_grand': 'Large',
     'taille_tgrand': 'X.Large',
     'taille_maxi': 'Max',
+    'indicatif': 'Phone prefix',
+    'devise': 'Currency',
+    'theme': 'Theme',
+    'theme_clair': 'Light',
+    'theme_sombre': 'Dark',
   },
   'mos': {
-    'titre': 'Rɛɛgã',
-    'enregistrer': 'Sɩbg',
-    'pays': '🌍 Tẽng',
-    'langue': '🗣️ Bʋʋdo',
-    'taille_texte': '🔤 Sɩbg-tenga',
-    'notifications': '🔔 Kõ-kaasã',
-    'mobile_money': '💳 Mobile Money',
-    'compte': '👤 Kaont',
-    'a_propos': 'ℹ️ Bõn-sɩbgr',
-    'push': 'Push kõ-kaasã',
-    'push_desc': 'Kõ-wakatã kõ-kaasã',
-    'sons': 'Kelm-bõnã',
-    'sons_desc': 'Kelm-bõnã toeegã wakate',
-    'vocal': 'Vocal sõsgr',
-    'vocal_desc': 'Kelg kõ-kaasã',
-    'changer_pin': 'Toeeg PIN code',
+    'titre': 'Reglages',
+    'enregistrer': 'Sɩng',
+    'pays': 'Tẽnga',
+    'langue': 'Bʋʋdo',
+    'taille_texte': 'Tɩ-gʋlsg',
+    'notifications': 'Ko-kaasã',
+    'mobile_money': 'Mobile Money',
+    'compte': 'Kaont',
+    'a_propos': 'Wilgr',
+    'push': 'Ko-kaasã push',
+    'push_desc': 'Kõ-kaas ne tɩɩs',
+    'sons': 'Koees',
+    'sons_desc': 'Koees tʋʋmde',
+    'vocal': 'Gomd-sõng',
+    'vocal_desc': 'Kõ-kaas gomd zugu',
+    'changer_pin': 'Toeeg PIN',
     'deconnecter': 'Yiis',
-    'supprimer': 'Bũgs m kaont',
-    'version': 'Versiõ',
-    'contact': 'Kõ-taas',
-    'politique': 'Yɛla-maaneg',
-    'conditions': 'Norms',
+    'supprimer': 'Kʋʋs m kaont',
+    'version': 'Nʋʋr',
+    'contact': 'Togs-d rãmb',
+    'politique': 'Zɩɩlgr noy',
+    'conditions': 'Noy-rɛɛzã',
     'disponible': 'Bee',
-    'applique': 'Rɛɛgã sɩnga !',
-    'pin_ancien': 'PIN code wakate',
-    'pin_nouveau': 'PIN code paalg',
-    'pin_confirmer': 'Wilg PIN paalg',
+    'applique': 'Reglages sɩda !',
+    'pin_ancien': 'PIN koe',
+    'pin_nouveau': 'PIN paalga',
+    'pin_confirmer': 'Sɩng PIN paalga',
     'pin_changer': 'Toeeg PIN',
-    'pin_succes': 'PIN code toeegame sɩda !',
-    'pin_erreur': 'PIN code ka sɩd',
-    'pin_match': 'PIN yii ka zemse',
-    'pin_4': 'PIN tõnd woto 4',
+    'pin_succes': 'PIN toeegsame !',
+    'pin_erreur': 'PIN ka sɩda',
+    'pin_match': 'PIN rãmba ka zems',
+    'pin_4': 'PIN fãa nʋʋr a naas',
     'annuler': 'Bas',
     'deconnexion_titre': 'Yiis',
-    'deconnexion_msg': 'F dat n yiis sɩda?',
-    'supprimer_titre': 'Bũgs kaont',
-    'supprimer_msg': 'Bũmb kãng ka tõe n lebg ye. F yɛla fãa bũgsame.',
-    'supprimer_btn': 'Bũgs',
-    'apercu': 'Sɩbg-tenga',
-    'taille_petit': 'Bɩtɩ',
-    'taille_normal': 'Noor',
-    'taille_grand': 'Kãsem',
-    'taille_tgrand': 'Kãsem t',
-    'taille_maxi': 'Zẽnde',
-  },
-  'bm': {
-    'titre': 'Cogoya',
-    'enregistrer': 'Mara',
-    'pays': '🌍 Jamana',
-    'langue': '🗣️ Kan',
-    'taille_texte': '🔤 Sɛbɛn bonya',
-    'notifications': '🔔 Kibaru',
-    'mobile_money': '💳 Mobile Money',
-    'compte': '👤 Konto',
-    'a_propos': 'ℹ️ Kunnafoni',
-    'push': 'Push kibaru',
-    'push_desc': 'Sara waati kibaru',
-    'sons': 'Kumaw',
-    'sons_desc': 'Kumaw kɛtaw waati',
-    'vocal': 'Kuma dɛmɛ',
-    'vocal_desc': 'Kibaru lamɛn',
-    'changer_pin': 'PIN yɛlɛma',
-    'deconnecter': 'Bɔ',
-    'supprimer': 'N ka konto jɔsi',
-    'version': 'Verisiyo',
-    'contact': 'Bi an kunbɛn',
-    'politique': 'Gundo sariya',
-    'conditions': 'Sariyaw',
-    'disponible': 'Be yen',
-    'applique': 'Cogoya kɛra !',
-    'pin_ancien': 'PIN tile min',
-    'pin_nouveau': 'PIN kura',
-    'pin_confirmer': 'PIN kura sɛgɛsɛgɛ',
-    'pin_changer': 'PIN yɛlɛma',
-    'pin_succes': 'PIN yɛlɛmana ka ɲɛ !',
-    'pin_erreur': 'PIN tɛ ɲɛ',
-    'pin_match': 'PIN fila tɛ kelen ye',
-    'pin_4': 'PIN tonbi 4 ɲɛnabɔ',
-    'annuler': 'Datan',
-    'deconnexion_titre': 'Bɔ',
-    'deconnexion_msg': 'I b\'a fɛ ka bɔ sɩra?',
-    'supprimer_titre': 'Konto jɔsi',
-    'supprimer_msg': 'Kɛta tɛ se ka kɔsɛ. I ka kunnafoni bɛɛ jɔsina.',
-    'supprimer_btn': 'Jɔsi',
-    'apercu': 'Sɛbɛn kunnafoni',
-    'taille_petit': 'Fitinin',
-    'taille_normal': 'Dɔgɔ',
-    'taille_grand': 'Belebele',
-    'taille_tgrand': 'Caman',
-    'taille_maxi': 'Fara',
-  },
-  'wo': {
-    'titre': 'Réglages yi',
-    'enregistrer': 'Bind',
-    'pays': '🌍 Dëkk',
-    'langue': '🗣️ Làkk',
-    'taille_texte': '🔤 Binndeef',
-    'notifications': '🔔 Xibaar yi',
-    'mobile_money': '💳 Mobile Money',
-    'compte': '👤 Kont',
-    'a_propos': 'ℹ️ Ci kaw',
-    'push': 'Push xibaar',
-    'push_desc': 'Xibaar cotisations yi',
-    'sons': 'Dëggël yi',
-    'sons_desc': 'Dëggël yi ci kɛf yi',
-    'vocal': 'Kàddu dëmm',
-    'vocal_desc': 'Xibaar yi ngir dee',
-    'changer_pin': 'Soppi PIN bi',
-    'deconnecter': 'Dem',
-    'supprimer': 'Def sa kont',
-    'version': 'Versiyon',
-    'contact': 'Xam nu',
-    'politique': 'Saritu',
-    'conditions': 'Dëkkandoo',
-    'disponible': 'Am na',
-    'applique': 'Réglages yi defar na !',
-    'pin_ancien': 'PIN bi ci kanam',
-    'pin_nouveau': 'PIN bu bees',
-    'pin_confirmer': 'Seytaan PIN bu bees',
-    'pin_changer': 'Soppi PIN',
-    'pin_succes': 'PIN bi soppi na !',
-    'pin_erreur': 'PIN bi dëgërul',
-    'pin_match': 'PIN yi dafañu bokk',
-    'pin_4': 'PIN dafa soxor ñent xët',
-    'annuler': 'Dëkk du',
-    'deconnexion_titre': 'Dem',
-    'deconnexion_msg': 'Dëgg nga bëgg dem?',
-    'supprimer_titre': 'Jël kont bi',
-    'supprimer_msg': 'Li lai dëkk du mën a dellu. Say données yi bëgg na ñëw.',
-    'supprimer_btn': 'Jël',
-    'apercu': 'Binndeef',
-    'taille_petit': 'Toñ',
-    'taille_normal': 'Normal',
-    'taille_grand': 'Magu',
-    'taille_tgrand': 'Mag lool',
-    'taille_maxi': 'Melo melo',
+    'deconnexion_msg': 'Yaa f sõng n dat n yiis?',
+    'supprimer_titre': 'Kʋʋs kaont',
+    'supprimer_msg': 'Tʋʋmdã ka tõe n lebg. F yɛla fãa na kʋʋse.',
+    'supprimer_btn': 'Kʋʋs',
+    'apercu': 'Tɩ-gʋlsg wilgr',
+    'taille_petit': 'Bilf',
+    'taille_normal': 'Sɩd-sɩda',
+    'taille_grand': 'Kãseng',
+    'taille_tgrand': 'Kãseng wʋsg',
+    'taille_maxi': 'Kãseng n wʋsg',
+    'indicatif': 'Tɩ-telef nʋʋr',
+    'devise': 'Ligdi nʋʋr',
+    'theme': 'Toeeng',
+    'theme_clair': 'Vẽenga',
+    'theme_sombre': 'Zĩigã',
   },
 };
 
-String _t(String langue, String key) {
-  final lang = _tr[langue] ?? _tr['fr']!;
-  return lang[key] ?? _tr['fr']![key] ?? key;
-}
+String _t(String langue, String key) =>
+    (_tr[langue] ?? _tr['fr']!)[key] ?? (_tr['fr']![key] ?? key);
 
 class ReglagesScreen extends ConsumerStatefulWidget {
   const ReglagesScreen({super.key});
@@ -257,516 +178,59 @@ class ReglagesScreen extends ConsumerStatefulWidget {
 }
 
 class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
-  String _langue = 'fr';
-  String _pays = 'BF';
-  double _fontSize = 14.0;
-  bool _vocalActif = true;
-  bool _notificationsActives = true;
-  bool _sonActif = true;
-  bool _modeSombre = false;
-  final VocalService _vocal = VocalService();
+  late String _langue;
+  late String _pays;
+  late double _fontSize;
+  late bool _notifActives;
+  late bool _sonActif;
+  late bool _vocalActif;
+  late bool _modeSombre;
+  late String _indicatif;
+  late String _devise;
+  bool _chargement = false;
 
   @override
   void initState() {
     super.initState();
-    final settings = StorageService.getAllSettings();
-    _langue = settings['langue'] ?? 'fr';
-    _pays = settings['pays'] ?? 'BF';
-    _fontSize = (settings['font_size'] as num?)?.toDouble() ?? 14.0;
-    _vocalActif = settings['vocal_actif'] ?? true;
-    _notificationsActives = settings['notifications_actives'] ?? true;
-    _sonActif = settings['son_actif'] ?? true;
-    _modeSombre = settings['mode_sombre'] ?? false;
+    _langue = StorageService.getLangue() ?? 'fr';
+    _pays = StorageService.getPays() ?? 'BF';
+    _fontSize = StorageService.getFontSize() ?? 14.0;
+    _notifActives = StorageService.getNotificationsActives();
+    _sonActif = StorageService.getSonActif();
+    _vocalActif = StorageService.getVocalActif();
+    _modeSombre = StorageService.getModeSombre();
+    _indicatif = StorageService.getIndicatif();
+    _devise = StorageService.getDevise();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final langue = ref.watch(langueProvider);
-    final paysInfo = PaysData.getPays(_pays);
-    final sw = MediaQuery.of(context).size.width;
-    final isSmall = sw < 360;
-
-    return Scaffold(
-      backgroundColor: AppTheme.fond,
-      appBar: AppBar(
+  Future<void> _sauvegarder(String langue) async {
+    setState(() => _chargement = true);
+    await StorageService.saveLangue(_langue);
+    await StorageService.savePays(_pays);
+    await StorageService.saveFontSize(_fontSize);
+    await StorageService.saveNotificationsActives(_notifActives);
+    await StorageService.saveSonActif(_sonActif);
+    await StorageService.saveVocalActif(_vocalActif);
+    await StorageService.saveModeSombre(_modeSombre);
+    await StorageService.saveIndicatif(_indicatif);
+    await StorageService.saveDevise(_devise);
+    ref.read(langueProvider.notifier).state = _langue;
+    setState(() => _chargement = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t(langue, 'applique')),
         backgroundColor: AppTheme.vert,
-        foregroundColor: Colors.white,
-        title: Text(
-          _t(langue, 'titre'),
-          style: const TextStyle(
-              fontFamily: 'Nunito', color: Colors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => _sauvegarder(langue),
-            child: Text(
-              _t(langue, 'enregistrer'),
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isSmall ? 14 : 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // ── PAYS ──────────────────────────────────
-            _buildSectionTitre(_t(langue, 'pays')),
-            _buildCard([
-              _buildItem(
-                leading: Text(paysInfo?['drapeau'] ?? '🌍',
-                    style: const TextStyle(fontSize: 24)),
-                title: paysInfo?['nom'] ?? 'Burkina Faso',
-                subtitle:
-                    '${paysInfo?['indicatif']} • ${paysInfo?['devise']}',
-                onTap: _choisirPays,
-              ),
-            ]),
-            const SizedBox(height: 16),
-
-            // ── LANGUE ────────────────────────────────
-            _buildSectionTitre(_t(langue, 'langue')),
-            _buildCard([
-              _buildItem(
-                leading: Text(LanguesData.getDrapeau(_langue),
-                    style: const TextStyle(fontSize: 24)),
-                title: LanguesData.getNom(_langue),
-                subtitle: LanguesData.getNatif(_langue),
-                onTap: () => _choisirLangue(langue),
-              ),
-            ]),
-            const SizedBox(height: 16),
-
-            // ── TAILLE TEXTE ──────────────────────────
-            _buildSectionTitre(_t(langue, 'taille_texte')),
-            _buildCard([
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('A',
-                            style: TextStyle(
-                                fontSize: isSmall ? 11 : 12,
-                                color: AppTheme.grisTexte)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.vertClair,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _t(langue, 'apercu'),
-                            style: TextStyle(
-                              fontFamily: 'Nunito',
-                              fontSize: _fontSize,
-                              color: AppTheme.vertFonce,
-                            ),
-                          ),
-                        ),
-                        Text('A',
-                            style: TextStyle(
-                                fontSize: isSmall ? 20 : 22,
-                                color: AppTheme.grisTexte)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: _fontSize,
-                      min: 12,
-                      max: 20,
-                      divisions: 4,
-                      activeColor: AppTheme.vert,
-                      label: _fontSize.toStringAsFixed(0),
-                      onChanged: (v) => setState(() => _fontSize = v),
-                    ),
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                      children: [
-                        _t(langue, 'taille_petit'),
-                        _t(langue, 'taille_normal'),
-                        _t(langue, 'taille_grand'),
-                        _t(langue, 'taille_tgrand'),
-                        _t(langue, 'taille_maxi'),
-                      ]
-                          .map((l) => Text(l,
-                              style: const TextStyle(
-                                  fontSize: 9,
-                                  color: AppTheme.grisTexte)))
-                          .toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ]),
-            const SizedBox(height: 16),
-
-            // ── NOTIFICATIONS ─────────────────────────
-            _buildSectionTitre(_t(langue, 'notifications')),
-            _buildCard([
-              SwitchListTile(
-                value: _notificationsActives,
-                onChanged: (v) =>
-                    setState(() => _notificationsActives = v),
-                title: Text(_t(langue, 'push'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito', fontSize: 14)),
-                subtitle: Text(_t(langue, 'push_desc'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        color: AppTheme.grisTexte)),
-                activeColor: AppTheme.vert,
-              ),
-              const Divider(height: 1, indent: 16),
-              SwitchListTile(
-                value: _sonActif,
-                onChanged: (v) => setState(() => _sonActif = v),
-                title: Text(_t(langue, 'sons'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito', fontSize: 14)),
-                subtitle: Text(_t(langue, 'sons_desc'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        color: AppTheme.grisTexte)),
-                activeColor: AppTheme.vert,
-              ),
-              const Divider(height: 1, indent: 16),
-              SwitchListTile(
-                value: _vocalActif,
-                onChanged: (v) {
-                  setState(() => _vocalActif = v);
-                  if (v) _vocal.parler(_t(langue, 'vocal'));
-                },
-                title: Text(_t(langue, 'vocal'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito', fontSize: 14)),
-                subtitle: Text(_t(langue, 'vocal_desc'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        color: AppTheme.grisTexte)),
-                activeColor: AppTheme.vert,
-              ),
-            ]),
-            const SizedBox(height: 16),
-
-            // ── MOBILE MONEY ──────────────────────────
-            _buildSectionTitre(_t(langue, 'mobile_money')),
-            _buildCard([
-              ...PaysData.getMobileMoney(_pays).map((mm) {
-                final code = mm.toLowerCase().replaceAll(' ', '_');
-                Color couleur = AppTheme.vert;
-                if (mm.toLowerCase().contains('orange'))
-                  couleur = const Color(0xFFFF6600);
-                else if (mm.toLowerCase().contains('moov'))
-                  couleur = const Color(0xFF0066CC);
-                else if (mm.toLowerCase().contains('mtn'))
-                  couleur = const Color(0xFFFFCC00);
-                else if (mm.toLowerCase().contains('wave'))
-                  couleur = const Color(0xFF1DC1C8);
-
-                return ListTile(
-                  leading: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: couleur.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        mm.split(' ').map((w) => w[0]).take(2).join(),
-                        style: TextStyle(
-                          color: couleur,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ),
-                  title: Text(mm,
-                      style: const TextStyle(
-                          fontFamily: 'Nunito', fontSize: 14)),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppTheme.vertClair,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      _t(langue, 'disponible'),
-                      style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 10,
-                          color: AppTheme.vertFonce,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                );
-              }),
-            ]),
-            const SizedBox(height: 16),
-
-            // ── COMPTE ────────────────────────────────
-            _buildSectionTitre(_t(langue, 'compte')),
-            _buildCard([
-              _buildItem(
-                leading: const Icon(Icons.lock_outline,
-                    color: AppTheme.grisTexte),
-                title: _t(langue, 'changer_pin'),
-                onTap: () => _changerPin(langue),
-              ),
-              const Divider(height: 1, indent: 16),
-              _buildItem(
-                leading: const Icon(Icons.logout,
-                    color: AppTheme.rouge),
-                title: _t(langue, 'deconnecter'),
-                titleColor: AppTheme.rouge,
-                onTap: () => _seDeconnecter(langue),
-              ),
-              const Divider(height: 1, indent: 16),
-              _buildItem(
-                leading: const Icon(Icons.delete_outline,
-                    color: AppTheme.rouge),
-                title: _t(langue, 'supprimer'),
-                titleColor: AppTheme.rouge,
-                onTap: () => _supprimerCompte(langue),
-              ),
-            ]),
-            const SizedBox(height: 16),
-
-            // ── À PROPOS ──────────────────────────────
-            _buildSectionTitre(_t(langue, 'a_propos')),
-            _buildCard([
-              _buildItem(
-                leading: const Icon(Icons.info_outline,
-                    color: AppTheme.grisTexte),
-                title: _t(langue, 'version'),
-                subtitle: '1.0.0 • Tontine Africa',
-                onTap: null,
-                showArrow: false,
-              ),
-              const Divider(height: 1, indent: 16),
-              _buildItem(
-                leading: const Icon(Icons.email_outlined,
-                    color: AppTheme.grisTexte),
-                title: _t(langue, 'contact'),
-                subtitle: 'support@tontine-africa.com',
-                onTap: null,
-                showArrow: false,
-              ),
-              const Divider(height: 1, indent: 16),
-              _buildItem(
-                leading: const Icon(Icons.privacy_tip_outlined,
-                    color: AppTheme.grisTexte),
-                title: _t(langue, 'politique'),
-                onTap: () {},
-              ),
-              const Divider(height: 1, indent: 16),
-              _buildItem(
-                leading: const Icon(Icons.description_outlined,
-                    color: AppTheme.grisTexte),
-                title: _t(langue, 'conditions'),
-                onTap: () {},
-              ),
-            ]),
-            const SizedBox(height: 24),
-
-            // ── BOUTON SAUVEGARDER ────────────────────
-            ElevatedButton.icon(
-              onPressed: () => _sauvegarder(langue),
-              icon: const Icon(Icons.save_outlined),
-              label: Text(_t(langue, 'enregistrer')),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 52),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                'Tontine Africa v1.0.0 • 20+ pays',
-                style: const TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 11,
-                    color: AppTheme.grisTexte),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
+      ));
+    }
   }
 
-  Widget _buildSectionTitre(String titre) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        titre,
-        style: const TextStyle(
-          fontFamily: 'Nunito',
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: AppTheme.grisTexte,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard(List<Widget> enfants) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: const Color(0xFFE8E8E5), width: 0.5),
-      ),
-      child: Column(children: enfants),
-    );
-  }
-
-  Widget _buildItem({
-    required Widget leading,
-    required String title,
-    String? subtitle,
-    Color? titleColor,
-    VoidCallback? onTap,
-    bool showArrow = true,
-  }) {
-    return ListTile(
-      leading: leading,
-      title: Text(
-        title,
-        style: TextStyle(
-          fontFamily: 'Nunito',
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: titleColor ?? AppTheme.texte,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(subtitle,
-              style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 12,
-                  color: AppTheme.grisTexte))
-          : null,
-      trailing: showArrow
-          ? const Icon(Icons.chevron_right,
-              color: AppTheme.grisTexte)
-          : null,
-      onTap: onTap,
-    );
-  }
-
-  // ── CHOISIR PAYS ──────────────────────────────────
-  void _choisirPays() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _SelecteurPaysReglages(
-        paysSelectionne: _pays,
-        onPaysSelectionne: (code) {
-          setState(() {
-            _pays = code;
-            final langues = PaysData.getLanguesPays(code);
-            if (!langues.contains(_langue)) {
-              _langue = langues.first;
-            }
-          });
-        },
-      ),
-    );
-  }
-
-  // ── CHOISIR LANGUE ────────────────────────────────
-  void _choisirLangue(String langue) {
-    final langues = PaysData.getLanguesPays(_pays);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                  color: AppTheme.grisClair,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _t(langue, 'langue'),
-              style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 16),
-            ...langues.map((code) => ListTile(
-                  leading: Text(LanguesData.getDrapeau(code),
-                      style: const TextStyle(fontSize: 24)),
-                  title: Text(
-                    LanguesData.getNom(code),
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontWeight: FontWeight.w600,
-                      color: _langue == code
-                          ? AppTheme.vert
-                          : AppTheme.texte,
-                    ),
-                  ),
-                  subtitle: Text(LanguesData.getNatif(code),
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.grisTexte)),
-                  trailing: _langue == code
-                      ? const Icon(Icons.check_circle,
-                          color: AppTheme.vert)
-                      : null,
-                  onTap: () {
-                    setState(() => _langue = code);
-                    Navigator.pop(ctx);
-                  },
-                )),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── CHANGER PIN ───────────────────────────────────
   void _changerPin(String langue) {
     final ancienCtrl = TextEditingController();
     final nouveauCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
+    bool _obscureAncien = true;
+    bool _obscureNouveau = true;
+    bool _obscureConfirm = true;
 
     showModalBottomSheet(
       context: context,
@@ -778,145 +242,142 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.all(24),
           child: StatefulBuilder(
             builder: (ctx, setModalState) {
               String? erreur;
               bool chargement = false;
-
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 4,
+                      width: 40, height: 4,
                       decoration: BoxDecoration(
                           color: AppTheme.grisClair,
                           borderRadius: BorderRadius.circular(2)),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    _t(langue, 'changer_pin'),
-                    style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700),
-                  ),
+                  Text(_t(langue, 'changer_pin'),
+                      style: const TextStyle(fontFamily: 'Nunito',
+                          fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 20),
                   // PIN actuel
-                  TextField(
+                  StatefulBuilder(builder: (ctx2, ss) => TextField(
                     controller: ancienCtrl,
-                    obscureText: true,
+                    obscureText: _obscureAncien,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
+                    maxLength: 4,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       labelText: _t(langue, 'pin_ancien'),
-                      prefixIcon:
-                          const Icon(Icons.lock_outline),
+                      counterText: '',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureAncien ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () { ss(() => _obscureAncien = !_obscureAncien); },
+                      ),
                     ),
-                  ),
+                  )),
                   const SizedBox(height: 12),
                   // Nouveau PIN
-                  TextField(
+                  StatefulBuilder(builder: (ctx2, ss) => TextField(
                     controller: nouveauCtrl,
-                    obscureText: true,
+                    obscureText: _obscureNouveau,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
+                    maxLength: 4,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       labelText: _t(langue, 'pin_nouveau'),
-                      prefixIcon:
-                          const Icon(Icons.lock_outline),
+                      counterText: '',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureNouveau ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () { ss(() => _obscureNouveau = !_obscureNouveau); },
+                      ),
                     ),
-                  ),
+                  )),
                   const SizedBox(height: 12),
                   // Confirmer PIN
-                  TextField(
+                  StatefulBuilder(builder: (ctx2, ss) => TextField(
                     controller: confirmCtrl,
-                    obscureText: true,
+                    obscureText: _obscureConfirm,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
+                    maxLength: 4,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       labelText: _t(langue, 'pin_confirmer'),
-                      prefixIcon:
-                          const Icon(Icons.lock_outline),
+                      counterText: '',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () { ss(() => _obscureConfirm = !_obscureConfirm); },
+                      ),
                     ),
-                  ),
+                  )),
                   if (erreur != null) ...[
                     const SizedBox(height: 8),
-                    Text(erreur!,
-                        style: const TextStyle(
-                            color: AppTheme.rouge,
-                            fontFamily: 'Nunito',
-                            fontSize: 12)),
+                    Text(erreur!, style: const TextStyle(color: AppTheme.rouge, fontSize: 13)),
                   ],
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: chargement
-                          ? null
-                          : () async {
-                              if (ancienCtrl.text.length != 4) {
-                                setModalState(() =>
-                                    erreur = _t(langue, 'pin_4'));
-                                return;
-                              }
-                              if (nouveauCtrl.text.length != 4) {
-                                setModalState(() =>
-                                    erreur = _t(langue, 'pin_4'));
-                                return;
-                              }
-                              if (nouveauCtrl.text !=
-                                  confirmCtrl.text) {
-                                setModalState(() => erreur =
-                                    _t(langue, 'pin_match'));
-                                return;
-                              }
-                              setModalState(
-                                  () => chargement = true);
-                              try {
-                                await ApiService.mettreAJourProfil({
-                                  'ancien_pin': ancienCtrl.text,
-                                  'nouveau_pin': nouveauCtrl.text,
-                                });
-                                if (mounted) {
-                                  Navigator.pop(ctx);
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          _t(langue, 'pin_succes')),
-                                      backgroundColor:
-                                          AppTheme.vert,
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                setModalState(() {
-                                  erreur = _t(langue, 'pin_erreur');
-                                  chargement = false;
-                                });
-                              }
-                            },
-                      child: Text(_t(langue, 'pin_changer')),
+                  Row(children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(_t(langue, 'annuler')),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatefulBuilder(builder: (ctx2, ss) => ElevatedButton(
+                        onPressed: chargement ? null : () async {
+                          // Validation
+                          if (ancienCtrl.text.length != 4) {
+                            setModalState(() => erreur = _t(langue, 'pin_4'));
+                            return;
+                          }
+                          if (nouveauCtrl.text.length != 4) {
+                            setModalState(() => erreur = _t(langue, 'pin_4'));
+                            return;
+                          }
+                          if (nouveauCtrl.text != confirmCtrl.text) {
+                            setModalState(() => erreur = _t(langue, 'pin_match'));
+                            return;
+                          }
+                          setModalState(() { erreur = null; chargement = true; });
+                          try {
+                            await ApiService.changerPin(
+                              ancienCtrl.text,
+                              nouveauCtrl.text,
+                            );
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(_t(langue, 'pin_succes')),
+                                backgroundColor: AppTheme.vert,
+                              ));
+                            }
+                          } catch (e) {
+                            print('PIN ERROR: ' + e.toString());
+                            setModalState(() {
+                              erreur = e.toString();
+                              chargement = false;
+                            });
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.vert),
+                        child: chargement
+                            ? const SizedBox(width: 20, height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text(_t(langue, 'pin_changer'),
+                                style: const TextStyle(color: Colors.white)),
+                      )),
+                    ),
+                  ]),
                   const SizedBox(height: 8),
                 ],
               );
@@ -927,70 +388,23 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
     );
   }
 
-  // ── SAUVEGARDER ───────────────────────────────────
-  Future<void> _sauvegarder(String langue) async {
-    await StorageService.saveAllSettings({
-      'langue': _langue,
-      'pays': _pays,
-      'font_size': _fontSize,
-      'vocal_actif': _vocalActif,
-      'notifications_actives': _notificationsActives,
-      'son_actif': _sonActif,
-      'mode_sombre': _modeSombre,
-      'indicatif':
-          PaysData.getPays(_pays)?['indicatif'] ?? '+226',
-      'devise': PaysData.getPays(_pays)?['devise'] ?? 'XOF',
-    });
-
-    ref.read(langueProvider.notifier).state = _langue;
-    ref.read(paysProvider.notifier).state = _pays;
-    ref.read(fontSizeProvider.notifier).state = _fontSize;
-
-    if (_vocalActif) _vocal.parler(_t(langue, 'applique'));
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '✅ ${LanguesData.getNom(_langue)} • ${PaysData.getPays(_pays)?['nom']}',
-                  style: const TextStyle(
-                      fontFamily: 'Nunito', fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppTheme.vert,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
-  // ── DÉCONNECTER ───────────────────────────────────
   Future<void> _seDeconnecter(String langue) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(_t(langue, 'deconnexion_titre'),
-            style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontWeight: FontWeight.w700)),
+            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
         content: Text(_t(langue, 'deconnexion_msg'),
             style: const TextStyle(fontFamily: 'Nunito')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(_t(langue, 'annuler')),
-          ),
-          TextButton(
+          TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_t(langue, 'annuler'))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.rouge),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(_t(langue, 'deconnecter'),
-                style: const TextStyle(color: AppTheme.rouge)),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1001,222 +415,636 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
     }
   }
 
-  // ── SUPPRIMER COMPTE ──────────────────────────────
   Future<void> _supprimerCompte(String langue) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(_t(langue, 'supprimer_titre'),
-            style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontWeight: FontWeight.w700,
+            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700,
                 color: AppTheme.rouge)),
         content: Text(_t(langue, 'supprimer_msg'),
             style: const TextStyle(fontFamily: 'Nunito')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(_t(langue, 'annuler')),
-          ),
-          TextButton(
+          TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_t(langue, 'annuler'))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.rouge),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(_t(langue, 'supprimer_btn'),
-                style:
-                    const TextStyle(color: AppTheme.rouge)),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
     if (confirm == true) {
       try {
-        await ApiService.mettreAJourProfil(
-            {'statut': 'supprime'});
+        await ApiService.supprimerCompte();
         await StorageService.clearAll();
-        if (mounted) context.go('/langue');
+        if (mounted) context.go('/connexion');
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(e.toString()),
-                backgroundColor: AppTheme.rouge),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppTheme.rouge,
+          ));
         }
       }
     }
   }
 
-  @override
-  void dispose() {
-    _vocal.stop();
-    super.dispose();
-  }
-}
-
-// ── SELECTEUR PAYS ────────────────────────────────────
-class _SelecteurPaysReglages extends StatefulWidget {
-  final String paysSelectionne;
-  final Function(String) onPaysSelectionne;
-
-  const _SelecteurPaysReglages({
-    required this.paysSelectionne,
-    required this.onPaysSelectionne,
-  });
-
-  @override
-  State<_SelecteurPaysReglages> createState() =>
-      _SelecteurPaysReglagesState();
-}
-
-class _SelecteurPaysReglagesState
-    extends State<_SelecteurPaysReglages> {
-  final TextEditingController _ctrl = TextEditingController();
-  List<Map<String, dynamic>> _paysFiltres = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _paysFiltres = PaysData.pays;
+  Future<void> _ouvrirUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
-  void _filtrer(String v) {
-    setState(() {
-      _paysFiltres = v.isEmpty
-          ? PaysData.pays
-          : PaysData.pays
-              .where((p) =>
-                  p['nom']
-                      .toString()
-                      .toLowerCase()
-                      .contains(v.toLowerCase()) ||
-                  p['indicatif'].toString().contains(v))
-              .toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E5),
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Choisir un pays',
-                style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700)),
-          ),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _ctrl,
-              decoration: InputDecoration(
-                hintText: 'Rechercher...',
-                prefixIcon: const Icon(Icons.search,
-                    color: AppTheme.grisTexte),
-                suffixIcon: _ctrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear,
-                            color: AppTheme.grisTexte),
-                        onPressed: () {
-                          _ctrl.clear();
-                          _filtrer('');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFE8E8E5))),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppTheme.vert, width: 2)),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
-              ),
-              onChanged: _filtrer,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              '${_paysFiltres.length} pays',
-              style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 12,
-                  color: AppTheme.grisTexte),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: ListView.builder(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _paysFiltres.length,
-              itemBuilder: (ctx, i) {
-                final p = _paysFiltres[i];
-                final selected =
-                    widget.paysSelectionne == p['code'];
-                return ListTile(
-                  onTap: () {
-                    widget.onPaysSelectionne(p['code']);
-                    Navigator.pop(ctx);
-                  },
-                  leading: Text(p['drapeau'],
-                      style: const TextStyle(fontSize: 26)),
-                  title: Text(p['nom'],
-                      style: TextStyle(
-                          fontFamily: 'Nunito',
-                          fontWeight: FontWeight.w600,
-                          color: selected
-                              ? AppTheme.vert
-                              : AppTheme.texte)),
-                  subtitle: Text(
-                    '${p['indicatif']} • ${p['devise']}',
-                    style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        color: AppTheme.grisTexte),
-                  ),
-                  trailing: selected
-                      ? const Icon(Icons.check_circle,
-                          color: AppTheme.vert)
-                      : null,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  tileColor: selected
-                      ? AppTheme.vertClair
-                      : Colors.transparent,
-                );
+  void _choisirLangue(String langue) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppTheme.grisClair,
+                    borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Text(_t(langue, 'langue'), style: const TextStyle(
+                fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            ...LanguesData.getToutesLesLangues().map((l) => ListTile(
+              leading: Text(l['drapeau'] ?? '', style: const TextStyle(fontSize: 24)),
+              title: Text(l['nom'] ?? '', style: const TextStyle(fontFamily: 'Nunito')),
+              subtitle: Text(l['nom_local'] ?? '', style: const TextStyle(
+                  fontFamily: 'Nunito', fontSize: 12, color: AppTheme.grisTexte)),
+              trailing: _langue == l['code']
+                  ? const Icon(Icons.check_circle, color: AppTheme.vert) : null,
+              onTap: () {
+                setState(() => _langue = l['code'] ?? 'fr');
+                Navigator.pop(ctx);
               },
-            ),
-          ),
-        ],
+            )),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final langue = ref.watch(langueProvider);
+    final sw = MediaQuery.of(context).size.width;
+    final isSmall = sw < 360;
+    final langueActuelle = LanguesData.getToutesLesLangues()
+        .firstWhere((l) => l['code'] == _langue, orElse: () => {'nom': _langue});
+    final paysActuel = PaysData.pays
+        .firstWhere((p) => p['code'] == _pays, orElse: () => {'nom': _pays, 'drapeau': ''});
+
+    return Scaffold(
+      backgroundColor: AppTheme.fond,
+      appBar: AppBar(
+        backgroundColor: AppTheme.vert,
+        foregroundColor: Colors.white,
+        title: Text(_t(langue, 'titre'),
+            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+        actions: [
+          if (_chargement)
+            const Padding(padding: EdgeInsets.all(16),
+                child: SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+          else
+            TextButton(
+              onPressed: () => _sauvegarder(langue),
+              child: Text(_t(langue, 'enregistrer'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ),
+        ],
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(isSmall ? 12 : 16),
+        children: [
+
+          // ── PAYS & LANGUE ─────────────────────────────
+          _buildSection(
+            icon: Icons.language,
+            title: _t(langue, 'pays'),
+            children: [
+              _buildItem(
+                leading: Text(paysActuel['drapeau'] ?? '',
+                    style: const TextStyle(fontSize: 24)),
+                title: paysActuel['nom'] ?? _pays,
+                subtitle: _pays,
+                onTap: () => _choisirPays(langue),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: Text(
+                  LanguesData.getToutesLesLangues()
+                      .firstWhere((l) => l['code'] == _langue,
+                          orElse: () => {'drapeau': 'fr'})['drapeau'] ?? '',
+                  style: const TextStyle(fontSize: 24)),
+                title: langueActuelle['nom'] ?? _langue,
+                subtitle: _t(langue, 'langue'),
+                onTap: () => _choisirLangue(langue),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.phone, color: AppTheme.grisTexte),
+                title: _indicatif,
+                subtitle: _t(langue, 'indicatif'),
+                onTap: () => _choisirIndicatif(langue),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.monetization_on_outlined,
+                    color: AppTheme.grisTexte),
+                title: _devise,
+                subtitle: _t(langue, 'devise'),
+                onTap: () => _choisirDevise(langue),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── TAILLE TEXTE ──────────────────────────────
+          _buildSection(
+            icon: Icons.text_fields,
+            title: _t(langue, 'taille_texte'),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_t(langue, 'apercu'),
+                        style: TextStyle(fontFamily: 'Nunito',
+                            fontSize: _fontSize, color: AppTheme.texte)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.text_fields, size: 14, color: AppTheme.grisTexte),
+                        Expanded(
+                          child: Slider(
+                            value: _fontSize,
+                            min: 12, max: 22, divisions: 4,
+                            activeColor: AppTheme.vert,
+                            onChanged: (v) => setState(() => _fontSize = v),
+                          ),
+                        ),
+                        const Icon(Icons.text_fields, size: 22, color: AppTheme.grisTexte),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _taillePill(_t(langue, 'taille_petit'), 12),
+                        _taillePill(_t(langue, 'taille_normal'), 14),
+                        _taillePill(_t(langue, 'taille_grand'), 16),
+                        _taillePill(_t(langue, 'taille_tgrand'), 18),
+                        _taillePill(_t(langue, 'taille_maxi'), 22),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── NOTIFICATIONS ─────────────────────────────
+          _buildSection(
+            icon: Icons.notifications_outlined,
+            title: _t(langue, 'notifications'),
+            children: [
+              _buildSwitchItem(
+                icon: Icons.notifications_active_outlined,
+                title: _t(langue, 'push'),
+                subtitle: _t(langue, 'push_desc'),
+                value: _notifActives,
+                onChanged: (v) => setState(() => _notifActives = v),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildSwitchItem(
+                icon: Icons.volume_up_outlined,
+                title: _t(langue, 'sons'),
+                subtitle: _t(langue, 'sons_desc'),
+                value: _sonActif,
+                onChanged: (v) => setState(() => _sonActif = v),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildSwitchItem(
+                icon: Icons.record_voice_over_outlined,
+                title: _t(langue, 'vocal'),
+                subtitle: _t(langue, 'vocal_desc'),
+                value: _vocalActif,
+                onChanged: (v) => setState(() => _vocalActif = v),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── THEME ─────────────────────────────────────
+          _buildSection(
+            icon: Icons.palette_outlined,
+            title: _t(langue, 'theme'),
+            children: [
+              _buildSwitchItem(
+                icon: Icons.dark_mode_outlined,
+                title: _t(langue, 'theme_sombre'),
+                subtitle: '',
+                value: _modeSombre,
+                onChanged: (v) => setState(() => _modeSombre = v),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── COMPTE ────────────────────────────────────
+          _buildSection(
+            icon: Icons.person_outline,
+            title: _t(langue, 'compte'),
+            children: [
+              _buildItem(
+                leading: const Icon(Icons.lock_outline, color: AppTheme.vert),
+                title: _t(langue, 'changer_pin'),
+                onTap: () => _changerPin(langue),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.logout, color: AppTheme.rouge),
+                title: _t(langue, 'deconnecter'),
+                titleColor: AppTheme.rouge,
+                onTap: () => _seDeconnecter(langue),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.delete_outline, color: AppTheme.rouge),
+                title: _t(langue, 'supprimer'),
+                titleColor: AppTheme.rouge,
+                onTap: () => _supprimerCompte(langue),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── A PROPOS ──────────────────────────────────
+          _buildSection(
+            icon: Icons.info_outline,
+            title: _t(langue, 'a_propos'),
+            children: [
+              _buildItem(
+                leading: const Icon(Icons.mail_outline, color: AppTheme.grisTexte),
+                title: _t(langue, 'contact'),
+                subtitle: 'support@tontiligdi.com',
+                onTap: () => _ouvrirUrl('mailto:support@tontiligdi.com'),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.grisTexte),
+                title: _t(langue, 'politique'),
+                onTap: () => _ouvrirUrl('https://tontiligdi.toeegdigital.com/confidentialite'),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.description_outlined, color: AppTheme.grisTexte),
+                title: _t(langue, 'conditions'),
+                onTap: () => _ouvrirUrl('https://tontiligdi.toeegdigital.com/conditions'),
+              ),
+              const Divider(height: 1, indent: 16),
+              _buildItem(
+                leading: const Icon(Icons.info_outline, color: AppTheme.grisTexte),
+                title: _t(langue, 'version'),
+                subtitle: '1.0.0 • TontiLigdi by Toeeg Digital SARL',
+                showArrow: false,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 32),
+
+          // ── LOGO BAS DE PAGE ──────────────────────────
+          Center(
+            child: Column(children: [
+              Text('TontiLigdi',
+                  style: TextStyle(fontFamily: 'Nunito',
+                      fontSize: isSmall ? 16 : 18, fontWeight: FontWeight.w700,
+                      color: AppTheme.vert)),
+              const SizedBox(height: 4),
+              Text('Lagem Ligdi • Rassemblons l argent',
+                  style: TextStyle(fontFamily: 'Nunito',
+                      fontSize: isSmall ? 11 : 12, color: AppTheme.grisTexte)),
+              const SizedBox(height: 4),
+              Text('by Toeeg Digital SARL • Ouagadougou, Burkina Faso',
+                  style: TextStyle(fontFamily: 'Nunito',
+                      fontSize: isSmall ? 10 : 11, color: AppTheme.grisTexte)),
+            ]),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // ── WIDGETS ───────────────────────────────────────────
+
+  Widget _buildSection({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Row(children: [
+            Icon(icon, size: 16, color: AppTheme.vert),
+            const SizedBox(width: 6),
+            Text(title, style: const TextStyle(
+                fontFamily: 'Nunito', fontSize: 13,
+                fontWeight: FontWeight.w700, color: AppTheme.vert)),
+          ]),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8E8E5), width: 0.5),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItem({
+    required Widget leading,
+    required String title,
+    String? subtitle,
+    Color? titleColor,
+    VoidCallback? onTap,
+    bool showArrow = true,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(children: [
+          leading,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(
+                    fontFamily: 'Nunito', fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: titleColor ?? AppTheme.texte)),
+                if (subtitle != null)
+                  Text(subtitle, style: const TextStyle(
+                      fontFamily: 'Nunito', fontSize: 12,
+                      color: AppTheme.grisTexte)),
+              ],
+            ),
+          ),
+          if (showArrow && onTap != null)
+            const Icon(Icons.chevron_right, color: AppTheme.grisTexte, size: 20),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildSwitchItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(children: [
+        Icon(icon, color: AppTheme.grisTexte, size: 22),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(
+                  fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w600)),
+              if (subtitle.isNotEmpty)
+                Text(subtitle, style: const TextStyle(
+                    fontFamily: 'Nunito', fontSize: 12, color: AppTheme.grisTexte)),
+            ],
+          ),
+        ),
+        Switch(value: value, onChanged: onChanged, activeColor: AppTheme.vert),
+      ]),
+    );
+  }
+
+  Widget _taillePill(String label, double size) {
+    final selected = _fontSize == size;
+    return GestureDetector(
+      onTap: () => setState(() => _fontSize = size),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? AppTheme.vert : AppTheme.grisClair,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(label, style: TextStyle(
+            fontFamily: 'Nunito', fontSize: 10,
+            color: selected ? Colors.white : AppTheme.grisTexte,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
+      ),
+    );
+  }
+
+  void _choisirPays(String langue) {
+    final ctrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        minChildSize: 0.4,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(children: [
+            const SizedBox(height: 12),
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppTheme.grisClair,
+                    borderRadius: BorderRadius.circular(2)))),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: ctrl,
+                decoration: InputDecoration(
+                  hintText: 'Rechercher un pays...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onChanged: (v) => setState(() {}),
+              ),
+            ),
+            Expanded(
+              child: StatefulBuilder(builder: (ctx2, ss) {
+                final pays = PaysData.pays.where((p) =>
+                    p['nom'].toString().toLowerCase().contains(ctrl.text.toLowerCase()) ||
+                    p['code'].toString().toLowerCase().contains(ctrl.text.toLowerCase())
+                ).toList();
+                return ListView.builder(
+                  controller: scrollCtrl,
+                  itemCount: pays.length,
+                  itemBuilder: (ctx3, i) {
+                    final p = pays[i];
+                    return ListTile(
+                      leading: Text(p['drapeau'] ?? '',
+                          style: const TextStyle(fontSize: 24)),
+                      title: Text(p['nom'] ?? '',
+                          style: const TextStyle(fontFamily: 'Nunito')),
+                      subtitle: Text(p['code'] ?? '',
+                          style: const TextStyle(fontFamily: 'Nunito',
+                              fontSize: 12, color: AppTheme.grisTexte)),
+                      trailing: _pays == p['code']
+                          ? const Icon(Icons.check_circle, color: AppTheme.vert) : null,
+                      onTap: () {
+                        setState(() {
+                          _pays = p['code'] ?? 'BF';
+                          _indicatif = p['indicatif'] ?? '+226';
+                          _devise = p['devise'] ?? 'XOF';
+                        });
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                );
+              }),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _choisirIndicatif(String langue) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.3,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(children: [
+            const SizedBox(height: 12),
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppTheme.grisClair,
+                    borderRadius: BorderRadius.circular(2)))),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Indicatif telephonique',
+                  style: TextStyle(fontFamily: 'Nunito',
+                      fontSize: 18, fontWeight: FontWeight.w700)),
+            ),
+            Expanded(
+              child: ListView(controller: scrollCtrl,
+                children: PaysData.pays.map((p) => ListTile(
+                  leading: Text(p['drapeau'] ?? '',
+                      style: const TextStyle(fontSize: 20)),
+                  title: Text('${p['indicatif']} — ${p['nom']}',
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13)),
+                  trailing: _indicatif == p['indicatif']
+                      ? const Icon(Icons.check_circle, color: AppTheme.vert) : null,
+                  onTap: () {
+                    setState(() => _indicatif = p['indicatif'] ?? '+226');
+                    Navigator.pop(ctx);
+                  },
+                )).toList(),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _choisirDevise(String langue) {
+    final devises = [
+      {'code': 'XOF', 'nom': 'Franc CFA UEMOA', 'symbole': 'F CFA'},
+      {'code': 'XAF', 'nom': 'Franc CFA CEMAC', 'symbole': 'F CFA'},
+      {'code': 'GHS', 'nom': 'Cedi ghaneen', 'symbole': 'GH₵'},
+      {'code': 'NGN', 'nom': 'Naira nigerien', 'symbole': '₦'},
+      {'code': 'EUR', 'nom': 'Euro', 'symbole': '€'},
+      {'code': 'USD', 'nom': 'Dollar americain', 'symbole': '\$'},
+      {'code': 'GNF', 'nom': 'Franc guineen', 'symbole': 'FG'},
+      {'code': 'MRU', 'nom': 'Ouguiya mauritanien', 'symbole': 'UM'},
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppTheme.grisClair,
+                    borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Text(_t(langue, 'devise'), style: const TextStyle(
+                fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            ...devises.map((d) => ListTile(
+              leading: Text(d['symbole'] ?? '',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              title: Text(d['nom'] ?? '',
+                  style: const TextStyle(fontFamily: 'Nunito')),
+              subtitle: Text(d['code'] ?? '',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12)),
+              trailing: _devise == d['code']
+                  ? const Icon(Icons.check_circle, color: AppTheme.vert) : null,
+              onTap: () {
+                setState(() => _devise = d['code'] ?? 'XOF');
+                Navigator.pop(ctx);
+              },
+            )),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 }

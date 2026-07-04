@@ -1,0 +1,70 @@
+﻿<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <title>TontiLigdi - Icone app</title>
+
+  <!-- Fond or avec coins arrondis -->
+  <rect width="1024" height="1024" rx="220" fill="#F5A623"/>
+
+  <!-- Cercle vert — bien centré avec marge suffisante -->
+  <circle cx="512" cy="440" r="260" fill="#1D9E75"/>
+  <circle cx="512" cy="440" r="260" fill="none" stroke="#0D5C3A" stroke-width="14"/>
+  <circle cx="512" cy="440" r="244" fill="none" stroke="#F5A623" stroke-width="4"/>
+  <circle cx="512" cy="440" r="228" fill="none" stroke="#F5A623" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Grand losange blanc — bien dans le cercle -->
+  <polygon points="512,222 710,440 512,658 314,440" fill="none" stroke="white" stroke-width="12" stroke-linejoin="round"/>
+
+  <!-- Losange moyen or -->
+  <polygon points="512,262 670,440 512,618 354,440" fill="none" stroke="#F5A623" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Losange intérieur foncé -->
+  <polygon points="512,302 630,440 512,578 394,440" fill="#0D5C3A" opacity="0.5"/>
+  <polygon points="512,302 630,440 512,578 394,440" fill="none" stroke="#F5A623" stroke-width="5" stroke-linejoin="round" opacity="0.7"/>
+
+  <!-- 4 losanges pleins aux coins — bien visibles -->
+  <!-- Haut -->
+  <polygon points="512,204 528,222 512,240 496,222" fill="#F5A623"/>
+  <!-- Bas -->
+  <polygon points="512,640 528,658 512,676 496,658" fill="#F5A623"/>
+  <!-- Gauche -->
+  <polygon points="296,440 314,422 332,440 314,458" fill="#F5A623"/>
+  <!-- Droite -->
+  <polygon points="692,440 710,422 728,440 710,458" fill="#F5A623"/>
+
+  <!-- Cercle centre foncé -->
+  <circle cx="512" cy="440" r="90" fill="#0D5C3A"/>
+  <circle cx="512" cy="440" r="90" fill="none" stroke="#F5A623" stroke-width="6"/>
+
+  <!-- Etoile Burkina bien proportionnée -->
+  <polygon points="
+    512,366
+    532,424
+    594,424
+    546,460
+    566,518
+    512,482
+    458,518
+    478,460
+    430,424
+    492,424" fill="#F5A623"/>
+
+  <!-- TontiLigdi en bas — bien espacé du cercle -->
+  <text x="512" y="790"
+    font-family="Georgia, serif"
+    font-size="80"
+    font-weight="700"
+    text-anchor="middle">
+    <tspan fill="white">Tonti</tspan><tspan fill="#0D5C3A">Ligdi</tspan>
+  </text>
+
+  <!-- Ligne or -->
+  <line x1="180" y1="810" x2="844" y2="810" stroke="#0D5C3A" stroke-width="3"/>
+
+  <!-- Slogan -->
+  <text x="512" y="850"
+    font-family="Arial, sans-serif"
+    font-size="32"
+    fill="#0D5C3A"
+    text-anchor="middle"
+    letter-spacing="2">Lagem Ligdi</text>
+
+</svg>

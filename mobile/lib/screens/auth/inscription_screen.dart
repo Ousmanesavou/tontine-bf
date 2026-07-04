@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,7 +30,7 @@ const Map<String, Map<String, String>> _tr = {
     'pin_confirmer': 'Confirmer le PIN',
     'pin_attention': 'Ne partagez jamais votre code PIN avec personne.',
     'creer': 'Créer mon compte',
-    'succes': 'Inscription réussie. Bienvenue sur Tontine Africa !',
+    'succes': 'Inscription réussie. Bienvenue sur TontiLigdi !',
     'requis': 'Requis',
     'tel_invalide': 'Numéro invalide',
     'pin_4': 'PIN doit avoir 4 chiffres',
@@ -58,7 +58,7 @@ const Map<String, Map<String, String>> _tr = {
     'pin_confirmer': 'Confirm PIN',
     'pin_attention': 'Never share your PIN with anyone.',
     'creer': 'Create my account',
-    'succes': 'Registration successful. Welcome to Tontine Africa!',
+    'succes': 'Registration successful. Welcome to TontiLigdi!',
     'requis': 'Required',
     'tel_invalide': 'Invalid number',
     'pin_4': 'PIN must have 4 digits',
@@ -86,7 +86,7 @@ const Map<String, Map<String, String>> _tr = {
     'pin_confirmer': 'Wilg PIN kãsem',
     'pin_attention': 'Da wilg f PIN ned neba ye.',
     'creer': 'Bʋg m kaont',
-    'succes': 'Toeega sɩnga. Aw laafi Tontine Africa !',
+    'succes': 'Toeega sɩnga. Aw laafi TontiLigdi !',
     'requis': 'Tõnd',
     'tel_invalide': 'Nimero ka sɩd',
     'pin_4': 'PIN tõnd woto 4',
@@ -114,7 +114,7 @@ const Map<String, Map<String, String>> _tr = {
     'pin_confirmer': 'PIN sɛgɛsɛgɛ',
     'pin_attention': 'I ka PIN mɔgɔ si ma fɔ.',
     'creer': 'N ka konto daminɛ',
-    'succes': 'Sɛbɛnni kɛra. Bisimila Tontine Africa !',
+    'succes': 'Sɛbɛnni kɛra. Bisimila TontiLigdi !',
     'requis': 'Ɲɛnabɔ',
     'tel_invalide': 'Nimɔrɔ tɛ ɲɛ',
     'pin_4': 'PIN tonbi 4 ɲɛnabɔ',
@@ -142,7 +142,7 @@ const Map<String, Map<String, String>> _tr = {
     'pin_confirmer': 'Seytaan PIN bi',
     'pin_attention': 'Bul jox sa PIN nit ku bari.',
     'creer': 'Def sa kont',
-    'succes': 'Sɛriñ rekk. Dalal Tontine Africa !',
+    'succes': 'Sɛriñ rekk. Dalal TontiLigdi !',
     'requis': 'Waajib',
     'tel_invalide': 'Nimero bu baax',
     'pin_4': 'PIN dafa soxor ñent xët',

@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'storage_service.dart';
 import 'offline_service.dart';
 import 'connectivity_service.dart';
@@ -378,4 +378,52 @@ class ApiService {
     }
     return 'Erreur inattendue. Réessayez.';
   }
+
+  static Future<List<Map<String, dynamic>>> getDemandesAdhesion(String tontineId) async {
+    try {
+      final r = await _dio.get('/tontines/$tontineId/demandes');
+      return List<Map<String, dynamic>>.from(r.data['demandes'] ?? []);
+    } catch (_) { return []; }
+  }
+
+  static Future<void> accepterAdhesion(String tontineId, String demandeurId) async {
+    await _dio.post('/tontines/$tontineId/demandes/$demandeurId/accepter');
+  }
+
+  static Future<void> refuserAdhesion(String tontineId, String demandeurId) async {
+    await _dio.post('/tontines/$tontineId/demandes/$demandeurId/refuser');
+  }
+
+
+  static Future<void> relancerMembre(String tontineId, String membreId) async {
+    await _dio.post('/tontines/$tontineId/membres/$membreId/relancer');
+  }
+
+  static Future<void> exclureMembre(String tontineId, String membreId) async {
+    await _dio.delete('/tontines/$tontineId/membres/$membreId');
+  }
+
+
+  static Future<Map<String, dynamic>> getDashboardOrganisateur(String tontineId) async {
+    final r = await _dio.get('/tontines/$tontineId/dashboard');
+    return Map<String, dynamic>.from(r.data);
+  }
+
+  static Future<void> validerPaiementManuel(String tontineId, String cotisationId) async {
+    await _dio.post('/tontines/\/cotisations/\/valider');
+  }
+
+
+  static Future<void> changerPin(String ancienPin, String nouveauPin) async {
+    await _dio.put('/utilisateurs/changer-pin', data: {
+      'ancien_pin': ancienPin,
+      'nouveau_pin': nouveauPin,
+    });
+  }
+
+
+  static Future<void> supprimerCompte() async {
+    await _dio.delete('/utilisateurs/mon-compte');
+  }
+
 }

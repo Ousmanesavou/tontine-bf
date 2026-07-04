@@ -1,4 +1,4 @@
-// lib/utils/langues_data.dart
+﻿// lib/utils/langues_data.dart
 
 class LanguesData {
   static const Map<String, Map<String, String>> _data = {

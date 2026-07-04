@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_theme.dart';
@@ -112,7 +112,7 @@ const Map<String, Map<String, String>> _tr = {
   },
   'mos': {
     'bonjour': 'Aw laafi',
-    'sous_titre': 'Tontine Africa pʋgẽ aw laafi',
+    'sous_titre': 'TontiLigdi pʋgẽ aw laafi',
     'mes_tontines': 'M tontines',
     'tontines_publiques': 'Tontines wʋsgã',
     'nouvelle_tontine': 'Tontine paalga',
@@ -155,7 +155,7 @@ const Map<String, Map<String, String>> _tr = {
   },
   'bm': {
     'bonjour': 'I ni sogoma',
-    'sous_titre': 'Tontine Africa la i bisimila',
+    'sous_titre': 'TontiLigdi la i bisimila',
     'mes_tontines': 'N ka tontinew',
     'tontines_publiques': 'Tontinew minw be',
     'nouvelle_tontine': 'Tontine kura',
@@ -198,7 +198,7 @@ const Map<String, Map<String, String>> _tr = {
   },
   'wo': {
     'bonjour': 'Salut',
-    'sous_titre': 'Tontine Africa, dalal ak jàmm',
+    'sous_titre': 'TontiLigdi, dalal ak jàmm',
     'mes_tontines': 'Say tontine yi',
     'tontines_publiques': 'Tontine yi ci kanam',
     'nouvelle_tontine': 'Tontine bu bees',
@@ -290,11 +290,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final langue = StorageService.getLangue() ?? 'fr';
     final prenom = user['prenom'] ?? '';
     final messages = {
-      'fr': 'Bonjour $prenom ! Bienvenue sur Tontine Africa.',
-      'en': 'Hello $prenom! Welcome to Tontine Africa.',
-      'mos': 'Aw laafi $prenom ! Tontine Africa pʋgẽ aw laafi.',
-      'bm': 'I ni sogoma $prenom ! Tontine Africa la i bisimila.',
-      'wo': 'Salut $prenom ! Tontine Africa, dalal ak jàmm.',
+      'fr': 'Bonjour $prenom ! Bienvenue sur TontiLigdi.',
+      'en': 'Hello $prenom! Welcome to TontiLigdi.',
+      'mos': 'Aw laafi $prenom ! TontiLigdi pʋgẽ aw laafi.',
+      'bm': 'I ni sogoma $prenom ! TontiLigdi la i bisimila.',
+      'wo': 'Salut $prenom ! TontiLigdi, dalal ak jàmm.',
     };
     await Future.delayed(const Duration(milliseconds: 800));
     _vocal.parler(messages[langue] ?? messages['fr']!);
@@ -477,22 +477,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           GestureDetector(
             onTap: () => context.push('/profil'),
             child: Container(
-              width: isSmall ? 34 : 38,
-              height: isSmall ? 34 : 38,
+              width: isSmall ? 38 : 42,
+              height: isSmall ? 38 : 42,
               decoration: BoxDecoration(
                 color: Colors.white24,
-                borderRadius: BorderRadius.circular(10),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-              child: Center(
-                child: Text(
-                  (user?['prenom'] ?? 'U')[0].toUpperCase(),
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: isSmall ? 15 : 17,
-                  ),
-                ),
+              child: ClipOval(
+                child: _buildAvatarHome(user, isSmall),
               ),
             ),
           ),
@@ -584,12 +577,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ? _buildEtatVide(langue, isSmall)
                   : Column(
                       children: data
-                          .map((t) => TontineCard(
-                                tontine: t,
-                                onTap: () =>
-                                    context.push('/tontine/${t['id']}'),
-                              ))
-                          .toList(),
+                          .map((t) {
+                            final user = StorageService.getUser();
+                            final estOrga = t['responsable_id']?.toString() == user?['id']?.toString();
+                            return TontineCard(
+                              tontine: t,
+                              onTap: () => context.push('/tontine/${t['id']}'),
+                              estOrganisateur: estOrga,
+                            );
+                          }).toList(),
                     ),
               loading: () => _buildChargement(),
               error: (e, _) => _buildErreur(e.toString(), langue),
@@ -734,7 +730,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
     );
   }
+  Widget _buildAvatarHome(Map<String, dynamic>? user, bool isSmall) {
+  final photoUrl = user?['photo_url'] ?? user?['photo_profil'];
+  final prenom = user?['prenom'] ?? 'U';
 
+  if (photoUrl != null && photoUrl.toString().isNotEmpty) {
+    return Image.network(
+      photoUrl,
+      fit: BoxFit.cover,
+      width: isSmall ? 38 : 42,
+      height: isSmall ? 38 : 42,
+      errorBuilder: (_, __, ___) => _buildInitialesHome(prenom, isSmall),
+      loadingBuilder: (ctx, child, progress) {
+        if (progress == null) return child;
+        return Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+              value: progress.expectedTotalBytes != null
+                  ? progress.cumulativeBytesLoaded /
+                      progress.expectedTotalBytes!
+                  : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+  return _buildInitialesHome(prenom, isSmall);
+}
+
+Widget _buildInitialesHome(String prenom, bool isSmall) {
+  return Container(
+    color: Colors.white24,
+    child: Center(
+      child: Text(
+        prenom[0].toUpperCase(),
+        style: TextStyle(
+          fontFamily: 'Nunito',
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: isSmall ? 15 : 17,
+        ),
+      ),
+    ),
+  );
+}
   Widget _buildMiniStat(String valeur, String label,
       IconData icon, bool isSmall, {Color couleur = Colors.white}) {
     return Container(

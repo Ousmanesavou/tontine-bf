@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../utils/app_theme.dart';
 
@@ -6,7 +7,8 @@ class TontineCard extends StatelessWidget {
   final Map<String, dynamic> tontine;
   final VoidCallback onTap;
 
-  const TontineCard({super.key, required this.tontine, required this.onTap});
+  final bool estOrganisateur;
+  const TontineCard({super.key, required this.tontine, required this.onTap, this.estOrganisateur = false});
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +93,23 @@ class TontineCard extends StatelessWidget {
                 _buildBadgeTour(tontine),
               ],
             ),
+            if (estOrganisateur) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/tontine/${tontine["id"]}/dashboard'),
+                  icon: const Icon(Icons.dashboard_outlined, size: 16),
+                  label: const Text('Dashboard organisateur',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.vertFonce,
+                    side: const BorderSide(color: AppTheme.vert),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

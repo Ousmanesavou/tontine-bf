@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +12,7 @@ import 'screens/auth/inscription_screen.dart';
 import 'screens/auth/connexion_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/tontine/tontine_detail_screen.dart';
+import 'screens/tontine/dashboard_organisateur_screen.dart';
 import 'screens/tontine/creer_tontine_screen.dart';
 import 'screens/tontine/membres_screen.dart';
 import 'screens/paiement/paiement_screen.dart';
@@ -80,7 +81,7 @@ class TontineAfricaApp extends ConsumerWidget {
     }
 
     return MaterialApp.router(
-      title: 'Tontine Africa',
+      title: 'TontiLigdi',
       debugShowCheckedModeBanner: false,
       key: ValueKey(langue), // Force rebuild quand langue change
       theme: AppTheme.lightTheme.copyWith(
@@ -105,7 +106,6 @@ class TontineAfricaApp extends ConsumerWidget {
     );
   }
 }
-
 // ── ROUTER ────────────────────────────────────────────
 final _router = GoRouter(
   initialLocation: '/splash',
@@ -114,7 +114,8 @@ final _router = GoRouter(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Page introuvable', style: TextStyle(fontSize: 18)),
+          const Text('Page introuvable',
+              style: TextStyle(fontSize: 18)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => ctx.go('/home'),
@@ -146,29 +147,6 @@ final _router = GoRouter(
       builder: (ctx, state) => const HomeScreen(),
     ),
     GoRoute(
-      path: '/tontine/creer',
-      builder: (ctx, state) => const CreerTontineScreen(),
-    ),
-    GoRoute(
-      path: '/tontine/:id',
-      builder: (ctx, state) =>
-          TontineDetailScreen(id: state.pathParameters['id']!),
-    ),
-    GoRoute(
-      path: '/tontine/:id/membres',
-      builder: (ctx, state) =>
-          MembresScreen(tontineId: state.pathParameters['id']!),
-    ),
-    GoRoute(
-      path: '/paiement/succes',
-      builder: (ctx, state) => const SuccesPaiementScreen(),
-    ),
-    GoRoute(
-      path: '/paiement/:cotisationId',
-      builder: (ctx, state) =>
-          PaiementScreen(cotisationId: state.pathParameters['cotisationId']!),
-    ),
-    GoRoute(
       path: '/catalogue',
       builder: (ctx, state) => const CatalogueScreen(),
     ),
@@ -185,11 +163,43 @@ final _router = GoRouter(
       builder: (ctx, state) => const ReglagesScreen(),
     ),
     GoRoute(
-  path: '/tontine/:id/compte-virtuel',
-  builder: (ctx, state) => CompteVirtuelScreen(
-    tontineId: state.pathParameters['id']!,
-  ),
-),
-  ],
+      path: '/paiement/succes',
+      builder: (ctx, state) => const SuccesPaiementScreen(),
+    ),
+    GoRoute(
+      path: '/paiement/:cotisationId',
+      builder: (ctx, state) => PaiementScreen(
+          cotisationId: state.pathParameters['cotisationId']!),
+    ),
 
+    // ── TONTINES (routes spécifiques AVANT /:id) ──────
+    GoRoute(
+      path: '/tontine/creer',
+      builder: (ctx, state) => const CreerTontineScreen(),
+    ),
+    GoRoute(
+      path: '/tontine/:id/compte-virtuel', // ✅ AVANT /:id
+      builder: (ctx, state) => CompteVirtuelScreen(
+        tontineId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/tontine/:id/membres', // ✅ AVANT /:id
+      builder: (ctx, state) => MembresScreen(
+          tontineId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/tontine/:id/dashboard',
+      builder: (ctx, state) => DashboardOrganisateurScreen(
+        tontineId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/tontine/:id', // ✅ EN DERNIER
+      builder: (ctx, state) => TontineDetailScreen(
+          id: state.pathParameters['id']!),
+    ),
+  ],
 );
+
+
