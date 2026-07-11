@@ -8,6 +8,7 @@ import '../../services/vocal_service.dart';
 import '../../services/storage_service.dart';
 import '../../main.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 const Map<String, Map<String, String>> _tr = {
   'fr': {
@@ -570,6 +571,12 @@ class _TontineDetailScreenState
             backgroundColor: AppTheme.vert,
             foregroundColor: Colors.white,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.share_outlined,
+                    color: Colors.white),
+                onPressed: () => _partager(langue),
+                tooltip: _t(langue, 'partager'),
+              ),
               IconButton(
                 icon: const Icon(Icons.volume_up_rounded,
                     color: Colors.white70),

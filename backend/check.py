@@ -1,0 +1,5 @@
+﻿f = open('src/controllers/tontineController.js', encoding='utf-8')
+content = f.read()
+f.close()
+idx = content.find('effectuerDepot')
+print(content[idx:idx+800])

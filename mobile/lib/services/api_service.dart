@@ -1,4 +1,5 @@
-﻿import 'package:dio/dio.dart';
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'storage_service.dart';
 import 'offline_service.dart';
 import 'connectivity_service.dart';
@@ -415,7 +416,7 @@ class ApiService {
 
 
   static Future<void> changerPin(String ancienPin, String nouveauPin) async {
-    await _dio.put('/utilisateurs/changer-pin', data: {
+    await _dio.put('/users/changer-pin', data: {
       'ancien_pin': ancienPin,
       'nouveau_pin': nouveauPin,
     });
@@ -424,6 +425,31 @@ class ApiService {
 
   static Future<void> supprimerCompte() async {
     await _dio.delete('/utilisateurs/mon-compte');
+  }
+
+
+  static Future<Map<String, dynamic>> soumettreCapturePaiement({
+    required String tontineId,
+    required double montant,
+    required File captureFile,
+    required String methode,
+  }) async {
+    final formData = FormData.fromMap({
+      'tontine_id': tontineId,
+      'montant': montant.toString(),
+      'methode_paiement': methode,
+      'capture': await MultipartFile.fromFile(
+        captureFile.path,
+        filename: 'capture_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ),
+    });
+    final r = await _dio.post('/paiements/soumettre', data: formData);
+    return Map<String, dynamic>.from(r.data);
+  }
+
+  static Future<Map<String, dynamic>> getTransactionsTontine(String tontineId) async {
+    final r = await _dio.get('/paiements/tontine/$tontineId/transactions');
+    return Map<String, dynamic>.from(r.data);
   }
 
 }

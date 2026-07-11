@@ -963,8 +963,17 @@ class _CompteVirtuelScreenState
                           double.tryParse(montantCtrl.text);
                       if (montant == null || montant <= 0) return;
                       Navigator.pop(ctx);
-                      await _effectuerDepot(
-                          langue, montant, methode, telCtrl.text);
+                      await _// Redirection vers ecran paiement avec capture IA
+                          Navigator.pop(context);
+                          context.push(
+                            '/paiement/capture/${widget.tontineId}',
+                            extra: {
+                              'montant': double.tryParse(montantCtrl.text) ?? 0.0,
+                              'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
+                              'operateur': methode,
+                              'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
+                            },
+                          );
                     },
                     child: Text(_t(langue, 'confirmer_depot')),
                   ),

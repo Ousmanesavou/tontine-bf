@@ -16,6 +16,7 @@ import 'screens/tontine/dashboard_organisateur_screen.dart';
 import 'screens/tontine/creer_tontine_screen.dart';
 import 'screens/tontine/membres_screen.dart';
 import 'screens/paiement/paiement_screen.dart';
+import 'screens/paiement/paiement_capture_screen.dart';
 import 'screens/paiement/succes_paiement_screen.dart';
 import 'screens/catalogue/catalogue_screen.dart';
 import 'screens/profil/profil_screen.dart';
@@ -131,6 +132,10 @@ final _router = GoRouter(
       builder: (ctx, state) => const SplashScreen(),
     ),
     GoRoute(
+      path: '/onboarding',
+      builder: (ctx, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
       path: '/langue',
       builder: (ctx, state) => const LangueScreen(),
     ),
@@ -161,6 +166,19 @@ final _router = GoRouter(
     GoRoute(
       path: '/reglages',
       builder: (ctx, state) => const ReglagesScreen(),
+    ),
+    GoRoute(
+      path: '/paiement/capture/:tontineId',
+      builder: (ctx, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return PaiementCaptureScreen(
+          tontineId: state.pathParameters['tontineId']!,
+          montant: extra['montant'] ?? 0.0,
+          numeroOrganisateur: extra['numeroOrganisateur'] ?? '',
+          operateur: extra['operateur'] ?? 'Orange Money',
+          nomTontine: extra['nomTontine'] ?? 'Tontine',
+        );
+      },
     ),
     GoRoute(
       path: '/paiement/succes',
