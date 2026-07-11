@@ -211,6 +211,22 @@ class CaptureAnalyseService {
   /**
    * Simuler OCR (Phase 1 - sans API)
    * En Phase 2, remplacer par Google Vision API
+   *
+   * FIX: cette fonction ignorait totalement imageUrl et renvoyait un texte
+   * 100% figé, y compris une référence de transaction constante
+   * ("OM20260704123456"). Conséquence en cascade : analyserTexte() extrayait
+   * TOUJOURS la même référence quelle que soit l'image réellement soumise,
+   * et referenceDejaUtilisee() (WHERE reference_transaction = $1 AND
+   * tontine_id != $2) bloquait alors, de façon permanente, toute soumission
+   * sur une tontine différente de celle où cette référence avait été
+   * enregistrée la première fois. Ce n'était pas un bug de logique métier,
+   * mais une conséquence mécanique du stub figé.
+   * On génère maintenant une référence unique à chaque appel (timestamp),
+   * pour que le reste du pipeline (upload, scoring IA, notifications,
+   * Socket.io...) soit testable sans collision artificielle. Le texte reste
+   * néanmoins simulé — le montant, le destinataire et la date sont encore
+   * figés et ne reflètent pas le contenu réel de l'image. Le vrai fix
+   * définitif reste l'intégration Google Vision API (Phase 2).
    */
   static async simulerOCR(imageUrl) {
     // TODO Phase 2: Intégrer Google Vision API
@@ -219,11 +235,13 @@ class CaptureAnalyseService {
     // const [result] = await client.textDetection(imageUrl);
     // return result.textAnnotations[0]?.description || '';
 
-    // Phase 1: Retourner texte simulé pour tests
+    // Phase 1: texte simulé pour tests, avec référence unique par appel
+    // pour éviter les faux doublons entre soumissions de test.
+    const referenceUnique = `OM${Date.now()}`;
     return `Orange Money BF
 Transaction Réussie
 Montant: 15000 F CFA
-Référence: OM20260704123456
+Référence: ${referenceUnique}
 Destinataire: +226 70 12 34 56
 Date: 04/07/2026
 Heure: 12:30`;
