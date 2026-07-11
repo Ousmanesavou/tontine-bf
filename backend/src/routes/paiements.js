@@ -144,7 +144,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         texte_ocr, notes, date_echeance, date_paiement
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
                 DATE_TRUNC('month', NOW()) + INTERVAL '1 month' - INTERVAL '1 day',
-                CASE WHEN $4 = 'paye' THEN NOW() ELSE NULL END)
+                CASE WHEN $4::text = 'paye' THEN NOW() ELSE NULL END)
       RETURNING *`,
       [
         tontine_id,
