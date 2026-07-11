@@ -32,12 +32,19 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     }
 
     // 1. Vérifier que l utilisateur est membre de la tontine
+    // FIX: t.numero_mobile_money n'existe pas sur la table tontines.
+    // Le numéro mobile money appartient à l'organisateur (utilisateurs),
+    // référencé via tontines.responsable_id. On joint donc utilisateurs
+    // une seconde fois (alias org) et on prend Orange Money en priorité,
+    // sinon Moov Money.
     const { rows: [membre] } = await client.query(
-      `SELECT mt.*, t.montant_cotisation, t.numero_mobile_money, t.nom as tontine_nom,
-              u.prenom, u.nom as nom_membre
+      `SELECT mt.*, t.montant_cotisation, t.nom as tontine_nom,
+              u.prenom, u.nom as nom_membre,
+              COALESCE(org.orange_money_numero, org.moov_money_numero) as numero_mobile_money
        FROM membres_tontine mt
        JOIN tontines t ON t.id = mt.tontine_id
        JOIN utilisateurs u ON u.id = mt.utilisateur_id
+       JOIN utilisateurs org ON org.id = t.responsable_id
        WHERE mt.tontine_id = $1 AND mt.utilisateur_id = $2 AND mt.est_actif = true`,
       [tontine_id, userId]
     );
