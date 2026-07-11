@@ -134,32 +134,44 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         statut = 'en_attente';
     }
 
+    // 7.5. Calculer le numéro de période (colonne NOT NULL en base).
+    // FIX: periode_numero n'était jamais fourni par l'ancien code =>
+    // violation de contrainte NOT NULL. On numérote les cotisations
+    // successives du membre pour cette tontine : 1ère cotisation = période 1,
+    // 2e = période 2, etc.
+    const { rows: [{ count }] } = await client.query(
+      `SELECT COUNT(*) FROM cotisations WHERE tontine_id = $1 AND membre_id = $2`,
+      [tontine_id, userId]
+    );
+    const periodeNumero = parseInt(count, 10) + 1;
+
     // 8. Enregistrer la cotisation
     // FIX: l'ancienne requête utilisait le paramètre $4 (statut) deux fois :
     // une fois dans VALUES(...) et une fois dans un CASE WHEN $4 = 'paye'.
     // PostgreSQL déduisait alors deux types différents pour le même paramètre
     // (character varying vs text) => erreur "inconsistent types deduced for
     // parameter $4". On calcule maintenant date_paiement en JS en amont et on
-    // le passe comme un paramètre dédié ($15), donc chaque paramètre n'est
-    // utilisé qu'une seule fois dans la requête.
+    // le passe comme un paramètre dédié, donc chaque paramètre n'est utilisé
+    // qu'une seule fois dans la requête.
     const datePaiementValue = statut === 'paye' ? new Date() : null;
 
     const { rows: [cotisation] } = await client.query(
       `INSERT INTO cotisations (
-        tontine_id, membre_id, montant, statut,
+        tontine_id, membre_id, montant, statut, periode_numero,
         capture_url, capture_hash, methode_paiement,
         reference_transaction, operateur_detecte,
         score_ia, decision_ia, alertes_ia,
         texte_ocr, notes, date_echeance, date_paiement
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                 DATE_TRUNC('month', NOW()) + INTERVAL '1 month' - INTERVAL '1 day',
-                $15)
+                $16)
       RETURNING *`,
       [
         tontine_id,
         userId,
         parseFloat(montant) || membre.montant_cotisation,
         statut,
+        periodeNumero,
         uploadResult.secure_url,
         imageHash,
         methode_paiement || analyse.operateur,
