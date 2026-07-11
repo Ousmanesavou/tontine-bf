@@ -209,12 +209,16 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
       );
 
       // Enregistrer transaction
+      // FIX: la contrainte transactions_virtuelles_type_check n'autorise que
+      // 'depot', 'retrait', 'transfert' — pas 'entree'. Une cotisation payée
+      // par un membre est fonctionnellement un dépôt sur le compte virtuel
+      // de la tontine, d où 'depot'.
       await client.query(
         `INSERT INTO transactions_virtuelles (
           tontine_id, type, montant, membre_id,
           cotisation_id, description, solde_avant, solde_apres
         )
-        SELECT $1, 'entree', $2, $3, $4, $5,
+        SELECT $1, 'depot', $2, $3, $4, $5,
                COALESCE(solde, 0) - $2,
                COALESCE(solde, 0)
         FROM comptes_virtuels WHERE tontine_id = $1`,
@@ -410,10 +414,11 @@ router.post('/cotisations/:id/valider', async (req, res) => {
     );
 
     // Enregistrer transaction
+    // FIX: même contrainte que dans /soumettre — 'depot' au lieu de 'entree'.
     await client.query(
       `INSERT INTO transactions_virtuelles (
         tontine_id, type, montant, membre_id, cotisation_id, description
-      ) VALUES ($1, 'entree', $2, $3, $4, $5)`,
+      ) VALUES ($1, 'depot', $2, $3, $4, $5)`,
       [cot.tontine_id, cot.montant, cot.membre_id, id,
        `Cotisation validée manuellement - ${cot.prenom} ${cot.nom_membre}`]
     );
