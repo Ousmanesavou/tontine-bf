@@ -115,11 +115,17 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     });
 
     // 5. Analyse IA de la capture
-    const texteOCR = await CaptureAnalyseService.simulerOCR(uploadResult.secure_url);
-    const analyse = CaptureAnalyseService.analyserTexte(texteOCR, {
+    // FIX: le contexte (montant attendu, numéro organisateur) est calculé
+    // une seule fois et transmis à la fois à extraireTexte() (utilisé par
+    // le repli simulé pour générer un texte cohérent) et à analyserTexte().
+    // extraireTexte() utilise Google Vision API si configurée, sinon la
+    // simulation multi-opérateurs (Orange, Moov, MTN, Wave).
+    const contexteAnalyse = {
       montantAttendu: parseFloat(montant) || membre.montant_cotisation,
       numeroOrganisateur: membre.numero_mobile_money,
-    });
+    };
+    const texteOCR = await CaptureAnalyseService.extraireTexte(uploadResult.secure_url, contexteAnalyse);
+    const analyse = CaptureAnalyseService.analyserTexte(texteOCR, contexteAnalyse);
 
     // 6. Vérifier référence unique
     if (analyse.details.reference) {

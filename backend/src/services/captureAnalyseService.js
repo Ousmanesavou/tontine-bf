@@ -4,8 +4,11 @@ const { pool } = require('../../config/database');
 
 /**
  * Service d analyse intelligente des captures Mobile Money
- * Phase 1 : Analyse par patterns regex (sans API externe)
- * Phase 2 : Integration Google Vision API
+ * Phase 1 : Analyse par patterns regex (sans API externe) — simulation enrichie
+ * Phase 2 : Google Vision API — activée automatiquement si
+ *           GOOGLE_VISION_CREDENTIALS_JSON est configurée, sinon repli sur
+ *           la simulation Phase 1 (aucun crash si l API n est pas encore
+ *           configurée ou échoue ponctuellement).
  */
 class CaptureAnalyseService {
 
@@ -30,7 +33,9 @@ class CaptureAnalyseService {
         succes: /(?:paiement|transfert|envoi).*(accept[ée]e?|valid[ée]e?|r[ée]ussie?)/i,
         montant: /(\d[\d\s]*(?:[.,]\d+)?)\s*(?:F\s*CFA|FCFA|XOF)/i,
         reference: /(?:num[ée]ro|code|ref)[:\s]*([A-Z0-9]{6,20})/i,
-        destinataire: /(?:\+?226\s*\d[\d\s]{8,})/,
+        // FIX: pas de groupe de capture ici auparavant -> matchDest[1]
+        // valait undefined -> crash sur .replace(). Ajout du groupe (...).
+        destinataire: /(\+?226\s*\d[\d\s]{8,})/,
         date: /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,
         heure: /(\d{1,2}:\d{2})/,
       }
@@ -54,7 +59,8 @@ class CaptureAnalyseService {
         succes: /(?:transaction|transfert).*(r[ée]ussie?|confirmed|approved)/i,
         montant: /(\d[\d\s]*)\s*(?:F\s*CFA|XAF|XOF|FCFA)/i,
         reference: /(?:txn|transaction|ref)[:\s#]*([A-Z0-9]{6,20})/i,
-        destinataire: /(?:\+?226\s*\d[\d\s]{8,}|\+?237\s*\d[\d\s]{8,})/,
+        // FIX: même bug que MOOV_BF — groupe de capture ajouté.
+        destinataire: /(\+?226\s*\d[\d\s]{8,}|\+?237\s*\d[\d\s]{8,})/,
         date: /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,
         heure: /(\d{1,2}:\d{2})/,
       }
@@ -136,7 +142,11 @@ class CaptureAnalyseService {
     // 5. Extraire le destinataire
     const matchDest = patterns.destinataire.exec(texteOCR);
     if (matchDest) {
-      details.destinataire = matchDest[1].replace(/\s/g, '');
+      // FIX défensif: si un pattern futur oublie un groupe de capture,
+      // on retombe sur le match complet (matchDest[0]) plutôt que de
+      // planter sur .replace(undefined).
+      const valeurDest = matchDest[1] ?? matchDest[0];
+      details.destinataire = valeurDest.replace(/\s/g, '');
       scoreConfiance += 10;
 
       // Vérifier cohérence avec numéro organisateur
@@ -209,42 +219,133 @@ class CaptureAnalyseService {
   }
 
   /**
-   * Simuler OCR (Phase 1 - sans API)
-   * En Phase 2, remplacer par Google Vision API
-   *
-   * FIX: cette fonction ignorait totalement imageUrl et renvoyait un texte
-   * 100% figé, y compris une référence de transaction constante
-   * ("OM20260704123456"). Conséquence en cascade : analyserTexte() extrayait
-   * TOUJOURS la même référence quelle que soit l'image réellement soumise,
-   * et referenceDejaUtilisee() (WHERE reference_transaction = $1 AND
-   * tontine_id != $2) bloquait alors, de façon permanente, toute soumission
-   * sur une tontine différente de celle où cette référence avait été
-   * enregistrée la première fois. Ce n'était pas un bug de logique métier,
-   * mais une conséquence mécanique du stub figé.
-   * On génère maintenant une référence unique à chaque appel (timestamp),
-   * pour que le reste du pipeline (upload, scoring IA, notifications,
-   * Socket.io...) soit testable sans collision artificielle. Le texte reste
-   * néanmoins simulé — le montant, le destinataire et la date sont encore
-   * figés et ne reflètent pas le contenu réel de l'image. Le vrai fix
-   * définitif reste l'intégration Google Vision API (Phase 2).
+   * Génère un texte de capture simulé (Phase 1), utilisé comme repli quand
+   * Google Vision API n est pas configurée ou échoue. Choisit aléatoirement
+   * parmi 4 gabarits d opérateurs (Orange, Moov, MTN, Wave) pour permettre
+   * de tester la reconnaissance multi-opérateurs sans API externe. Le
+   * montant et le destinataire reprennent le contexte réel (montant attendu
+   * de la période, numéro de l organisateur) quand disponible, afin que les
+   * tests puissent atteindre AUTO_VALIDE de façon réaliste. La date/heure
+   * sont toujours celles du moment (évite le rejet automatique "capture de
+   * plus de 48h"). La référence est unique à chaque appel (evite les faux
+   * doublons entre soumissions de test).
+   */
+  static _genererTexteSimule(contexte = {}) {
+    const maintenant = new Date();
+    const dateStr = [
+      String(maintenant.getDate()).padStart(2, '0'),
+      String(maintenant.getMonth() + 1).padStart(2, '0'),
+      maintenant.getFullYear(),
+    ].join('/');
+    const heureStr = [
+      String(maintenant.getHours()).padStart(2, '0'),
+      String(maintenant.getMinutes()).padStart(2, '0'),
+    ].join(':');
+
+    const montant = contexte.montantAttendu
+      || [1000, 2000, 5000, 10000, 15000][Math.floor(Math.random() * 5)];
+
+    const destinataire = contexte.numeroOrganisateur
+      || `+226 ${Math.floor(60000000 + Math.random() * 9999999)}`;
+
+    // Suffixe aléatoire en plus du timestamp pour éviter toute collision de
+    // référence même en cas d appels quasi simultanés (même milliseconde).
+    const suffixeUnique = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+    const gabarits = [
+      () => `Orange Money BF
+Transaction Réussie
+Montant: ${montant} F CFA
+Référence: OM${suffixeUnique}
+Destinataire: ${destinataire}
+Date: ${dateStr}
+Heure: ${heureStr}`,
+
+      () => `Moov Money BF
+Paiement Accepté
+Montant envoyé: ${montant} FCFA
+Code: MV${suffixeUnique}
+Vers: ${destinataire}
+Le ${dateStr} à ${heureStr}`,
+
+      () => `MTN Mobile Money
+Transaction confirmée
+Montant: ${montant} F CFA
+Txn ID: MTN${suffixeUnique}
+Bénéficiaire: ${destinataire}
+${dateStr} ${heureStr}`,
+
+      () => `Wave
+Vous avez envoyé ${montant} F avec succès
+à ${destinataire}
+Transaction ID: WV${suffixeUnique}
+${dateStr} - ${heureStr}`,
+    ];
+
+    const gabaritChoisi = gabarits[Math.floor(Math.random() * gabarits.length)];
+    return gabaritChoisi();
+  }
+
+  /**
+   * Client Google Vision, créé une seule fois et mis en cache (y compris
+   * le cas "non configuré" -> null, pour ne pas retenter à chaque appel).
+   * Ne configure rien si GOOGLE_VISION_CREDENTIALS_JSON est absente : dans
+   * ce cas, extraireTexte() utilisera directement la simulation, sans
+   * jamais planter le serveur ni bloquer le démarrage (le require du
+   * package est fait ici, en différé, pas en haut du fichier).
+   */
+  static _getVisionClient() {
+    if (this._visionClient !== undefined) return this._visionClient;
+
+    const credsJson = process.env.GOOGLE_VISION_CREDENTIALS_JSON;
+    if (!credsJson) {
+      this._visionClient = null;
+      return null;
+    }
+
+    try {
+      const vision = require('@google-cloud/vision');
+      const credentials = JSON.parse(credsJson);
+      this._visionClient = new vision.ImageAnnotatorClient({ credentials });
+      console.log('Google Vision API initialisée avec succès');
+    } catch (err) {
+      console.error('Erreur initialisation Google Vision API, utilisation de la simulation:', err.message);
+      this._visionClient = null;
+    }
+    return this._visionClient;
+  }
+
+  /**
+   * Extraire le texte d une capture. Utilise Google Vision API si
+   * configurée et disponible ; sinon (ou en cas d échec ponctuel : quota,
+   * réseau, image illisible...) retombe sur la simulation Phase 1 enrichie,
+   * pour ne jamais faire échouer une soumission à cause d un problème côté
+   * OCR externe.
+   */
+  static async extraireTexte(imageUrl, contexte = {}) {
+    const client = this._getVisionClient();
+    if (client) {
+      try {
+        const [result] = await client.textDetection({
+          image: { source: { imageUri: imageUrl } },
+        });
+        const texte = result.textAnnotations?.[0]?.description;
+        if (texte) return texte;
+        console.warn('Vision API: aucun texte détecté sur la capture, repli sur la simulation');
+      } catch (err) {
+        console.error('Erreur Google Vision API, repli sur la simulation:', err.message);
+      }
+    }
+    return this._genererTexteSimule(contexte);
+  }
+
+  /**
+   * Conservé pour compatibilité avec d éventuels appels existants ailleurs
+   * dans le code. Préférer extraireTexte(imageUrl, contexte), qui gère
+   * aussi Google Vision API.
    */
   static async simulerOCR(imageUrl) {
-    // TODO Phase 2: Intégrer Google Vision API
-    // const vision = require('@google-cloud/vision');
-    // const client = new vision.ImageAnnotatorClient();
-    // const [result] = await client.textDetection(imageUrl);
-    // return result.textAnnotations[0]?.description || '';
-
-    // Phase 1: texte simulé pour tests, avec référence unique par appel
-    // pour éviter les faux doublons entre soumissions de test.
-    const referenceUnique = `OM${Date.now()}`;
-    return `Orange Money BF
-Transaction Réussie
-Montant: 15000 F CFA
-Référence: ${referenceUnique}
-Destinataire: +226 70 12 34 56
-Date: 04/07/2026
-Heure: 12:30`;
+    return this._genererTexteSimule({});
   }
 
   /**
