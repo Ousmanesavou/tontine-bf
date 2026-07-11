@@ -135,6 +135,15 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     }
 
     // 8. Enregistrer la cotisation
+    // FIX: l'ancienne requête utilisait le paramètre $4 (statut) deux fois :
+    // une fois dans VALUES(...) et une fois dans un CASE WHEN $4 = 'paye'.
+    // PostgreSQL déduisait alors deux types différents pour le même paramètre
+    // (character varying vs text) => erreur "inconsistent types deduced for
+    // parameter $4". On calcule maintenant date_paiement en JS en amont et on
+    // le passe comme un paramètre dédié ($15), donc chaque paramètre n'est
+    // utilisé qu'une seule fois dans la requête.
+    const datePaiementValue = statut === 'paye' ? new Date() : null;
+
     const { rows: [cotisation] } = await client.query(
       `INSERT INTO cotisations (
         tontine_id, membre_id, montant, statut,
@@ -144,7 +153,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         texte_ocr, notes, date_echeance, date_paiement
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
                 DATE_TRUNC('month', NOW()) + INTERVAL '1 month' - INTERVAL '1 day',
-                CASE WHEN $4::text = 'paye' THEN NOW() ELSE NULL END)
+                $15)
       RETURNING *`,
       [
         tontine_id,
@@ -161,6 +170,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         JSON.stringify(analyse.alertes),
         texteOCR,
         notes || null,
+        datePaiementValue,
       ]
     );
 
