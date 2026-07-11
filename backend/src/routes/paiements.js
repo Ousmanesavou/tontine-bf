@@ -158,30 +158,37 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
 
     // 8. Mettre à jour la cotisation ciblée (PAS d insertion)
     // FIX: periode_numero existe déjà sur la ligne ciblée (posé par
-    // genererCotisations), donc plus besoin de le calculer ici. Le montant
-    // reste celui prévu au calendrier (cotisationCible.montant) plutôt que
-    // d être écrasé par la saisie utilisateur, pour que le montant dû par
-    // période reste cohérent avec le plan de la tontine.
+    // genererCotisations), donc plus besoin de le calculer ici.
+    // FIX (signalé par l utilisateur): le montant enregistré doit refléter
+    // ce qui a RÉELLEMENT été détecté dans la capture (analyse.details.montant),
+    // pas rester figé au montant prévu au calendrier — sinon un paiement de
+    // 5000F sur une période prévue à 2000F se retrouvait quand même compté
+    // pour 2000F (et inversement pour un paiement inférieur). Le montant
+    // prévu (cotisationCible.montant) ne sert plus que de repli si l analyse
+    // n a détecté aucun montant du tout.
     const datePaiementValue = statut === 'paye' ? new Date() : null;
+    const montantPaye = analyse.details.montant || cotisationCible.montant;
 
     const { rows: [cotisation] } = await client.query(
       `UPDATE cotisations SET
         statut = $1,
-        capture_url = $2,
-        capture_hash = $3,
-        methode_paiement = $4,
-        reference_transaction = $5,
-        operateur_detecte = $6,
-        score_ia = $7,
-        decision_ia = $8,
-        alertes_ia = $9,
-        texte_ocr = $10,
-        notes = $11,
-        date_paiement = $12
-       WHERE id = $13
+        montant = $2,
+        capture_url = $3,
+        capture_hash = $4,
+        methode_paiement = $5,
+        reference_transaction = $6,
+        operateur_detecte = $7,
+        score_ia = $8,
+        decision_ia = $9,
+        alertes_ia = $10,
+        texte_ocr = $11,
+        notes = $12,
+        date_paiement = $13
+       WHERE id = $14
        RETURNING *`,
       [
         statut,
+        montantPaye,
         uploadResult.secure_url,
         imageHash,
         methode_paiement || analyse.operateur,
@@ -199,11 +206,15 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
 
     // 9. Si validé auto → mettre à jour solde virtuel
     if (statut === 'paye') {
+      // FIX: total_depots n'était jamais incrémenté (seul solde l était),
+      // donc restait vide indéfiniment alors que solde augmentait à chaque
+      // paiement. On les met à jour ensemble, cohérence garantie.
       await client.query(
-        `INSERT INTO comptes_virtuels (tontine_id, solde)
-         VALUES ($1, $2)
+        `INSERT INTO comptes_virtuels (tontine_id, solde, total_depots)
+         VALUES ($1, $2, $2)
          ON CONFLICT (tontine_id)
          DO UPDATE SET solde = comptes_virtuels.solde + $2,
+                       total_depots = COALESCE(comptes_virtuels.total_depots, 0) + $2,
                        updated_at = NOW()`,
         [tontine_id, cotisation.montant]
       );
@@ -405,11 +416,14 @@ router.post('/cotisations/:id/valider', async (req, res) => {
     );
 
     // Mettre à jour solde virtuel
+    // FIX: même ajout de total_depots que dans /soumettre.
     await client.query(
-      `INSERT INTO comptes_virtuels (tontine_id, solde)
-       VALUES ($1, $2)
+      `INSERT INTO comptes_virtuels (tontine_id, solde, total_depots)
+       VALUES ($1, $2, $2)
        ON CONFLICT (tontine_id)
-       DO UPDATE SET solde = comptes_virtuels.solde + $2, updated_at = NOW()`,
+       DO UPDATE SET solde = comptes_virtuels.solde + $2,
+                     total_depots = COALESCE(comptes_virtuels.total_depots, 0) + $2,
+                     updated_at = NOW()`,
       [cot.tontine_id, cot.montant]
     );
 
