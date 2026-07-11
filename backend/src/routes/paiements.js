@@ -53,19 +53,35 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
       return res.status(403).json({ error: 'Vous n êtes pas membre de cette tontine' });
     }
 
-    // 2. Vérifier pas de cotisation déjà en attente
-    const { rows: [cotExistante] } = await client.query(
-      `SELECT id FROM cotisations
+    // 2. Trouver la période de cotisation à honorer
+    // FIX MAJEUR: genererCotisations() pré-crée, dès la création de la
+    // tontine, UNE LIGNE PAR PÉRIODE ET PAR MEMBRE (statut='en_attente',
+    // capture_url=NULL) pour tout le calendrier de la tontine. /soumettre ne
+    // doit donc JAMAIS insérer une nouvelle ligne de cotisation : il doit
+    // mettre à jour la période impayée la plus ancienne. L'ancien code
+    // insérait une ligne et vérifiait juste "existe-t-il une cotisation
+    // en_attente ce mois-ci" — ce qui était TOUJOURS vrai dès la création de
+    // la tontine (les lignes pré-générées existent avant tout paiement réel),
+    // bloquant donc systématiquement toute soumission.
+    // On cible : la période la plus ancienne (periode_numero croissant) qui
+    // est soit jamais tentée (en_attente + capture_url NULL), soit rejetée
+    // (à ressoumettre). Une période en_attente AVEC déjà une capture_url est
+    // en cours de validation par l'organisateur et n'est pas re-soumettable.
+    const { rows: [cotisationCible] } = await client.query(
+      `SELECT * FROM cotisations
        WHERE tontine_id = $1 AND membre_id = $2
-       AND statut IN ('en_attente', 'paye')
-       AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM NOW())
-       AND EXTRACT(YEAR FROM date_echeance) = EXTRACT(YEAR FROM NOW())`,
+       AND (
+         (statut = 'en_attente' AND capture_url IS NULL)
+         OR statut = 'rejete'
+       )
+       ORDER BY periode_numero ASC
+       LIMIT 1`,
       [tontine_id, userId]
     );
 
-    if (cotExistante) {
+    if (!cotisationCible) {
       return res.status(400).json({
-        error: 'Vous avez déjà soumis une cotisation ce mois-ci'
+        error: 'Aucune cotisation en attente de paiement pour cette tontine. Vous êtes soit à jour, soit une soumission précédente est déjà en cours de validation.'
       });
     }
 
@@ -134,44 +150,32 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         statut = 'en_attente';
     }
 
-    // 7.5. Calculer le numéro de période (colonne NOT NULL en base).
-    // FIX: periode_numero n'était jamais fourni par l'ancien code =>
-    // violation de contrainte NOT NULL. On numérote les cotisations
-    // successives du membre pour cette tontine : 1ère cotisation = période 1,
-    // 2e = période 2, etc.
-    const { rows: [{ count }] } = await client.query(
-      `SELECT COUNT(*) FROM cotisations WHERE tontine_id = $1 AND membre_id = $2`,
-      [tontine_id, userId]
-    );
-    const periodeNumero = parseInt(count, 10) + 1;
-
-    // 8. Enregistrer la cotisation
-    // FIX: l'ancienne requête utilisait le paramètre $4 (statut) deux fois :
-    // une fois dans VALUES(...) et une fois dans un CASE WHEN $4 = 'paye'.
-    // PostgreSQL déduisait alors deux types différents pour le même paramètre
-    // (character varying vs text) => erreur "inconsistent types deduced for
-    // parameter $4". On calcule maintenant date_paiement en JS en amont et on
-    // le passe comme un paramètre dédié, donc chaque paramètre n'est utilisé
-    // qu'une seule fois dans la requête.
+    // 8. Mettre à jour la cotisation ciblée (PAS d insertion)
+    // FIX: periode_numero existe déjà sur la ligne ciblée (posé par
+    // genererCotisations), donc plus besoin de le calculer ici. Le montant
+    // reste celui prévu au calendrier (cotisationCible.montant) plutôt que
+    // d être écrasé par la saisie utilisateur, pour que le montant dû par
+    // période reste cohérent avec le plan de la tontine.
     const datePaiementValue = statut === 'paye' ? new Date() : null;
 
     const { rows: [cotisation] } = await client.query(
-      `INSERT INTO cotisations (
-        tontine_id, membre_id, montant, statut, periode_numero,
-        capture_url, capture_hash, methode_paiement,
-        reference_transaction, operateur_detecte,
-        score_ia, decision_ia, alertes_ia,
-        texte_ocr, notes, date_echeance, date_paiement
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-                DATE_TRUNC('month', NOW()) + INTERVAL '1 month' - INTERVAL '1 day',
-                $16)
-      RETURNING *`,
+      `UPDATE cotisations SET
+        statut = $1,
+        capture_url = $2,
+        capture_hash = $3,
+        methode_paiement = $4,
+        reference_transaction = $5,
+        operateur_detecte = $6,
+        score_ia = $7,
+        decision_ia = $8,
+        alertes_ia = $9,
+        texte_ocr = $10,
+        notes = $11,
+        date_paiement = $12
+       WHERE id = $13
+       RETURNING *`,
       [
-        tontine_id,
-        userId,
-        parseFloat(montant) || membre.montant_cotisation,
         statut,
-        periodeNumero,
         uploadResult.secure_url,
         imageHash,
         methode_paiement || analyse.operateur,
@@ -183,6 +187,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         texteOCR,
         notes || null,
         datePaiementValue,
+        cotisationCible.id,
       ]
     );
 
