@@ -33,8 +33,6 @@ class CaptureAnalyseService {
         succes: /(?:paiement|transfert|envoi).*(accept[ée]e?|valid[ée]e?|r[ée]ussie?)/i,
         montant: /(\d[\d\s]*(?:[.,]\d+)?)\s*(?:F\s*CFA|FCFA|XOF)/i,
         reference: /(?:num[ée]ro|code|ref)[:\s]*([A-Z0-9]{6,20})/i,
-        // FIX: pas de groupe de capture ici auparavant -> matchDest[1]
-        // valait undefined -> crash sur .replace(). Ajout du groupe (...).
         destinataire: /(\+?226\s*\d[\d\s]{8,})/,
         date: /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,
         heure: /(\d{1,2}:\d{2})/,
@@ -59,7 +57,6 @@ class CaptureAnalyseService {
         succes: /(?:transaction|transfert).*(r[ée]ussie?|confirmed|approved)/i,
         montant: /(\d[\d\s]*)\s*(?:F\s*CFA|XAF|XOF|FCFA)/i,
         reference: /(?:txn|transaction|ref)[:\s#]*([A-Z0-9]{6,20})/i,
-        // FIX: même bug que MOOV_BF — groupe de capture ajouté.
         destinataire: /(\+?226\s*\d[\d\s]{8,}|\+?237\s*\d[\d\s]{8,})/,
         date: /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,
         heure: /(\d{1,2}:\d{2})/,
@@ -70,7 +67,9 @@ class CaptureAnalyseService {
   /**
    * Analyser une capture Mobile Money
    * @param {string} texteOCR - Texte extrait de l image
-   * @param {object} contexte - Informations attendues
+   * @param {object} contexte - Informations attendues (montantAttendu doit
+   *   être le montant RESTANT dû pour la période ciblée, pas forcément le
+   *   montant total de la cotisation — voir paiements.js)
    * @returns {object} Résultat d analyse
    */
   static analyserTexte(texteOCR, contexte = {}) {
@@ -108,21 +107,27 @@ class CaptureAnalyseService {
     }
 
     // 3. Extraire le montant
+    // FIX (paiement par tranche): un montant INFÉRIEUR au montant attendu
+    // n est plus pénalisé — c est un paiement partiel légitime, pas un
+    // signal de fraude. Seul un montant démesurément SUPÉRIEUR (>3x, capture
+    // d une transaction sans rapport) reste suspect. Un montant qui
+    // correspond exactement reste le cas le mieux noté.
     const matchMontant = patterns.montant.exec(texteOCR);
     if (matchMontant) {
       const montantStr = matchMontant[1].replace(/[\s,]/g, '');
       details.montant = parseFloat(montantStr);
       scoreConfiance += 25;
 
-      // Vérifier cohérence avec montant attendu
       if (contexte.montantAttendu) {
-        const diff = Math.abs(details.montant - contexte.montantAttendu);
-        const tolerance = contexte.montantAttendu * 0.01; // 1% tolerance
-        if (diff <= tolerance) {
+        const ratio = details.montant / contexte.montantAttendu;
+        if (ratio > 3) {
+          alertes.push(`Montant ${details.montant} F très supérieur au montant attendu ${contexte.montantAttendu} F`);
+          scoreConfiance -= 15;
+        } else if (ratio >= 0.99) {
           scoreConfiance += 20;
         } else {
-          alertes.push(`Montant ${details.montant} F ≠ attendu ${contexte.montantAttendu} F`);
-          scoreConfiance -= 20;
+          alertes.push(`Paiement partiel: ${details.montant} F sur ${contexte.montantAttendu} F attendu`);
+          scoreConfiance += 10;
         }
       }
     } else {
@@ -142,14 +147,10 @@ class CaptureAnalyseService {
     // 5. Extraire le destinataire
     const matchDest = patterns.destinataire.exec(texteOCR);
     if (matchDest) {
-      // FIX défensif: si un pattern futur oublie un groupe de capture,
-      // on retombe sur le match complet (matchDest[0]) plutôt que de
-      // planter sur .replace(undefined).
       const valeurDest = matchDest[1] ?? matchDest[0];
       details.destinataire = valeurDest.replace(/\s/g, '');
       scoreConfiance += 10;
 
-      // Vérifier cohérence avec numéro organisateur
       if (contexte.numeroOrganisateur) {
         const numeroNormalise = contexte.numeroOrganisateur.replace(/[\s\+]/g, '');
         const destNormalise = details.destinataire.replace(/[\s\+]/g, '');
@@ -169,7 +170,6 @@ class CaptureAnalyseService {
       details.date = matchDate[1];
       scoreConfiance += 5;
 
-      // Vérifier que la date est récente (max 48h)
       try {
         const parts = details.date.split(/[\/\-]/);
         const dateCapture = new Date(
@@ -192,10 +192,8 @@ class CaptureAnalyseService {
       details.heure = matchHeure[1];
     }
 
-    // Score final (0-100)
     scoreConfiance = Math.max(0, Math.min(100, scoreConfiance));
 
-    // Décision finale
     let decision;
     if (!estReussie) {
       decision = 'REJETE';
@@ -218,18 +216,6 @@ class CaptureAnalyseService {
     };
   }
 
-  /**
-   * Génère un texte de capture simulé (Phase 1), utilisé comme repli quand
-   * Google Vision API n est pas configurée ou échoue. Choisit aléatoirement
-   * parmi 4 gabarits d opérateurs (Orange, Moov, MTN, Wave) pour permettre
-   * de tester la reconnaissance multi-opérateurs sans API externe. Le
-   * montant et le destinataire reprennent le contexte réel (montant attendu
-   * de la période, numéro de l organisateur) quand disponible, afin que les
-   * tests puissent atteindre AUTO_VALIDE de façon réaliste. La date/heure
-   * sont toujours celles du moment (évite le rejet automatique "capture de
-   * plus de 48h"). La référence est unique à chaque appel (evite les faux
-   * doublons entre soumissions de test).
-   */
   static _genererTexteSimule(contexte = {}) {
     const maintenant = new Date();
     const dateStr = [
@@ -248,8 +234,6 @@ class CaptureAnalyseService {
     const destinataire = contexte.numeroOrganisateur
       || `+226 ${Math.floor(60000000 + Math.random() * 9999999)}`;
 
-    // Suffixe aléatoire en plus du timestamp pour éviter toute collision de
-    // référence même en cas d appels quasi simultanés (même milliseconde).
     const suffixeUnique = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
     const gabarits = [
@@ -286,14 +270,6 @@ ${dateStr} - ${heureStr}`,
     return gabaritChoisi();
   }
 
-  /**
-   * Client Google Vision, créé une seule fois et mis en cache (y compris
-   * le cas "non configuré" -> null, pour ne pas retenter à chaque appel).
-   * Ne configure rien si GOOGLE_VISION_CREDENTIALS_JSON est absente : dans
-   * ce cas, extraireTexte() utilisera directement la simulation, sans
-   * jamais planter le serveur ni bloquer le démarrage (le require du
-   * package est fait ici, en différé, pas en haut du fichier).
-   */
   static _getVisionClient() {
     if (this._visionClient !== undefined) return this._visionClient;
 
@@ -315,13 +291,6 @@ ${dateStr} - ${heureStr}`,
     return this._visionClient;
   }
 
-  /**
-   * Extraire le texte d une capture. Utilise Google Vision API si
-   * configurée et disponible ; sinon (ou en cas d échec ponctuel : quota,
-   * réseau, image illisible...) retombe sur la simulation Phase 1 enrichie,
-   * pour ne jamais faire échouer une soumission à cause d un problème côté
-   * OCR externe.
-   */
   static async extraireTexte(imageUrl, contexte = {}) {
     const client = this._getVisionClient();
     if (client) {
@@ -339,25 +308,14 @@ ${dateStr} - ${heureStr}`,
     return this._genererTexteSimule(contexte);
   }
 
-  /**
-   * Conservé pour compatibilité avec d éventuels appels existants ailleurs
-   * dans le code. Préférer extraireTexte(imageUrl, contexte), qui gère
-   * aussi Google Vision API.
-   */
   static async simulerOCR(imageUrl) {
     return this._genererTexteSimule({});
   }
 
-  /**
-   * Hash d une image pour détection de doublons
-   */
   static async hashImage(buffer) {
     return crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
-  /**
-   * Vérifier si une référence a déjà été utilisée
-   */
   static async referenceDejaUtilisee(reference, tontineId) {
     if (!reference) return false;
     const { rows } = await pool.query(
@@ -369,9 +327,6 @@ ${dateStr} - ${heureStr}`,
     return rows.length > 0;
   }
 
-  /**
-   * Vérifier si un hash d image a déjà été utilisé
-   */
   static async hashDejaUtilise(hash) {
     const { rows } = await pool.query(
       'SELECT id FROM cotisations WHERE capture_hash = $1',
