@@ -13,10 +13,12 @@ const { v4: uuidv4 } = require('uuid');
  * n'importe quel utilisateur authentifié.
  */
 async function verifierMembreOuPlus(dbClient, tontineId, userId) {
+  // FIX: est_admin n'existe pas comme colonne — le statut admin passe par
+  // role = 'admin' (confirmé via information_schema.columns).
   const { rows: [acces] } = await dbClient.query(
     `SELECT 1 FROM membres_tontine WHERE tontine_id = $1 AND utilisateur_id = $2 AND est_actif = true
      UNION SELECT 1 FROM tontines WHERE id = $1 AND responsable_id = $2
-     UNION SELECT 1 FROM utilisateurs WHERE id = $2 AND est_admin = true`,
+     UNION SELECT 1 FROM utilisateurs WHERE id = $2 AND role = 'admin'`,
     [tontineId, userId]
   );
   return !!acces;
@@ -36,11 +38,12 @@ async function verifierOrganisateurOuAdmin(dbClient, tontineId, userId) {
   if (!tontine) return { tontine: null, autorise: false };
   if (tontine.responsable_id === userId) return { tontine, autorise: true };
 
+  // FIX: même correction — role = 'admin' au lieu de est_admin (inexistant).
   const { rows: [user] } = await dbClient.query(
-    'SELECT est_admin FROM utilisateurs WHERE id = $1',
+    'SELECT role FROM utilisateurs WHERE id = $1',
     [userId]
   );
-  return { tontine, autorise: !!user?.est_admin };
+  return { tontine, autorise: user?.role === 'admin' };
 }
 
 /**
@@ -886,9 +889,9 @@ const tontineController = {
       let autorise = tontine[0].responsable_id === userId;
       if (!autorise) {
         const { rows: [user] } = await client.query(
-          'SELECT est_admin FROM utilisateurs WHERE id = $1', [userId]
+          'SELECT role FROM utilisateurs WHERE id = $1', [userId]
         );
-        autorise = !!user?.est_admin;
+        autorise = user?.role === 'admin';
       }
       if (!autorise) {
         await client.query('ROLLBACK');

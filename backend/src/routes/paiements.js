@@ -651,12 +651,13 @@ router.get('/admin/transactions', async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // FIX: est_admin n'existe pas comme colonne — utiliser role = 'admin'.
     const { rows: [user] } = await pool.query(
-      'SELECT est_admin FROM utilisateurs WHERE id = $1',
+      'SELECT role FROM utilisateurs WHERE id = $1',
       [userId]
     );
 
-    if (!user?.est_admin) {
+    if (user?.role !== 'admin') {
       return res.status(403).json({ error: 'Accès admin requis' });
     }
 
