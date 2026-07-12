@@ -19,10 +19,7 @@ const upload = multer({
 /**
  * Applique un surplus (trop-perçu sur une période) aux périodes suivantes
  * du même membre, dans l'ordre chronologique, jusqu'à épuisement du
- * surplus ou absence de période éligible restante. Ne touche que les
- * périodes 'en_attente' (jamais tentées) ou 'partiel' (déjà entamées) —
- * jamais 'rejete' (aucune capture valide associée) ni 'paye'.
- * Retourne le surplus qui n'a pas pu être affecté (aucune période à couvrir).
+ * surplus ou absence de période éligible restante.
  */
 async function appliquerSurplus(client, tontineId, membreId, membreInfo, surplusInitial, periodeDepart) {
   let surplus = surplusInitial;
@@ -60,25 +57,33 @@ async function appliquerSurplus(client, tontineId, membreId, membreInfo, surplus
       [nouveauStatut, Math.min(cumul, montantDu), prochaine.id]
     );
 
-    await client.query(
+    // FIX: RETURNING id pour récupérer le compte_virtuel_id réel, et le
+    // renseigner (avec utilisateur_id) sur transactions_virtuelles — sans
+    // ça, ces colonnes restent NULL et l écran "Compte virtuel" côté app
+    // (qui filtre dessus dans tontineController.js) ne trouve jamais rien.
+    const { rows: [compteVirtuel] } = await client.query(
       `INSERT INTO comptes_virtuels (tontine_id, solde, total_depots)
        VALUES ($1, $2, $2)
        ON CONFLICT (tontine_id)
        DO UPDATE SET solde = comptes_virtuels.solde + $2,
                      total_depots = COALESCE(comptes_virtuels.total_depots, 0) + $2,
-                     updated_at = NOW()`,
+                     updated_at = NOW()
+       RETURNING id`,
       [tontineId, aAppliquer]
     );
 
     await client.query(
       `INSERT INTO transactions_virtuelles (
-        tontine_id, type, montant, membre_id, cotisation_id, description, solde_avant, solde_apres
+        tontine_id, compte_virtuel_id, type, montant, membre_id, utilisateur_id,
+        cotisation_id, description, solde_avant, solde_apres
       )
-      SELECT $1, 'depot', $2, $3, $4, $5,
-             COALESCE(solde, 0) - $2, COALESCE(solde, 0)
+      SELECT $1, $2, 'depot', $3, $4, $5, $6, $7,
+             COALESCE(solde, 0) - $3, COALESCE(solde, 0)
       FROM comptes_virtuels WHERE tontine_id = $1`,
-      [tontineId, aAppliquer, membreId, prochaine.id,
-       `Surplus reporté (période ${derniereDeriode} → ${prochaine.periode_numero}) - ${membreInfo.prenom} ${membreInfo.nom_membre}`]
+      [
+        tontineId, compteVirtuel.id, aAppliquer, membreId, membreId, prochaine.id,
+        `Surplus reporté (période ${derniereDeriode} → ${prochaine.periode_numero}) - ${membreInfo.prenom} ${membreInfo.nom_membre}`
+      ]
     );
 
     surplus -= aAppliquer;
@@ -121,9 +126,6 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     }
 
     // 2. Trouver la période de cotisation à honorer
-    // Éligible : jamais tentée (en_attente + capture_url NULL), rejetée (à
-    // ressoumettre), ou partiellement payée (à compléter — paiement par
-    // tranche).
     const { rows: [cotisationCible] } = await client.query(
       `SELECT * FROM cotisations
        WHERE tontine_id = $1 AND membre_id = $2
@@ -173,10 +175,6 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     });
 
     // 5. Analyse IA de la capture
-    // Le montant attendu pour la comparaison est désormais le montant
-    // RESTANT dû sur la période ciblée (montant - montant_paye déjà réglé),
-    // pas le montant total de la période — indispensable pour que le
-    // paiement par tranche soit correctement évalué.
     const montantRestantDu = Math.max(
       0,
       parseFloat(cotisationCible.montant) - (parseFloat(cotisationCible.montant_paye) || 0)
@@ -202,7 +200,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     }
 
     // 7. Déterminer l issue selon le score IA
-    let decisionStatut; // 'accepte' | 'en_attente' | 'rejete'
+    let decisionStatut;
     switch (analyse.decision) {
       case 'AUTO_VALIDE':
         decisionStatut = 'accepte';
@@ -218,13 +216,6 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     }
 
     // 8. Calculer l application du paiement (plein, partiel, ou en attente)
-    // - 'accepte' (AUTO_VALIDE) : appliqué immédiatement, cumul avec les
-    //   tranches précédentes. Si le cumul dépasse le montant dû, l excédent
-    //   est calculé pour être reporté sur la période suivante (étape 9b).
-    // - 'en_attente' (VALIDATION_MANUELLE) : le montant est stocké dans
-    //   montant_propose SANS toucher au solde tant que l organisateur n a
-    //   pas validé via /cotisations/:id/valider.
-    // - 'rejete' : rien n est appliqué.
     const montantRecu = analyse.details.montant || 0;
     const montantDejaPaye = parseFloat(cotisationCible.montant_paye) || 0;
     const montantDu = parseFloat(cotisationCible.montant);
@@ -297,28 +288,33 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
         ? (montantDu - montantDejaPaye)
         : montantRecu;
 
-      await client.query(
+      // FIX: RETURNING id pour propager compte_virtuel_id + utilisateur_id
+      // sur transactions_virtuelles (voir explication dans appliquerSurplus).
+      const { rows: [compteVirtuel] } = await client.query(
         `INSERT INTO comptes_virtuels (tontine_id, solde, total_depots)
          VALUES ($1, $2, $2)
          ON CONFLICT (tontine_id)
          DO UPDATE SET solde = comptes_virtuels.solde + $2,
                        total_depots = COALESCE(comptes_virtuels.total_depots, 0) + $2,
-                       updated_at = NOW()`,
+                       updated_at = NOW()
+         RETURNING id`,
         [tontine_id, montantAppliqueCettePeriode]
       );
 
       await client.query(
         `INSERT INTO transactions_virtuelles (
-          tontine_id, type, montant, membre_id,
+          tontine_id, compte_virtuel_id, type, montant, membre_id, utilisateur_id,
           cotisation_id, description, solde_avant, solde_apres
         )
-        SELECT $1, 'depot', $2, $3, $4, $5,
-               COALESCE(solde, 0) - $2,
+        SELECT $1, $2, 'depot', $3, $4, $5, $6, $7,
+               COALESCE(solde, 0) - $3,
                COALESCE(solde, 0)
         FROM comptes_virtuels WHERE tontine_id = $1`,
         [
           tontine_id,
+          compteVirtuel.id,
           montantAppliqueCettePeriode,
+          userId,
           userId,
           cotisation.id,
           `Cotisation ${membre.prenom} ${membre.nom_membre} - ${analyse.operateur}` +
@@ -396,7 +392,6 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
       });
     }
 
-    // Message principal pour popup côté app — couvre tous les cas
     let messagePrincipal;
     if (statut === 'paye') {
       messagePrincipal = surplus > 0
@@ -511,10 +506,6 @@ router.post('/cotisations/:id/valider', async (req, res) => {
       return res.status(400).json({ error: 'Cette cotisation ne peut pas être validée (aucun paiement en attente)' });
     }
 
-    // Applique le montant proposé (stocké lors de la soumission) au cumul
-    // de la période, détermine si elle passe à 'paye' ou reste 'partiel',
-    // et reporte l éventuel surplus sur la suite — même logique que la
-    // validation automatique dans /soumettre.
     const montantDu = parseFloat(cot.montant);
     const dejaPaye = parseFloat(cot.montant_paye) || 0;
     const propose = parseFloat(cot.montant_propose);
@@ -532,21 +523,24 @@ router.post('/cotisations/:id/valider', async (req, res) => {
       [nouveauStatut, montantApplique, userId, id]
     );
 
-    await client.query(
+    // FIX: même ajout de compte_virtuel_id/utilisateur_id qu ailleurs.
+    const { rows: [compteVirtuel] } = await client.query(
       `INSERT INTO comptes_virtuels (tontine_id, solde, total_depots)
        VALUES ($1, $2, $2)
        ON CONFLICT (tontine_id)
        DO UPDATE SET solde = comptes_virtuels.solde + $2,
                      total_depots = COALESCE(comptes_virtuels.total_depots, 0) + $2,
-                     updated_at = NOW()`,
+                     updated_at = NOW()
+       RETURNING id`,
       [cot.tontine_id, montantAAppliquerMaintenant]
     );
 
     await client.query(
       `INSERT INTO transactions_virtuelles (
-        tontine_id, type, montant, membre_id, cotisation_id, description
-      ) VALUES ($1, 'depot', $2, $3, $4, $5)`,
-      [cot.tontine_id, montantAAppliquerMaintenant, cot.membre_id, id,
+        tontine_id, compte_virtuel_id, type, montant, membre_id, utilisateur_id,
+        cotisation_id, description
+      ) VALUES ($1, $2, 'depot', $3, $4, $5, $6, $7)`,
+      [cot.tontine_id, compteVirtuel.id, montantAAppliquerMaintenant, cot.membre_id, cot.membre_id, id,
        `Cotisation validée manuellement - ${cot.prenom} ${cot.nom_membre}` +
          (nouveauStatut === 'partiel' ? ' (partiel)' : '')]
     );
@@ -622,10 +616,6 @@ router.post('/cotisations/:id/rejeter', async (req, res) => {
       return res.status(403).json({ error: 'Non autorisé' });
     }
 
-    // Si un montant avait déjà été validé sur une tranche précédente pour
-    // cette période, le rejet de CETTE soumission ne doit pas effacer cet
-    // acquis : la période retombe à 'partiel' (pas 'rejete') pour refléter
-    // l historique réel.
     const dejaPaye = parseFloat(cot.montant_paye) || 0;
     const statutApresRejet = dejaPaye > 0 ? 'partiel' : 'rejete';
 
