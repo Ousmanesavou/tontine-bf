@@ -1,7 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../utils/app_theme.dart';
+import '../../utils/app_theme.dart';
 
 class MediaPickerWidget extends StatefulWidget {
   final Function(String? imagePath, String? videoPath) onMediaSelected;

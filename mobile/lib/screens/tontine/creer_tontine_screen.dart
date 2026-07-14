@@ -334,7 +334,8 @@ String _t(String langue, String key) {
 }
 
 class CreerTontineScreen extends ConsumerStatefulWidget {
-  const CreerTontineScreen({super.key});
+  final Map<String, dynamic>? produit;
+  const CreerTontineScreen({super.key, this.produit});
 
   @override
   ConsumerState<CreerTontineScreen> createState() =>
@@ -343,12 +344,16 @@ class CreerTontineScreen extends ConsumerStatefulWidget {
 
 class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nomCtrl = TextEditingController();
-  final _montantCtrl = TextEditingController();
+  //final _nomCtrl = TextEditingController();
+  //final _montantCtrl = TextEditingController();
   final _membresCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
   final _joursCtrl = TextEditingController();
   final VocalService _vocal = VocalService();
+
+  late TextEditingController _nomCtrl;
+  late TextEditingController _montantCtrl;
+
 
   String _type = 'argent_liquide';
   String _periodicite = 'hebdomadaire';
@@ -471,6 +476,22 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    
+    // 2. Prefill if product data exists, otherwise use empty string
+    _nomCtrl = TextEditingController(
+      text: widget.produit != null ? widget.produit!['nom'] : '',
+    );
+    
+    _montantCtrl = TextEditingController(
+      text: widget.produit != null ? widget.produit!['prix'].toString() : '',
+    );
+  }
+
+  
+
+  @override
   Widget build(BuildContext context) {
     final langue = ref.watch(langueProvider);
     final sw = MediaQuery.of(context).size.width;
@@ -514,6 +535,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               _buildSection(_t(langue, 'nom'), isSmall),
               TextFormField(
                 controller: _nomCtrl,
+                readOnly: widget.produit != null,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   hintText: _t(langue, 'nom_hint'),
@@ -627,6 +649,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               _buildSection(_t(langue, 'montant'), isSmall),
               TextFormField(
                 controller: _montantCtrl,
+                readOnly: widget.produit != null,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(

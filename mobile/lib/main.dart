@@ -192,9 +192,16 @@ final _router = GoRouter(
 
     // ── TONTINES (routes spécifiques AVANT /:id) ──────
     GoRoute(
-      path: '/tontine/creer',
-      builder: (ctx, state) => const CreerTontineScreen(),
-    ),
+  path: '/tontine/creer',
+  builder: (ctx, state) {
+    // Safely extract the optional product map
+    final Map<String, dynamic>? produitSelectionne = state.extra as Map<String, dynamic>?;
+    
+    // Pass the nullable map to your screen widget
+    return CreerTontineScreen(produit: produitSelectionne);
+  },
+),
+
     GoRoute(
       path: '/tontine/:id/compte-virtuel', // ✅ AVANT /:id
       builder: (ctx, state) => CompteVirtuelScreen(

@@ -159,7 +159,7 @@ class _SuccesPaiementScreenState
                     Container(
                       width: isSmall ? 100 : 120,
                       height: isSmall ? 100 : 120,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppTheme.vertClair,
                         shape: BoxShape.circle,
                       ),
