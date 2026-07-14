@@ -45,19 +45,18 @@ const adminController = {
       ] = await Promise.all([
         pool.query("SELECT COUNT(*) as total FROM utilisateurs WHERE est_actif=true AND role='user'"),
         pool.query("SELECT COUNT(*) as total FROM tontines WHERE statut='active'"),
-        pool.query("SELECT COALESCE(SUM(montant),0) as total FROM cotisations WHERE statut='paye' AND date_paiement>=date_trunc('month',NOW())"),
+        pool.query("SELECT COALESCE(SUM(montant_paye),0) as total FROM cotisations WHERE statut IN ('paye','partiel') AND date_paiement>=date_trunc('month',NOW())"),
         pool.query("SELECT COUNT(*) as total FROM cotisations WHERE statut='en_retard'"),
         pool.query("SELECT COUNT(*) as total FROM utilisateurs WHERE created_at>=NOW()-INTERVAL '7 days' AND role='user'"),
         pool.query("SELECT COUNT(*) as total FROM tontines WHERE created_at>=date_trunc('month',NOW())"),
         pool.query(`
-          SELECT to_char(date_trunc('month',COALESCE(tv.created_at,c.date_paiement)),'Mon YYYY') as mois,
-            COALESCE(SUM(COALESCE(tv.montant,c.montant)),0) as total,
+          SELECT to_char(date_trunc('month', tv.created_at), 'Mon YYYY') as mois,
+            COALESCE(SUM(tv.montant), 0) as total,
             COUNT(*) as nb_transactions
-          FROM cotisations c
-          LEFT JOIN transactions_virtuelles tv ON tv.created_at=c.date_paiement
-          WHERE c.statut='paye' AND c.date_paiement>=NOW()-INTERVAL '6 months'
-          GROUP BY date_trunc('month',COALESCE(tv.created_at,c.date_paiement))
-          ORDER BY date_trunc('month',COALESCE(tv.created_at,c.date_paiement))
+          FROM transactions_virtuelles tv
+          WHERE tv.type = 'depot' AND tv.created_at >= NOW() - INTERVAL '6 months'
+          GROUP BY date_trunc('month', tv.created_at)
+          ORDER BY date_trunc('month', tv.created_at)
         `),
         pool.query("SELECT langue, COUNT(*) as total FROM utilisateurs WHERE role='user' GROUP BY langue ORDER BY total DESC"),
         pool.query("SELECT type, COUNT(*) as total FROM tontines GROUP BY type ORDER BY total DESC"),
@@ -257,7 +256,7 @@ const adminController = {
           COUNT(DISTINCT mt.utilisateur_id) as total_membres,
           COUNT(CASE WHEN c.statut='paye' THEN 1 END) as cotisations_payees,
           COUNT(c.id) as total_cotisations,
-          COALESCE(SUM(CASE WHEN c.statut='paye' THEN c.montant END),0) as total_collecte,
+          COALESCE(SUM(CASE WHEN c.statut IN ('paye','partiel') THEN c.montant_paye END),0) as total_collecte,
           cv.solde as solde_virtuel
         FROM tontines t
         LEFT JOIN utilisateurs u ON u.id=t.responsable_id
@@ -468,7 +467,10 @@ const adminController = {
         "SELECT * FROM transactions_virtuelles WHERE id=$1 AND type='retrait' AND statut='approuve'",
         [req.params.id]
       );
-      if (!retrait[0]) return res.status(404).json({ error: 'Retrait non trouvé ou déjà traité' });
+      if (!retrait[0]) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Retrait non trouvé ou déjà traité' });
+      }
 
       // Marquer comme traité par admin
       await client.query(
@@ -476,22 +478,19 @@ const adminController = {
         [req.user.id, req.params.id]
       );
 
-      // Déduire du solde si pas encore fait
-      await client.query(
-        'UPDATE comptes_virtuels SET solde=solde-$1, total_retraits=total_retraits+$1 WHERE id=$2',
-        [retrait[0].montant, retrait[0].compte_virtuel_id]
-      );
+      // FIX MAJEUR: le solde était déjà débité au moment de l'approbation
+      // par vote des membres (voterRetrait) — pas de nouvelle déduction ici,
+      // ce serait la deuxième fois pour le même montant. validerRetrait ne
+      // fait que confirmer administrativement l'exécution réelle.
 
-      // Récupérer la tontine pour notification
       const { rows: tontine } = await client.query(`
-        SELECT t.nom, t.responsable_id FROM tontines t
+        SELECT t.id, t.nom, t.responsable_id FROM tontines t
         JOIN comptes_virtuels cv ON cv.tontine_id=t.id
         WHERE cv.id=$1
       `, [retrait[0].compte_virtuel_id]);
 
       await client.query('COMMIT');
 
-      // Notifier le créateur
       if (tontine[0]) {
         await notificationService.notifierMembre(tontine[0].responsable_id, {
           type: 'tour_recu',
@@ -511,6 +510,7 @@ const adminController = {
     }
   },
 
+
   async refuserRetrait(req, res) {
     try {
       const { motif = '' } = req.body;
@@ -520,12 +520,15 @@ const adminController = {
       );
       if (!retrait[0]) return res.status(404).json({ error: 'Retrait non trouvé' });
 
+      if (retrait[0].statut === 'traite') {
+        return res.status(400).json({ error: 'Ce retrait a déjà été traité, il ne peut plus être refusé' });
+      }
+
       await pool.query(
         "UPDATE transactions_virtuelles SET statut='refuse_admin', description=CONCAT(description,' | Refus admin: ',$1) WHERE id=$2",
         [motif, req.params.id]
       );
 
-      // Rembourser le solde si déjà déduit
       if (retrait[0].statut === 'approuve') {
         await pool.query(
           'UPDATE comptes_virtuels SET solde=solde+$1 WHERE id=$2',
@@ -538,7 +541,6 @@ const adminController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
-
   // ── TRANSACTIONS ──────────────────────────────────────
   async getAllPaiements(req, res) {
     try {

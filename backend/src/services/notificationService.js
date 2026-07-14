@@ -117,10 +117,49 @@ function getMessage(type, langue, nom, montant, tontine) {
   return fn ? fn(nom || '', montant || '', tontine || '') : (msgs['fr'](nom || '', montant || '', tontine || ''));
 }
 
-// ── ENVOI SMS ─────────────────────────────────────────
+// ── IKODDI (SMS) ───────────────────────────────────────
+// Client créé une seule fois et mis en cache. Si IKODDI_KEY/IKODDI_GROUP_ID
+// ne sont pas configurées, reste `false` et envoyerSMS retombe sur
+// Africa's Talking (comportement inchangé) — aucun risque de casser
+// l'existant tant que les clés Ikoddi ne sont pas ajoutées sur Render.
+let ikoddiClient = null;
+function getIkoddiClient() {
+  if (ikoddiClient !== null) return ikoddiClient;
+  if (!process.env.IKODDI_KEY || !process.env.IKODDI_GROUP_ID) {
+    ikoddiClient = false;
+    return false;
+  }
+  try {
+    const { Ikoddi } = require('ikoddi-client-sdk');
+    ikoddiClient = new Ikoddi()
+      .withApiKey(process.env.IKODDI_KEY)
+      .withGroupId(process.env.IKODDI_GROUP_ID);
+    logger.info('Ikoddi initialisé avec succès');
+  } catch (err) {
+    logger.error('Erreur initialisation Ikoddi, repli sur Africa\'s Talking:', err.message);
+    ikoddiClient = false;
+  }
+  return ikoddiClient;
+}
+
+// ── ENVOI SMS ──────────────────────────────────────────
 async function envoyerSMS(telephone, message) {
   try {
     if (!telephone) return { success: false };
+
+    const client = getIkoddiClient();
+    if (client) {
+      await client.sendSMS(
+        [telephone],
+        process.env.IKODDI_SENDER_ID || 'TONTINE',
+        message,
+        'Notification Tontine'
+      );
+      logger.info(`SMS envoyé à ${telephone} (Ikoddi)`);
+      return { success: true };
+    }
+
+    // Repli : Africa's Talking (inchangé)
     if (process.env.AT_USERNAME === 'sandbox') {
       logger.info(`[SMS SANDBOX] → ${telephone}: ${message}`);
       return { success: true, sandbox: true };
@@ -130,14 +169,13 @@ async function envoyerSMS(telephone, message) {
       message,
       from: process.env.AT_SENDER_ID || 'TONTINE',
     });
-    logger.info(`SMS envoyé à ${telephone}`);
+    logger.info(`SMS envoyé à ${telephone} (Africa's Talking)`);
     return result;
   } catch (err) {
     logger.error(`Erreur SMS ${telephone}:`, err.message);
     return { success: false, error: err.message };
   }
 }
-
 // ── ENVOI WHATSAPP ────────────────────────────────────
 async function envoyerWhatsApp(telephone, message) {
   try {
@@ -161,11 +199,14 @@ async function envoyerWhatsApp(telephone, message) {
     logger.info(`WhatsApp envoyé à ${telephone}`);
     return { success: true };
   } catch (err) {
-    logger.error(`Erreur WhatsApp ${telephone}:`, err.message);
-    return { success: false, error: err.message };
+    // FIX: err.message est generique (ex: "Request failed with status code
+    // 400") — le vrai détail Meta est dans err.response.data.error, jamais
+    // loggé jusqu'ici, d'où l'impossibilité de diagnostiquer depuis le début.
+    const detailMeta = err.response?.data?.error;
+    logger.error(`Erreur WhatsApp ${telephone}:`, detailMeta || err.message);
+    return { success: false, error: detailMeta?.message || err.message };
   }
 }
-
 // ── ENVOI EMAIL ───────────────────────────────────────
 async function envoyerEmail(email, sujet, message) {
   try {
