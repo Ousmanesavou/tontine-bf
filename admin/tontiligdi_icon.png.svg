@@ -1,0 +1,82 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <title>TontiLigdi - Logo final</title>
+  <desc>Logo officiel TontiLigdi - Lagem Ligdi - Rassemblons l'argent - by Toeeg Digital SARL</desc>
+
+  <!-- Fond blanc -->
+  <rect width="1024" height="1024" fill="white"/>
+
+  <!-- Cercle or principal -->
+  <circle cx="512" cy="430" r="310" fill="#F5A623"/>
+
+  <!-- Anneaux verts -->
+  <circle cx="512" cy="430" r="310" fill="none" stroke="#1D9E75" stroke-width="18"/>
+  <circle cx="512" cy="430" r="282" fill="none" stroke="#1D9E75" stroke-width="6"/>
+  <circle cx="512" cy="430" r="256" fill="none" stroke="#1D9E75" stroke-width="2" opacity="0.4"/>
+
+  <!-- Cercle intérieur vert -->
+  <circle cx="512" cy="430" r="222" fill="#1D9E75"/>
+  <circle cx="512" cy="430" r="222" fill="none" stroke="#F5A623" stroke-width="5"/>
+  <circle cx="512" cy="430" r="200" fill="none" stroke="#F5A623" stroke-width="2" opacity="0.35"/>
+
+  <!-- Texture bogolan subtile -->
+  <polygon points="512,240 520,250 512,260 504,250" fill="white" opacity="0.06"/>
+  <polygon points="544,252 552,262 544,272 536,262" fill="white" opacity="0.06"/>
+  <polygon points="480,252 488,262 480,272 472,262" fill="white" opacity="0.06"/>
+  <polygon points="572,272 580,282 572,292 564,282" fill="white" opacity="0.06"/>
+  <polygon points="452,272 460,282 452,292 444,282" fill="white" opacity="0.06"/>
+  <polygon points="590,300 598,310 590,320 582,310" fill="white" opacity="0.06"/>
+  <polygon points="434,300 442,310 434,320 426,310" fill="white" opacity="0.06"/>
+  <polygon points="600,334 608,344 600,354 592,344" fill="white" opacity="0.06"/>
+  <polygon points="424,334 432,344 424,354 416,344" fill="white" opacity="0.06"/>
+  <polygon points="604,372 612,382 604,392 596,382" fill="white" opacity="0.06"/>
+  <polygon points="420,372 428,382 420,392 412,382" fill="white" opacity="0.06"/>
+  <polygon points="604,412 612,422 604,432 596,422" fill="white" opacity="0.06"/>
+  <polygon points="420,412 428,422 420,432 412,422" fill="white" opacity="0.06"/>
+  <polygon points="600,450 608,460 600,470 592,460" fill="white" opacity="0.06"/>
+  <polygon points="424,450 432,460 424,470 416,460" fill="white" opacity="0.06"/>
+  <polygon points="590,486 598,496 590,506 582,496" fill="white" opacity="0.06"/>
+  <polygon points="434,486 442,496 434,506 426,496" fill="white" opacity="0.06"/>
+  <polygon points="572,516 580,526 572,536 564,526" fill="white" opacity="0.06"/>
+  <polygon points="452,516 460,526 452,536 444,526" fill="white" opacity="0.06"/>
+  <polygon points="544,534 552,544 544,554 536,544" fill="white" opacity="0.06"/>
+  <polygon points="480,534 488,544 480,554 472,544" fill="white" opacity="0.06"/>
+  <polygon points="512,542 520,552 512,562 504,552" fill="white" opacity="0.06"/>
+
+  <!-- 4 grands losanges aux coins -->
+  <polygon points="512,108 532,132 512,156 492,132" fill="#1D9E75"/>
+  <polygon points="512,704 532,728 512,752 492,728" fill="#1D9E75"/>
+  <polygon points="196,430 220,406 244,430 220,454" fill="#1D9E75"/>
+  <polygon points="780,430 804,406 828,430 804,454" fill="#1D9E75"/>
+
+  <!-- 4 petits losanges intermédiaires -->
+  <polygon points="512,186 524,198 512,210 500,198" fill="#1D9E75" opacity="0.7"/>
+  <polygon points="512,650 524,662 512,674 500,662" fill="#1D9E75" opacity="0.7"/>
+  <polygon points="290,430 302,418 314,430 302,442" fill="#1D9E75" opacity="0.7"/>
+  <polygon points="698,430 710,418 722,430 710,442" fill="#1D9E75" opacity="0.7"/>
+
+  <!-- Étoile Burkina Faso au centre -->
+  <circle cx="512" cy="430" r="96" fill="#0D5C3A"/>
+  <circle cx="512" cy="430" r="96" fill="none" stroke="#F5A623" stroke-width="6"/>
+  <circle cx="512" cy="430" r="78" fill="none" stroke="#F5A623" stroke-width="2" opacity="0.4"/>
+  <polygon points="512,354 530,408 588,408 542,442 560,496 512,462 464,496 482,442 436,408 494,408" fill="#F5A623"/>
+
+  <!-- ✅ NOM CENTRÉ TontiLigdi -->
+  <text x="512" y="820" font-family="Georgia, serif" font-size="86" font-weight="700" text-anchor="middle">
+    <tspan fill="#1D9E75">Tonti</tspan><tspan fill="#F5A623">Ligdi</tspan>
+  </text>
+
+  <!-- Ligne or séparatrice -->
+  <line x1="112" y1="842" x2="912" y2="842" stroke="#F5A623" stroke-width="4"/>
+
+  <!-- Slogan mooré -->
+  <text x="512" y="880" font-family="Georgia, serif" font-size="36" font-weight="700" fill="#F5A623" text-anchor="middle" letter-spacing="4">Lagem Ligdi</text>
+
+  <!-- Traduction française -->
+  <text x="512" y="916" font-family="Arial, sans-serif" font-size="26" fill="#1D9E75" text-anchor="middle" letter-spacing="2">Rassemblons l'argent</text>
+
+  <!-- Ligne fine -->
+  <line x1="312" y1="934" x2="712" y2="934" stroke="#F5A623" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Mention Toeeg Digital -->
+  <text x="512" y="968" font-family="Arial, sans-serif" font-size="22" fill="#aaa" text-anchor="middle">by Toeeg Digital SARL</text>
+</svg>
