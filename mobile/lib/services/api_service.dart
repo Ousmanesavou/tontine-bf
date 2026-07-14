@@ -254,7 +254,9 @@ class ApiService {
       if (e.response?.statusCode == 200) return;
       // ✅ Ignorer erreur de parsing si succès
       if (e.type == DioExceptionType.badResponse &&
-          (e.response?.statusCode ?? 0) < 400) return;
+          (e.response?.statusCode ?? 0) < 400) {
+        return;
+      }
       throw _handleError(e);
     } catch (e) {
       // ✅ Ignorer toute erreur de type casting
@@ -411,7 +413,7 @@ class ApiService {
   }
 
   static Future<void> validerPaiementManuel(String tontineId, String cotisationId) async {
-    await _dio.post('/tontines/\/cotisations/\/valider');
+    await _dio.post('/tontines//cotisations//valider');
   }
 
 

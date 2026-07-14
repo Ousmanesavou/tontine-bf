@@ -480,10 +480,12 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
             hintText: _t(langue, 'tel_hint'),
           ),
           validator: (v) {
-            if (v == null || v.isEmpty)
+            if (v == null || v.isEmpty) {
               return _t(langue, 'requis');
-            if (v.length < 6)
+            }
+            if (v.length < 6) {
               return _t(langue, 'tel_invalide');
+            }
             return null;
           },
         ),
@@ -629,8 +631,9 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
             ),
           ),
           validator: (v) {
-            if (v == null || v.length != 4)
+            if (v == null || v.length != 4) {
               return _t(langue, 'pin_4');
+            }
             return null;
           },
         ),
@@ -648,8 +651,9 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
             prefixIcon: const Icon(Icons.lock_outline),
           ),
           validator: (v) {
-            if (v != _pinCtrl.text)
+            if (v != _pinCtrl.text) {
               return _t(langue, 'pin_match');
+            }
             return null;
           },
         ),

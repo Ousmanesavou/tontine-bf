@@ -233,7 +233,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen>
     }).toList();
   }
 
-  void _voirProduit(Map<String, dynamic> produit, String langue) {
+  void _voirProduit(BuildContext context, Map<String, dynamic> produit, String langue) {
     _vocal.parler('${produit['nom']}. ${_formatPrix(_parseInt(produit['prix']))}');
     showModalBottomSheet(
       context: context,
@@ -484,7 +484,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen>
         produit['livraison_disponible'] == true;
 
     return GestureDetector(
-      onTap: () => _voirProduit(produit, langue),
+      onTap: () => _voirProduit(context, produit, langue),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -506,9 +506,9 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen>
                 Container(
                   height: isSmall ? 90 : 110,
                   width: double.infinity,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppTheme.vertClair,
-                    borderRadius: const BorderRadius.vertical(
+                    borderRadius: BorderRadius.vertical(
                         top: Radius.circular(16)),
                   ),
                   child: Center(
@@ -1010,7 +1010,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen>
             child: ElevatedButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                context.push('/tontine/creer');
+                context.push('/tontine/creer', extra: produit);
               },
               icon: const Icon(Icons.group_add_outlined),
               label: Text(_t(langue, 'creer_tontine')),

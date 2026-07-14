@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/storage_service.dart';
@@ -963,15 +964,14 @@ class _CompteVirtuelScreenState
                           double.tryParse(montantCtrl.text);
                       if (montant == null || montant <= 0) return;
                       Navigator.pop(ctx);
-                      await _// Redirection vers ecran paiement avec capture IA
-                          Navigator.pop(context);
+                      Navigator.pop(context);
                           context.push(
                             '/paiement/capture/${widget.tontineId}',
                             extra: {
                               'montant': double.tryParse(montantCtrl.text) ?? 0.0,
-                              'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
+                              //'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
                               'operateur': methode,
-                              'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
+                              //'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
                             },
                           );
                     },
@@ -1042,15 +1042,15 @@ class _CompteVirtuelScreenState
                     color: AppTheme.orangeClair,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.security,
+                      Icon(Icons.security,
                           color: AppTheme.orangeFonce, size: 18),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Tous les membres doivent approuver ce retrait.',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Nunito',
                             fontSize: 12,
                             color: AppTheme.orangeFonce,
