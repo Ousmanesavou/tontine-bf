@@ -176,7 +176,13 @@ async function envoyerSMS(telephone, message) {
     return { success: false, error: err.message };
   }
 }
-// ── ENVOI WHATSAPP ────────────────────────────────────
+// ── ENVOI WHATSAPP ──────────────────────────────────────
+// FIX: le texte libre (type "text") est bloqué par Meta hors fenêtre de 24h
+// (le destinataire doit avoir écrit en premier récemment) — nos
+// notifications sont initiées par l'app, donc systématiquement hors
+// fenêtre. On passe par le modèle pré-approuvé "notification_generique"
+// (catégorie Utilitaire), qui insère le message complet dans sa seule
+// variable {{1}}.
 async function envoyerWhatsApp(telephone, message) {
   try {
     if (!process.env.WHATSAPP_TOKEN || !telephone) return { success: false };
@@ -186,8 +192,19 @@ async function envoyerWhatsApp(telephone, message) {
       {
         messaging_product: 'whatsapp',
         to: tel,
-        type: 'text',
-        text: { body: message },
+        type: 'template',
+        template: {
+          name: 'notification_generique',
+          language: { code: 'fr' },
+          components: [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: message },
+              ],
+            },
+          ],
+        },
       },
       {
         headers: {
@@ -199,9 +216,6 @@ async function envoyerWhatsApp(telephone, message) {
     logger.info(`WhatsApp envoyé à ${telephone}`);
     return { success: true };
   } catch (err) {
-    // FIX: err.message est generique (ex: "Request failed with status code
-    // 400") — le vrai détail Meta est dans err.response.data.error, jamais
-    // loggé jusqu'ici, d'où l'impossibilité de diagnostiquer depuis le début.
     const detailMeta = err.response?.data?.error;
     logger.error(`Erreur WhatsApp ${telephone}:`, detailMeta || err.message);
     return { success: false, error: detailMeta?.message || err.message };
