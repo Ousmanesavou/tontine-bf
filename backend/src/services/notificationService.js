@@ -195,7 +195,7 @@ async function envoyerWhatsApp(telephone, message) {
         type: 'template',
         template: {
           name: 'notification_generique',
-          language: { code: 'fr' },
+          language: { code: 'fr_FR' },
           components: [
             {
               type: 'body',
