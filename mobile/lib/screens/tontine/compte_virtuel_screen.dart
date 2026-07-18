@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
@@ -962,18 +963,20 @@ class _CompteVirtuelScreenState
                       final montant =
                           double.tryParse(montantCtrl.text);
                       if (montant == null || montant <= 0) return;
+                      final montantVal = double.tryParse(montantCtrl.text) ?? 0.0;
+                      final methodVal = methode;
                       Navigator.pop(ctx);
-                      await _// Redirection vers ecran paiement avec capture IA
-                          Navigator.pop(context);
-                          context.push(
-                            '/paiement/capture/${widget.tontineId}',
-                            extra: {
-                              'montant': double.tryParse(montantCtrl.text) ?? 0.0,
-                              'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
-                              'operateur': methode,
-                              'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
-                            },
-                          );
+                      if (mounted) {
+                        GoRouter.of(context).push(
+                          '/paiement/capture/${widget.tontineId}',
+                          extra: {
+                            'montant': montantVal,
+                            'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
+                            'operateur': methodVal,
+                            'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
+                          },
+                        );
+                      }
                     },
                     child: Text(_t(langue, 'confirmer_depot')),
                   ),
