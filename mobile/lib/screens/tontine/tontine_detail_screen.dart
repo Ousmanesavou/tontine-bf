@@ -607,7 +607,7 @@ class _TontineDetailScreenState
                   fontSize: isSmall ? 12 : 14,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
-                  shadows: [Shadow(color: Colors.black38, blurRadius: 4)],
+                  shadows: const [Shadow(color: Colors.black38, blurRadius: 4)],
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -946,7 +946,7 @@ class _TontineDetailScreenState
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -1332,11 +1332,11 @@ class _TontineDetailScreenState
                         ),
                       ],
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 80),
         ],
       ),

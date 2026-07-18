@@ -47,7 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
     final langue = StorageService.getLangue();
     final token = StorageService.getToken();
-    final premiereVisite = true; // FORCE TEST
+    const premiereVisite = true; // FORCE TEST
     if (premiereVisite) {
       context.go('/onboarding');
     } else if (langue == null) {
@@ -135,10 +135,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             fontFamily: 'Nunito', fontSize: sw * 0.035,
                             color: Colors.white70)),
                         SizedBox(height: sh * 0.07),
-                        SizedBox(
+                        const SizedBox(
                           width: 28, height: 28,
                           child: CircularProgressIndicator(
-                              color: const Color(0xFFF5A623), strokeWidth: 2.5),
+                              color: Color(0xFFF5A623), strokeWidth: 2.5),
                         ),
                         SizedBox(height: sh * 0.05),
                         Wrap(
@@ -159,13 +159,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             bottom: 20, left: 0, right: 0,
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: Column(children: [
-                const Text('by Toeeg Digital SARL',
+              child: const Column(children: [
+                Text('by Toeeg Digital SARL',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontFamily: 'Nunito',
                         fontSize: 11, color: Colors.white38)),
-                const SizedBox(height: 2),
-                const Text('v1.0.0 • 20+ pays africains',
+                SizedBox(height: 2),
+                Text('v1.0.0 • 20+ pays africains',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontFamily: 'Nunito',
                         fontSize: 10, color: Colors.white24)),
@@ -252,7 +252,11 @@ class _LogoPainter extends CustomPainter {
       final ray = i.isEven ? r : petitR;
       final x = center.dx + ray * _cos(angle);
       final y = center.dy + ray * _sin(angle);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     c.drawPath(path, p);
@@ -300,58 +304,58 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       iconeWidget: null,
       tag: 'NOUVEAU',
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '🤝',
       titre: 'Créez ou rejoignez\nune tontine',
       description: 'Créez votre groupe d\'épargne en quelques minutes. '
           'Invitez vos amis, famille ou collègues. '
           'Définissez le montant, la fréquence et l\'ordre de rotation.',
-      couleur: const Color(0xFF2196F3),
-      couleurSecondaire: const Color(0xFF1565C0),
+      couleur: Color(0xFF2196F3),
+      couleurSecondaire: Color(0xFF1565C0),
       features: ['Tontines publiques et privées', 'Jusqu\'à 50 membres', 'Rotation automatique'],
       tag: 'SIMPLE',
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '💰',
       titre: 'Paiements sécurisés\net traçables',
       description: 'Chaque cotisation est enregistrée et vérifiée. '
           'Payez via Orange Money, Moov Money ou envoyez une capture d\'écran. '
           'Historique complet disponible à tout moment.',
-      couleur: const Color(0xFFFF8F00),
-      couleurSecondaire: const Color(0xFFE65100),
+      couleur: Color(0xFFFF8F00),
+      couleurSecondaire: Color(0xFFE65100),
       features: ['Orange Money & Moov Money', 'Validation par l\'organisateur', 'Historique complet'],
       tag: 'SÉCURISÉ',
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '📊',
       titre: 'Dashboard organisateur\npuissant',
       description: 'Les organisateurs ont accès à un tableau de bord complet. '
           'Suivez les paiements en temps réel, gérez les membres, '
           'envoyez des rappels et générez des rapports.',
-      couleur: const Color(0xFF7B1FA2),
-      couleurSecondaire: const Color(0xFF4A148C),
+      couleur: Color(0xFF7B1FA2),
+      couleurSecondaire: Color(0xFF4A148C),
       features: ['Suivi en temps réel', 'Rappels automatiques', 'Score de fiabilité'],
       tag: 'PUISSANT',
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '🌍',
       titre: 'Disponible dans\n20+ pays africains',
       description: 'TontiLigdi est disponible au Burkina Faso, Sénégal, '
           'Côte d\'Ivoire, Mali, Guinée et bien plus encore. '
           'Interface en français, mooré, bambara et wolof.',
-      couleur: const Color(0xFF00897B),
-      couleurSecondaire: const Color(0xFF004D40),
+      couleur: Color(0xFF00897B),
+      couleurSecondaire: Color(0xFF004D40),
       features: ['5 langues disponibles', 'Adapté à chaque pays', 'Support Mobile Money local'],
       tag: 'PANAFRICAIN',
     ),
-    _OnboardingPage(
+    const _OnboardingPage(
       emoji: '🔒',
       titre: 'Votre argent\nen sécurité',
       description: 'KYC obligatoire pour les organisateurs. '
           'Code PIN secret pour accéder à votre compte. '
           'Toutes les transactions sont chiffrées et supervisées par TontiLigdi.',
-      couleur: const Color(0xFF37474F),
-      couleurSecondaire: const Color(0xFF102027),
+      couleur: Color(0xFF37474F),
+      couleurSecondaire: Color(0xFF102027),
       features: ['Vérification KYC', 'Code PIN sécurisé', 'Supervision TontiLigdi'],
       tag: 'FIABLE',
     ),

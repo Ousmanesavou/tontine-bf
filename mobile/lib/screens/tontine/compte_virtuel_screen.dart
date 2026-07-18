@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/storage_service.dart';
@@ -966,17 +967,17 @@ class _CompteVirtuelScreenState
                       final montantVal = double.tryParse(montantCtrl.text) ?? 0.0;
                       final methodVal = methode;
                       Navigator.pop(ctx);
-                      if (mounted) {
-                        GoRouter.of(context).push(
-                          '/paiement/capture/${widget.tontineId}',
-                          extra: {
-                            'montant': montantVal,
-                            'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
-                            'operateur': methodVal,
-                            'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
-                          },
-                        );
-                      }
+if (mounted) {
+                          GoRouter.of(context).push(
+                            '/paiement/capture/${widget.tontineId}',
+                            extra: {
+                              'montant': montantVal,
+                              'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
+                              'operateur': methodVal,
+                              'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
+                            },
+                          );
+                        }
                     },
                     child: Text(_t(langue, 'confirmer_depot')),
                   ),
@@ -1045,15 +1046,15 @@ class _CompteVirtuelScreenState
                     color: AppTheme.orangeClair,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.security,
+                      Icon(Icons.security,
                           color: AppTheme.orangeFonce, size: 18),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Tous les membres doivent approuver ce retrait.',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Nunito',
                             fontSize: 12,
                             color: AppTheme.orangeFonce,

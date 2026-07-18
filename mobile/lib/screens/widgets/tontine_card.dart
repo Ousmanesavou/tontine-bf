@@ -112,7 +112,7 @@ class TontineCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         // Membres
                         Row(children: [
-                          Icon(Icons.people_outline,
+                          const Icon(Icons.people_outline,
                               size: 12, color: AppTheme.grisTexte),
                           const SizedBox(width: 4),
                           Text(
@@ -163,13 +163,13 @@ class TontineCard extends StatelessWidget {
                   color: AppTheme.rouge.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(children: [
-                  const Icon(Icons.warning_amber_rounded,
+                child: const Row(children: [
+                  Icon(Icons.warning_amber_rounded,
                       color: AppTheme.rouge, size: 16),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'Cotisation en retard — Payez maintenant',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Nunito',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -238,8 +238,8 @@ class TontineCard extends StatelessWidget {
                   color: isUrgent ? AppTheme.rouge : AppTheme.texte,
                 ),
               ),
-              Text('j',
-                  style: const TextStyle(
+              const Text('j',
+                  style: TextStyle(
                       fontFamily: 'Nunito',
                       fontSize: 9,
                       color: AppTheme.grisTexte)),

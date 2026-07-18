@@ -429,7 +429,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                         fontFamily: 'Nunito',
                         fontSize: 12,
                         color: AppTheme.grisTexte)),
-                activeColor: AppTheme.vert,
+                activeThumbColor: AppTheme.vert,
               ),
               const Divider(height: 1, indent: 16),
               SwitchListTile(
@@ -443,7 +443,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                         fontFamily: 'Nunito',
                         fontSize: 12,
                         color: AppTheme.grisTexte)),
-                activeColor: AppTheme.vert,
+                activeThumbColor: AppTheme.vert,
               ),
               const Divider(height: 1, indent: 16),
               SwitchListTile(
@@ -460,7 +460,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                         fontFamily: 'Nunito',
                         fontSize: 12,
                         color: AppTheme.grisTexte)),
-                activeColor: AppTheme.vert,
+                activeThumbColor: AppTheme.vert,
               ),
             ]),
             const SizedBox(height: 16),
@@ -471,9 +471,9 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
               ...PaysData.getMobileMoney(_pays).map((mm) {
                 final code = mm.toLowerCase().replaceAll(' ', '_');
                 Color couleur = AppTheme.vert;
-                if (mm.toLowerCase().contains('orange'))
+                if (mm.toLowerCase().contains('orange')) {
                   couleur = const Color(0xFFFF6600);
-                else if (mm.toLowerCase().contains('moov'))
+                } else if (mm.toLowerCase().contains('moov'))
                   couleur = const Color(0xFF0066CC);
                 else if (mm.toLowerCase().contains('mtn'))
                   couleur = const Color(0xFFFFCC00);
@@ -607,10 +607,10 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Center(
+            const Center(
               child: Text(
                 'TontiLigdi v1.0.0 • 20+ pays',
-                style: const TextStyle(
+                style: TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 11,
                     color: AppTheme.grisTexte),
@@ -866,14 +866,6 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                           const Icon(Icons.lock_outline),
                     ),
                   ),
-                  if (erreur != null) ...[
-                    const SizedBox(height: 8),
-                    Text(erreur!,
-                        style: const TextStyle(
-                            color: AppTheme.rouge,
-                            fontFamily: 'Nunito',
-                            fontSize: 12)),
-                  ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
