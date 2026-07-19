@@ -389,12 +389,12 @@ class ApiService {
     } catch (_) { return []; }
   }
 
-  static Future<void> accepterAdhesion(String tontineId, String demandeurId) async {
-    await _dio.post('/tontines/$tontineId/demandes/$demandeurId/accepter');
+  static Future<void> accepterAdhesion(String adhesionId) async {
+    await _dio.put('/tontines/adhesions/$adhesionId/accepter');
   }
 
-  static Future<void> refuserAdhesion(String tontineId, String demandeurId) async {
-    await _dio.post('/tontines/$tontineId/demandes/$demandeurId/refuser');
+  static Future<void> refuserAdhesion(String adhesionId) async {
+    await _dio.put('/tontines/adhesions/$adhesionId/refuser');
   }
 
 

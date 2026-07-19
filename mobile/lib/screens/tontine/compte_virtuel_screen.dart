@@ -972,9 +972,9 @@ if (mounted) {
                             '/paiement/capture/${widget.tontineId}',
                             extra: {
                               'montant': montantVal,
-                              'numeroOrganisateur': _compteVirtuel?['numero_mobile_money'] ?? '',
+                              'numeroOrganisateur': _compte?['numero_mobile_money'] ?? '',
                               'operateur': methodVal,
-                              'nomTontine': _compteVirtuel?['nom'] ?? 'Tontine',
+                              'nomTontine': _compte?['nom'] ?? 'Tontine',
                             },
                           );
                         }

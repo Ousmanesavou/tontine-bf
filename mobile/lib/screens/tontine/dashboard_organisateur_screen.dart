@@ -1,8 +1,10 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
+import '../../services/storage_service.dart';
 import '../../main.dart';
 
 const Map<String, Map<String, String>> _tr = {
@@ -26,7 +28,7 @@ const Map<String, Map<String, String>> _tr = {
     'exclure': 'Exclure',
     'relancer': 'Relancer',
     'demandes': 'Demandes adhesion',
-    'ordre_rotation': 'Ordre de rotation',
+    'ordre_rotation': 'Ordre rotation',
     'historique': 'Historique paiements',
     'valider_paiement': 'Valider paiement',
     'securite_titre': 'Statut securite',
@@ -140,9 +142,9 @@ class _DashboardOrganisateurScreenState
       List<Map<String, dynamic>>.from(_dashboard?['activite'] ?? []);
 
   // ── ACTIONS ───────────────────────────────────────────
-  Future<void> _accepterMembre(String demandeurId) async {
+  Future<void> _accepterMembre(String adhesionId) async {
     try {
-      await ApiService.accepterAdhesion(widget.tontineId, demandeurId);
+      await ApiService.accepterAdhesion(adhesionId);
       await _charger();
       if (mounted) _snack('Membre accepte !', AppTheme.vert);
     } catch (e) {
@@ -150,9 +152,9 @@ class _DashboardOrganisateurScreenState
     }
   }
 
-  Future<void> _refuserMembre(String demandeurId) async {
+  Future<void> _refuserMembre(String adhesionId) async {
     try {
-      await ApiService.refuserAdhesion(widget.tontineId, demandeurId);
+      await ApiService.refuserAdhesion(adhesionId);
       await _charger();
     } catch (_) {}
   }
@@ -693,7 +695,7 @@ class _DashboardOrganisateurScreenState
   }
 
   Widget _buildCarteDemande(Map<String, dynamic> d, String langue, bool isSmall) {
-    final demandeurId = d['demandeur_id']?.toString() ?? '';
+    final adhesionId = d['id']?.toString() ?? '';
     final prenom = d['prenom']?.toString() ?? '?';
     final nom = d['nom']?.toString() ?? '';
     final score = int.tryParse(d['score_fiabilite']?.toString() ?? '0') ?? 0;
@@ -742,7 +744,7 @@ class _DashboardOrganisateurScreenState
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _accepterMembre(demandeurId),
+                  onPressed: () => _accepterMembre(adhesionId),
                   icon: const Icon(Icons.check, size: 16),
                   label: Text(_t(langue, 'accepter')),
                   style: ElevatedButton.styleFrom(backgroundColor: AppTheme.vert),
@@ -751,7 +753,7 @@ class _DashboardOrganisateurScreenState
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _refuserMembre(demandeurId),
+                  onPressed: () => _refuserMembre(adhesionId),
                   icon: const Icon(Icons.close, size: 16),
                   label: Text(_t(langue, 'refuser')),
                   style: OutlinedButton.styleFrom(
