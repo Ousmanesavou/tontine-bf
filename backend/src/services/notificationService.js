@@ -136,7 +136,7 @@ function getIkoddiClient() {
       .withGroupId(process.env.IKODDI_GROUP_ID);
     logger.info('Ikoddi initialisé avec succès');
   } catch (err) {
-    logger.error('Erreur initialisation Ikoddi, repli sur Africa\'s Talking:', err.message);
+    logger.error('Erreur initialisation Ikoddi, repli sur Africa\'s Talking:', err.message || err.toString() || JSON.stringify(err));
     ikoddiClient = false;
   }
   return ikoddiClient;
