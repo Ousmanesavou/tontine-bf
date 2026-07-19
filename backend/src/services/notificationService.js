@@ -180,7 +180,7 @@ async function envoyerSMS(telephone, message) {
 // FIX: le texte libre (type "text") est bloqué par Meta hors fenêtre de 24h
 // (le destinataire doit avoir écrit en premier récemment) — nos
 // notifications sont initiées par l'app, donc systématiquement hors
-// fenêtre. On passe par le modèle pré-approuvé "notification_generique"
+// fenêtre. On passe par le modèle pré-approuvé "notification_tontiligdi"
 // (catégorie Utilitaire), qui insère le message complet dans sa seule
 // variable {{1}}.
 async function envoyerWhatsApp(telephone, message) {
@@ -194,7 +194,7 @@ async function envoyerWhatsApp(telephone, message) {
         to: tel,
         type: 'template',
         template: {
-          name: 'notification_generique',
+          name: 'notification_tontiligdi',
           language: { code: 'fr' },
           components: [
             {
