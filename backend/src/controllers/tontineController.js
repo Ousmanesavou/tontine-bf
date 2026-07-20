@@ -409,7 +409,7 @@ const tontineController = {
       );
 
       if (!userRows[0]) {
-        const msg = `Vous êtes invité(e) à rejoindre la tontine "${tontineRows[0].nom}". Téléchargez l'app Tontine Africa !`;
+        const msg = `Vous êtes invité(e) à rejoindre la tontine "${tontineRows[0].nom}". Téléchargez l'app TontiLigdi !`;
         await notificationService.envoyerSMS(telephone, msg);
         return res.json({ success: true, message: 'Invitation SMS envoyée' });
       }
@@ -585,21 +585,37 @@ const tontineController = {
         return res.status(403).json({ error: 'Accès refusé' });
       }
 
-      const { rows: count } = await client.query(
-        'SELECT COUNT(*) as total FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true',
-        [adhesion[0].tontine_id]
+      // FIX: si une ligne existe déjà (membre actif, ou ancien membre exclu
+      // dont la ligne persiste avec est_actif=false), l'INSERT plantait sur
+      // la contrainte unique (tontine_id, utilisateur_id). On réactive
+      // l'existant au lieu d'en créer un doublon.
+      const { rows: existant } = await client.query(
+        'SELECT id FROM membres_tontine WHERE tontine_id = $1 AND utilisateur_id = $2',
+        [adhesion[0].tontine_id, adhesion[0].demandeur_id]
       );
 
-      if (parseInt(count[0].total) >= tontine.nombre_membres) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Le groupe est complet' });
+      if (existant[0]) {
+        await client.query(
+          'UPDATE membres_tontine SET est_actif = true WHERE id = $1',
+          [existant[0].id]
+        );
+      } else {
+        const { rows: count } = await client.query(
+          'SELECT COUNT(*) as total FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true',
+          [adhesion[0].tontine_id]
+        );
+
+        if (parseInt(count[0].total) >= tontine.nombre_membres) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Le groupe est complet' });
+        }
+
+        const position = parseInt(count[0].total) + 1;
+        await client.query(
+          'INSERT INTO membres_tontine (tontine_id, utilisateur_id, position_rotation) VALUES ($1,$2,$3)',
+          [adhesion[0].tontine_id, adhesion[0].demandeur_id, position]
+        );
       }
-
-      const position = parseInt(count[0].total) + 1;
-      await client.query(
-        'INSERT INTO membres_tontine (tontine_id, utilisateur_id, position_rotation) VALUES ($1,$2,$3)',
-        [adhesion[0].tontine_id, adhesion[0].demandeur_id, position]
-      );
 
       await client.query(
         "UPDATE adhesions_tontine SET statut = 'accepte', updated_at = NOW() WHERE id = $1",
