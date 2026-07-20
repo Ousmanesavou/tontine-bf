@@ -136,7 +136,11 @@ function getIkoddiClient() {
       .withGroupId(process.env.IKODDI_GROUP_ID);
     logger.info('Ikoddi initialisé avec succès');
   } catch (err) {
-    logger.error('Erreur initialisation Ikoddi, repli sur Africa\'s Talking:', err.message || err.toString() || JSON.stringify(err));
+    logger.error('Erreur initialisation Ikoddi, repli sur Africa\'s Talking:', {
+      message: err.message,
+      name: err.name,
+      stack: err.stack,
+    });
     ikoddiClient = false;
   }
   return ikoddiClient;
@@ -237,13 +241,13 @@ async function envoyerEmail(email, sujet, message) {
         <div style="font-family:Arial;padding:20px;background:#f5f5f5">
           <div style="background:white;padding:24px;border-radius:12px;max-width:500px;margin:0 auto">
             <div style="text-align:center;margin-bottom:20px">
-              <h2 style="color:#1D9E75;margin:0">💰 Tontine Africa</h2>
+              <h2 style="color:#1D9E75;margin:0">💰 TontiLigdi</h2>
               <p style="color:#888;font-size:12px;margin:4px 0">Épargne solidaire en Afrique</p>
             </div>
             <p style="font-size:15px;line-height:1.6;color:#333">${message}</p>
             <hr style="border:1px solid #eee;margin:20px 0">
             <p style="color:#888;font-size:11px;text-align:center">
-              Tontine Africa — Burkina Faso, Mali, Sénégal, Côte d'Ivoire et plus
+              TontiLigdi — Burkina Faso, Mali, Sénégal, Côte d'Ivoire et plus
             </p>
           </div>
         </div>
@@ -305,7 +309,7 @@ async function notifierMembre(userId, options) {
       options.type, langue, nom,
       options.montant || '', options.nom_tontine || ''
     );
-    const titre = 'Tontine Africa';
+    const titre = 'TontiLigdi';
 
     // Sauvegarder en base
     try {
