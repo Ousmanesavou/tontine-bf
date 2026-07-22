@@ -3,6 +3,7 @@ const { deleteCache } = require('../../config/redis');
 const notificationService = require('../services/notificationService');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
+const { LIEN_TELECHARGEMENT } = require('../services/notificationService');
 
 /**
  * Accès en LECTURE : membre actif de la tontine, OU organisateur, OU admin.
@@ -409,7 +410,7 @@ const tontineController = {
       );
 
       if (!userRows[0]) {
-        const msg = `Vous êtes invité(e) à rejoindre la tontine "${tontineRows[0].nom}". Téléchargez l'app TontiLigdi !`;
+        const msg = `Vous êtes invité(e) à rejoindre la tontine "${tontineRows[0].nom}" sur TontiLigdi ! Téléchargez l'app : ${LIEN_TELECHARGEMENT}`;
         await notificationService.envoyerSMS(telephone, msg);
         return res.json({ success: true, message: 'Invitation SMS envoyée' });
       }
