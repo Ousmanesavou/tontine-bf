@@ -4,6 +4,8 @@ const axios = require('axios');
 const { pool } = require('../../config/database');
 const logger = require('../utils/logger');
 
+// Lien temporaire — à remplacer par le vrai lien Play Store une fois l'app publiée.
+const LIEN_TELECHARGEMENT = 'https://tontiligdi.com/telecharger';
 // ── INIT AFRICA'S TALKING ─────────────────────────────
 const AT = africastalking({
   apiKey: process.env.AT_API_KEY || 'sandbox',
@@ -40,12 +42,12 @@ try {
 // ── MESSAGES MULTILINGUES ─────────────────────────────
 const MESSAGES = {
   rappel_cotisation: {
-    fr: (nom, montant, tontine) => `Bonjour ${nom} ! Votre cotisation de ${montant} F pour "${tontine}" est due. Payez maintenant sur Tontine Africa.`,
-    moore: (nom, montant, tontine) => `Aw laafi ${nom} ! F cotisation ${montant} F tontine "${tontine}" pʋgẽ yaa sɩda. Tontine Africa zugu f kõ.`,
-    dioula: (nom, montant, tontine) => `I ni sogoma ${nom} ! I ka wari ${montant} F bɔ tontine "${tontine}" kama. Tontine Africa kan i ka sara.`,
-    en: (nom, montant, tontine) => `Hello ${nom}! Your contribution of ${montant} for "${tontine}" is due. Pay now on Tontine Africa.`,
-    wolof: (nom, montant, tontine) => `Salut ${nom}! Sa cotisation ${montant} F pour "${tontine}" dafa des. Fay ci Tontine Africa.`,
-    bambara: (nom, montant, tontine) => `I ni sogoma ${nom}! I ka wari ${montant} bɔ tontine "${tontine}" kama. Tontine Africa kan i ka sara.`,
+    fr: (nom, montant, tontine) => `Bonjour ${nom} ! Votre cotisation de ${montant} F pour "${tontine}" est due. Payez maintenant sur TontiLigdi.`,
+    moore: (nom, montant, tontine) => `Aw laafi ${nom} ! F cotisation ${montant} F tontine "${tontine}" pʋgẽ yaa sɩda. TontiLigdi zugu f kõ.`,
+    dioula: (nom, montant, tontine) => `I ni sogoma ${nom} ! I ka wari ${montant} F bɔ tontine "${tontine}" kama. TontiLigdi kan i ka sara.`,
+    en: (nom, montant, tontine) => `Hello ${nom}! Your contribution of ${montant} for "${tontine}" is due. Pay now on TontiLigdi.`,
+    wolof: (nom, montant, tontine) => `Salut ${nom}! Sa cotisation ${montant} F pour "${tontine}" dafa des. Fay ci TontiLigdi.`,
+    bambara: (nom, montant, tontine) => `I ni sogoma ${nom}! I ka wari ${montant} bɔ tontine "${tontine}" kama. TontiLigdi kan i ka sara.`,
   },
   retard_paiement: {
     fr: (nom, montant, tontine) => `⚠️ ${nom}, vous avez un retard de paiement de ${montant} F pour "${tontine}". Régularisez au plus vite.`,
@@ -96,23 +98,23 @@ const MESSAGES = {
     en: (nom, montant, tontine) => `❌ Your request to join "${tontine}" has been declined.`,
   },
   invitation_tontine: {
-    fr: (nom, montant, tontine) => `💰 Vous êtes invité(e) à rejoindre la tontine "${tontine}". Téléchargez Tontine Africa !`,
-    moore: (nom, montant, tontine) => `💰 A bool yãmb tontine "${tontine}" pʋgẽ. Tontine Africa app kẽng !`,
-    dioula: (nom, montant, tontine) => `💰 I be wele tontine "${tontine}" kɔnɔ. Tontine Africa app sɔrɔ !`,
-    en: (nom, montant, tontine) => `💰 You are invited to join tontine "${tontine}". Download Tontine Africa!`,
-    wolof: (nom, montant, tontine) => `💰 Yow la wele ci tontine "${tontine}". Tontine Africa app yëgël !`,
+    fr: (nom, montant, tontine) => `👋 Vous êtes invité(e) à rejoindre la tontine "${tontine}". Ouvrez TontiLigdi pour accepter !`,
+    moore: (nom, montant, tontine) => `👋 A bool yãmb tontine "${tontine}" pʋgẽ. Yak TontiLigdi app !`,
+    dioula: (nom, montant, tontine) => `👋 I be wele tontine "${tontine}" kɔnɔ. TontiLigdi app da wuli !`,
+    en: (nom, montant, tontine) => `👋 You are invited to join tontine "${tontine}". Open TontiLigdi to accept!`,
+    wolof: (nom, montant, tontine) => `👋 Yow la wele ci tontine "${tontine}". Ubbi TontiLigdi app bi !`,
   },
   rapport_mensuel: {
     fr: (nom, montant, tontine) => `📊 Rapport mensuel de "${tontine}" : ${montant} F collectés ce mois. Continuez !`,
     moore: (nom, montant, tontine) => `📊 Rapport "${tontine}" : ${montant} F lɛɛba dũnni. Maan !`,
-    dioula: (nom, montant, tontine) => `📊 Rapport "${tontine}" : ${montant} F bɔra kalo in na. Taa !</p>`,
+    dioula: (nom, montant, tontine) => `📊 Rapport "${tontine}" : ${montant} F bɔra kalo in na. Taa !`,
     en: (nom, montant, tontine) => `📊 Monthly report for "${tontine}": ${montant} collected this month. Keep it up!`,
   },
 };
 
 function getMessage(type, langue, nom, montant, tontine) {
   const msgs = MESSAGES[type];
-  if (!msgs) return `Notification Tontine Africa`;
+  if (!msgs) return `Notification TontiLigdi`;
   const fn = msgs[langue] || msgs['fr'];
   return fn ? fn(nom || '', montant || '', tontine || '') : (msgs['fr'](nom || '', montant || '', tontine || ''));
 }
@@ -237,8 +239,8 @@ async function envoyerEmail(email, sujet, message) {
     await sgMail.send({
       to: email,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@tontine-africa.com',
-        name: process.env.SENDGRID_FROM_NAME || 'Tontine Africa',
+        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@tontiLigdi.com',
+        name: process.env.SENDGRID_FROM_NAME || 'TontiLigdi',
       },
       subject: sujet,
       text: message,
@@ -369,4 +371,5 @@ module.exports = {
   notifierGroupeTontine,
   getMessage,
   parlerMultilingue,
+  LIEN_TELECHARGEMENT,
 };
