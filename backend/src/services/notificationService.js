@@ -176,7 +176,12 @@ async function envoyerSMS(telephone, message) {
     logger.info(`SMS envoyé à ${telephone} (Africa's Talking)`);
     return result;
   } catch (err) {
-    logger.error(`Erreur SMS ${telephone}:`, err.message);
+    logger.error(`Erreur SMS ${telephone}:`, {
+      message: err.message,
+      name: err.name,
+      response: err.response?.data,
+      stack: err.stack,
+    });
     return { success: false, error: err.message };
   }
 }

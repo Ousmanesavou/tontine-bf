@@ -9,7 +9,9 @@ import '../../services/storage_service.dart';
 import '../../main.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'package:flutter/services.dart';
+import '../../utils/pays_data.dart';
+import '../../services/storage_service.dart';
 const Map<String, Map<String, String>> _tr = {
   'fr': {
     'prochain_tour': 'Prochain tour',
@@ -391,65 +393,199 @@ class _TontineDetailScreenState
     }
   }
 
-  Future<void> _inviterMembre(String langue) async {
+ Future<void> _inviterMembre(String langue) async {
+    final paysParDefaut = StorageService.getPays() ?? 'BF';
+    Map<String, dynamic> paysChoisi =
+        PaysData.getPays(paysParDefaut) ?? PaysData.pays.first;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
-        title: Text(_t(langue, 'inviter_membre'),
-            style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontWeight: FontWeight.w700)),
-        content: TextField(
-          controller: _telephoneCtrl,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            hintText: _t(langue, 'telephone'),
-            prefixIcon: const Icon(Icons.phone_outlined),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          title: Text(_t(langue, 'inviter_membre'),
+              style: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w700)),
+          content: Row(
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () async {
+                  final resultat = await _choisirPays(context);
+                  if (resultat != null) {
+                    setDialogState(() => paysChoisi = resultat);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.vertClair,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(paysChoisi['drapeau'] ?? '🌍',
+                          style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 4),
+                      Text(paysChoisi['indicatif'] ?? '+226',
+                          style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.vertFonce)),
+                      const Icon(Icons.arrow_drop_down,
+                          size: 18, color: AppTheme.vertFonce),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _telephoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly
+                  ],
+                  decoration: InputDecoration(
+                    hintText: '70 XX XX XX',
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                  ),
+                ),
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(_t(langue, 'annuler'),
+                  style: const TextStyle(
+                      color: AppTheme.grisTexte)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_telephoneCtrl.text.length < 6) return;
+                final indicatif = paysChoisi['indicatif'] ?? '+226';
+                Navigator.pop(ctx);
+                try {
+                  await ApiService.inviterMembre(
+                      widget.id, '$indicatif${_telephoneCtrl.text}');
+                  _telephoneCtrl.clear();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Invitation envoyée !'),
+                        backgroundColor: AppTheme.vert,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString()),
+                        backgroundColor: AppTheme.rouge,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: Text(_t(langue, 'envoyer')),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(_t(langue, 'annuler'),
-                style:
-                    const TextStyle(color: AppTheme.grisTexte)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (_telephoneCtrl.text.isEmpty) return;
-              Navigator.pop(ctx);
-              try {
-                await ApiService.inviterMembre(
-                    widget.id, _telephoneCtrl.text);
-                _telephoneCtrl.clear();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Invitation envoyée !'),
-                      backgroundColor: AppTheme.vert,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString()),
-                      backgroundColor: AppTheme.rouge,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text(_t(langue, 'envoyer')),
-          ),
-        ],
       ),
     );
   }
 
+  // ── SÉLECTEUR DE PAYS (recherche parmi les 65+ pays) ──
+  Future<Map<String, dynamic>?> _choisirPays(BuildContext context) {
+    String recherche = '';
+    return showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final resultats = PaysData.pays.where((p) {
+            if (recherche.isEmpty) return true;
+            final q = recherche.toLowerCase();
+            return (p['nom'] as String).toLowerCase().contains(q) ||
+                (p['indicatif'] as String).contains(q);
+          }).toList();
+
+          return Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Container(
+              height: MediaQuery.of(ctx).size.height * 0.7,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.grisClair,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un pays...',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: AppTheme.fond,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (v) =>
+                        setModalState(() => recherche = v),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: resultats.length,
+                      itemBuilder: (ctx, i) {
+                        final p = resultats[i];
+                        return ListTile(
+                          leading: Text(p['drapeau'] ?? '🌍',
+                              style: const TextStyle(fontSize: 22)),
+                          title: Text(p['nom'] ?? '',
+                              style: const TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontWeight: FontWeight.w600)),
+                          trailing: Text(p['indicatif'] ?? '',
+                              style: const TextStyle(
+                                  fontFamily: 'Nunito',
+                                  color: AppTheme.grisTexte)),
+                          onTap: () => Navigator.pop(ctx, p),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
   Future<void> _partager(String langue) async {
     final nom = _tontine?['nom'] ?? 'TontiLigdi';
     final montant = _tontine?['montant_cotisation']?.toString() ?? '0';
