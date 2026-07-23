@@ -98,11 +98,11 @@ const MESSAGES = {
     en: (nom, montant, tontine) => `❌ Your request to join "${tontine}" has been declined.`,
   },
   invitation_tontine: {
-    fr: (nom, montant, tontine) => `👋 Vous êtes invité(e) à rejoindre la tontine "${tontine}". Ouvrez TontiLigdi pour accepter !`,
-    moore: (nom, montant, tontine) => `👋 A bool yãmb tontine "${tontine}" pʋgẽ. Yak TontiLigdi app !`,
-    dioula: (nom, montant, tontine) => `👋 I be wele tontine "${tontine}" kɔnɔ. TontiLigdi app da wuli !`,
-    en: (nom, montant, tontine) => `👋 You are invited to join tontine "${tontine}". Open TontiLigdi to accept!`,
-    wolof: (nom, montant, tontine) => `👋 Yow la wele ci tontine "${tontine}". Ubbi TontiLigdi app bi !`,
+    fr: (nom, montant, tontine) => `👋 Vous êtes invité(e) à rejoindre la tontine "${tontine}". Ouvrez TontiLigdi pour accepter ! ${LIEN_TELECHARGEMENT}`,
+    moore: (nom, montant, tontine) => `👋 A bool yãmb tontine "${tontine}" pʋgẽ. Yak TontiLigdi app ! ${LIEN_TELECHARGEMENT}`,
+    dioula: (nom, montant, tontine) => `👋 I be wele tontine "${tontine}" kɔnɔ. TontiLigdi app da wuli ! ${LIEN_TELECHARGEMENT}`,
+    en: (nom, montant, tontine) => `👋 You are invited to join tontine "${tontine}". Open TontiLigdi to accept! ${LIEN_TELECHARGEMENT}`,
+    wolof: (nom, montant, tontine) => `👋 Yow la wele ci tontine "${tontine}". Ubbi TontiLigdi app bi ! ${LIEN_TELECHARGEMENT}`,
   },
   rapport_mensuel: {
     fr: (nom, montant, tontine) => `📊 Rapport mensuel de "${tontine}" : ${montant} F collectés ce mois. Continuez !`,
