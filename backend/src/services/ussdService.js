@@ -45,7 +45,10 @@ const ussdService = {
 
   async traiterRequete(sessionId, phoneNumber, networkCode, serviceCode, text) {
     try {
-      const telephone = phoneNumber.replace('+', '');
+      // FIX: la base stocke les numéros AVEC le "+" (confirmé partout ailleurs
+// dans l'app) — le retirer ici faisait échouer la recherche à chaque fois,
+// traitant même les utilisateurs inscrits comme inconnus.
+const telephone = phoneNumber;
       const { rows } = await pool.query(
         'SELECT * FROM utilisateurs WHERE telephone = $1', [telephone]
       );
