@@ -151,11 +151,17 @@ class CaptureAnalyseService {
       details.destinataire = valeurDest.replace(/\s/g, '');
       scoreConfiance += 10;
 
-      if (contexte.numeroOrganisateur) {
-        const numeroNormalise = contexte.numeroOrganisateur.replace(/[\s\+]/g, '');
+      // FIX: accepte maintenant plusieurs numéros valides (Orange ET Moov
+      // de Toeeg Digital) au lieu d'un seul — rétrocompatible si
+      // numeroOrganisateur est encore utilisé ailleurs.
+      const numerosACtester = contexte.numerosValides || (contexte.numeroOrganisateur ? [contexte.numeroOrganisateur] : []);
+      if (numerosACtester.length > 0) {
         const destNormalise = details.destinataire.replace(/[\s\+]/g, '');
-        if (destNormalise.includes(numeroNormalise.slice(-8)) ||
-            numeroNormalise.includes(destNormalise.slice(-8))) {
+        const correspond = numerosACtester.some(num => {
+          const numeroNormalise = num.replace(/[\s\+]/g, '');
+          return destNormalise.includes(numeroNormalise.slice(-8)) || numeroNormalise.includes(destNormalise.slice(-8));
+        });
+        if (correspond) {
           scoreConfiance += 15;
         } else {
           alertes.push('Numéro destinataire ne correspond pas à l organisateur');

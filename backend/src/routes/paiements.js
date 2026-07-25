@@ -111,12 +111,10 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     // 1. Vérifier que l utilisateur est membre de la tontine
     const { rows: [membre] } = await client.query(
       `SELECT mt.*, t.montant_cotisation, t.nom as tontine_nom,
-              u.prenom, u.nom as nom_membre,
-              COALESCE(org.orange_money_numero, org.moov_money_numero) as numero_mobile_money
+              u.prenom, u.nom as nom_membre
        FROM membres_tontine mt
        JOIN tontines t ON t.id = mt.tontine_id
        JOIN utilisateurs u ON u.id = mt.utilisateur_id
-       JOIN utilisateurs org ON org.id = t.responsable_id
        WHERE mt.tontine_id = $1 AND mt.utilisateur_id = $2 AND mt.est_actif = true`,
       [tontine_id, userId]
     );
@@ -124,6 +122,13 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     if (!membre) {
       return res.status(403).json({ error: 'Vous n êtes pas membre de cette tontine' });
     }
+
+    // NOUVEAU: numéros de réception centralisés Toeeg Digital — remplace
+    // l'ancien numéro personnel de l'organisateur (cohérent avec le flux
+    // USSD, réduit le risque qu'un seul organisateur détienne les fonds).
+    const { rows: numerosToeeg } = await client.query(
+      `SELECT operateur, numero FROM numeros_reception_toeeg WHERE actif = true`
+    );
 
     // 2. Trouver la période de cotisation à honorer
     const { rows: [cotisationCible] } = await client.query(
@@ -181,7 +186,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     );
     const contexteAnalyse = {
       montantAttendu: montantRestantDu || membre.montant_cotisation,
-      numeroOrganisateur: membre.numero_mobile_money,
+      numerosValides: numerosToeeg.map(n => n.numero),
     };
     const texteOCR = await CaptureAnalyseService.extraireTexte(uploadResult.secure_url, contexteAnalyse);
     const analyse = CaptureAnalyseService.analyserTexte(texteOCR, contexteAnalyse);

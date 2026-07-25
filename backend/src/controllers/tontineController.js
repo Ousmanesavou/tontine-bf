@@ -744,12 +744,19 @@ const tontineController = {
         WHERE compte_virtuel_id = $1 AND utilisateur_id = $2 AND type = 'depot' AND statut = 'confirme'
       `, [rows[0].id, userId]);
 
+      const { rows: numerosToeeg } = await pool.query(
+        `SELECT operateur, numero FROM numeros_reception_toeeg WHERE actif = true ORDER BY operateur`
+      );
+      const numeroMobileMoneyAffiche = numerosToeeg.length
+        ? numerosToeeg.map(n => `${n.operateur}: ${n.numero}`).join(' / ')
+        : '';
       res.json({
         success: true,
         data: {
           ...rows[0],
           transactions,
           mon_depot_total: parseFloat(monDepot[0].mon_total),
+          numero_mobile_money: numeroMobileMoneyAffiche,
         }
       });
     } catch (err) {
