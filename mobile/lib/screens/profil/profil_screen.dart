@@ -343,13 +343,13 @@ void initState() {
                   langue == 'en' ? 'Active' : 'Activées',
                   () {},
                 ),
-                _buildDivider(),
+               /* _buildDivider(),
                 _buildItemAction(
                   Icons.security_outlined,
                   langue == 'en' ? 'Change PIN' : 'Changer mon PIN',
                   '',
                   () {},
-                ),
+                ),*/
                 _buildDivider(),
                 _buildItemAction(
                   Icons.help_outline,

@@ -70,6 +70,8 @@ class TontineAfricaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final langue = ref.watch(langueProvider);
     final fontSize = ref.watch(fontSizeProvider);
+    final factor = (fontSize / 14.0).clamp(0.8, 1.4);
+    final baseText = AppTheme.lightTheme.textTheme;
 
     // Locale selon la langue choisie
     Locale locale;
@@ -85,11 +87,24 @@ class TontineAfricaApp extends ConsumerWidget {
       title: 'TontiLigdi',
       debugShowCheckedModeBanner: false,
       key: ValueKey(langue), // Force rebuild quand langue change
+      //fixes to the font size issue when changing the font size in settings
       theme: AppTheme.lightTheme.copyWith(
-        textTheme: AppTheme.lightTheme.textTheme.apply(
-          fontSizeFactor: (fontSize / 14.0).clamp(0.8, 1.4),
+      textTheme: baseText.copyWith(
+           
+      bodyLarge: baseText.bodyLarge?.copyWith(fontSize: (baseText.bodyLarge?.fontSize ?? 16) * factor), // Body Text (Standard content)
+      bodyMedium: baseText.bodyMedium?.copyWith(fontSize: (baseText.bodyMedium?.fontSize ?? 14) * factor),
+       bodySmall: baseText.bodySmall?.copyWith(fontSize: (baseText.bodySmall?.fontSize ?? 12) * factor),   
+            
+      titleLarge: baseText.titleLarge?.copyWith(fontSize: (baseText.titleLarge?.fontSize ?? 22) * factor),// Headings & Titles (AppBars, Section Headers)
+      titleMedium: baseText.titleMedium?.copyWith(fontSize: (baseText.titleMedium?.fontSize ?? 16) * factor),
+      titleSmall: baseText.titleSmall?.copyWith(fontSize: (baseText.titleSmall?.fontSize ?? 14) * factor),
+           
+      labelLarge: baseText.labelLarge?.copyWith(fontSize: (baseText.labelLarge?.fontSize ?? 14) * factor),// Labels & Buttons (TextFields, TabBars, Buttons)
+      labelMedium: baseText.labelMedium?.copyWith(fontSize: (baseText.labelMedium?.fontSize ?? 12) * factor),
+      labelSmall: baseText.labelSmall?.copyWith(fontSize: (baseText.labelSmall?.fontSize ?? 11) * factor),
         ),
-      ),
+    ),
+
       locale: locale,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
