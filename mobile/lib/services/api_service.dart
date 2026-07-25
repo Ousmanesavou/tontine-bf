@@ -413,7 +413,34 @@ class ApiService {
   }
 
   static Future<void> validerPaiementManuel(String tontineId, String cotisationId) async {
-    await _dio.post('/tontines//cotisations//valider');
+    await _dio.post('/tontines/$tontineId/cotisations/$cotisationId/valider');
+  }
+
+  static Future<Map<String, dynamic>> confirmerDeclarationUSSD(String declarationId) async {
+    try {
+      final resp = await _dio.put('/tontines/declarations-ussd/$declarationId/confirmer');
+      return Map<String, dynamic>.from(resp.data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> rejeterDeclarationUSSD(String declarationId, {String? motif}) async {
+    try {
+      await _dio.put('/tontines/declarations-ussd/$declarationId/rejeter',
+          data: {'motif': motif});
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getDeclarationsUSSD(String tontineId) async {
+    try {
+      final resp = await _dio.get('/tontines/$tontineId/declarations-ussd');
+      return List<Map<String, dynamic>>.from(resp.data['data'] ?? []);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
 
 

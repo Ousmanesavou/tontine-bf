@@ -31,6 +31,8 @@ const Map<String, Map<String, String>> _tr = {
     'ordre_rotation': 'Ordre rotation',
     'historique': 'Historique paiements',
     'valider_paiement': 'Valider paiement',
+    'declarations_ussd': 'Declarations USSD a verifier',
+    'confirmer': 'Confirmer',
     'securite_titre': 'Statut securite',
     'regles_titre': 'Regles de la tontine',
     'progression': 'Progression du cycle',
@@ -63,6 +65,8 @@ const Map<String, Map<String, String>> _tr = {
     'ordre_rotation': 'Rotation order',
     'historique': 'Payment history',
     'valider_paiement': 'Validate payment',
+    'declarations_ussd': 'USSD declarations to verify',
+    'confirmer': 'Confirm',
     'securite_titre': 'Security status',
     'regles_titre': 'Tontine rules',
     'progression': 'Cycle progress',
@@ -91,6 +95,7 @@ class _DashboardOrganisateurScreenState
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Map<String, dynamic>? _dashboard;
+  List<Map<String, dynamic>> _declarationsUSSD = [];
   bool _chargement = true;
   DateTime? _derniereMaj;
   Timer? _pollingTimer;
@@ -100,7 +105,6 @@ class _DashboardOrganisateurScreenState
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _charger();
-    // ✅ Polling automatique toutes les 30 secondes
     _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _charger(silencieux: true);
     });
@@ -117,9 +121,16 @@ class _DashboardOrganisateurScreenState
     if (!silencieux) setState(() => _chargement = true);
     try {
       final data = await ApiService.getDashboardOrganisateur(widget.tontineId);
+      // NOUVEAU: déclarations USSD récupérées via route dédiée, en plus du
+      // dashboard principal, sans bloquer l'un sur l'autre.
+      List<Map<String, dynamic>> decls = [];
+      try {
+        decls = await ApiService.getDeclarationsUSSD(widget.tontineId);
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _dashboard = data;
+          _declarationsUSSD = decls;
           _chargement = false;
           _derniereMaj = DateTime.now();
         });
@@ -164,6 +175,58 @@ class _DashboardOrganisateurScreenState
       await ApiService.validerPaiementManuel(widget.tontineId, cotisationId);
       await _charger();
       if (mounted) _snack('Paiement valide !', AppTheme.vert);
+    } catch (e) {
+      if (mounted) _snack(e.toString(), AppTheme.rouge);
+    }
+  }
+
+  // NOUVEAU: confirmer une déclaration USSD — le backend renvoie solde
+  // avant/après, montrés directement dans la confirmation.
+  Future<void> _confirmerDeclaration(String declarationId) async {
+    try {
+      final resultat = await ApiService.confirmerDeclarationUSSD(declarationId);
+      await _charger();
+      if (mounted) {
+        final avant = resultat['soldeAvant'];
+        final apres = resultat['soldeApres'];
+        _snack(
+          avant != null && apres != null
+              ? 'Confirme ! Solde: ${avant}F → ${apres}F'
+              : 'Paiement confirme !',
+          AppTheme.vert,
+        );
+      }
+    } catch (e) {
+      if (mounted) _snack(e.toString(), AppTheme.rouge);
+    }
+  }
+
+  Future<void> _rejeterDeclaration(String declarationId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Rejeter la declaration',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+        content: const Text(
+            'Confirmez que vous n\'avez pas recu le SMS de transfert correspondant a ce montant.',
+            style: TextStyle(fontFamily: 'Nunito')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.rouge),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Rejeter', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await ApiService.rejeterDeclarationUSSD(declarationId);
+      await _charger();
+      if (mounted) _snack('Declaration rejetee', AppTheme.orange);
     } catch (e) {
       if (mounted) _snack(e.toString(), AppTheme.rouge);
     }
@@ -335,7 +398,6 @@ class _DashboardOrganisateurScreenState
               ],
             ),
             actions: [
-              // ✅ Indicateur de dernière mise à jour
               if (_derniereMaj != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
@@ -404,6 +466,9 @@ class _DashboardOrganisateurScreenState
             if (_demandes.isNotEmpty)
               _buildAlerte('${_demandes.length} demande(s) en attente',
                   AppTheme.orange, Icons.person_add_outlined),
+            if (_declarationsUSSD.isNotEmpty)
+              _buildAlerte('${_declarationsUSSD.length} declaration(s) USSD a verifier',
+                  AppTheme.orangeFonce, Icons.sms_outlined),
 
             GridView.count(
               shrinkWrap: true,
@@ -627,7 +692,6 @@ class _DashboardOrganisateurScreenState
                     Text(m['telephone']?.toString() ?? '',
                         style: const TextStyle(fontFamily: 'Nunito',
                             fontSize: 11, color: AppTheme.grisTexte)),
-                    // Stats paiements
                     Text('$nbOk payes · $nbRetards retards',
                         style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
                             color: nbRetards > 0 ? AppTheme.rouge : AppTheme.grisTexte)),
@@ -803,6 +867,14 @@ class _DashboardOrganisateurScreenState
               ],
             ),
             const SizedBox(height: 16),
+            // NOUVEAU: déclarations USSD — flux distinct des captures
+            // d'écran (l'organisateur vérifie un SMS reçu sur son propre
+            // téléphone, pas une image uploadée).
+            if (_declarationsUSSD.isNotEmpty) ...[
+              _sectionTitre(_t(langue, 'declarations_ussd')),
+              ..._declarationsUSSD.map((d) => _buildCarteDeclarationUSSD(d, langue, isSmall)),
+              const SizedBox(height: 16),
+            ],
             if (enAttente.isNotEmpty) ...[
               _sectionTitre(_t(langue, 'valider_paiement')),
               ...enAttente.map((c) => _buildCarteValidation(c, langue, isSmall)),
@@ -877,6 +949,83 @@ class _DashboardOrganisateurScreenState
             const SizedBox(height: 80),
           ],
         ),
+      ),
+    );
+  }
+
+  // NOUVEAU: carte pour une déclaration USSD en attente de vérification.
+  Widget _buildCarteDeclarationUSSD(Map<String, dynamic> d, String langue, bool isSmall) {
+    final declarationId = d['id']?.toString() ?? '';
+    final prenom = d['prenom']?.toString() ?? '?';
+    final nom = d['nom']?.toString() ?? '';
+    final telephone = d['telephone']?.toString() ?? '';
+    final montant = d['montant_declare']?.toString() ?? '0';
+    final createdAt = d['created_at']?.toString();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(isSmall ? 12 : 14),
+      decoration: BoxDecoration(
+        color: AppTheme.orangeClair,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.orangeFonce.withOpacity(0.35), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.sms_outlined, color: AppTheme.orangeFonce, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('$prenom $nom — $montant F',
+                    style: const TextStyle(fontFamily: 'Nunito',
+                        fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('$telephone · déclaré ${_formatDate(createdAt)} à ${_formatHeure(createdAt)}',
+              style: const TextStyle(fontFamily: 'Nunito',
+                  fontSize: 11, color: AppTheme.grisTexte)),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              '⚠ Vérifiez le SMS reçu sur votre téléphone avant de confirmer',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                  color: AppTheme.orangeFonce, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _confirmerDeclaration(declarationId),
+                  icon: const Icon(Icons.check, size: 16),
+                  label: Text(_t(langue, 'confirmer')),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.vert),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _rejeterDeclaration(declarationId),
+                  icon: const Icon(Icons.close, size: 16),
+                  label: Text(_t(langue, 'rejeter')),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.rouge,
+                      side: const BorderSide(color: AppTheme.rouge)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

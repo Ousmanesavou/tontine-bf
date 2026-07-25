@@ -1440,11 +1440,13 @@ const tontineController = {
       const nouveauStatut = cumul >= montantDu ? 'paye' : 'partiel';
       const montantPayeFinal = Math.min(cumul, montantDu);
 
+      const datePaiementValue = nouveauStatut === 'paye' ? new Date() : null;
+
       await client.query(`
         UPDATE cotisations SET statut = $1, montant_paye = $2,
-        date_paiement = CASE WHEN $1 = 'paye' THEN NOW() ELSE date_paiement END
-        WHERE id = $3
-      `, [nouveauStatut, montantPayeFinal, cot.id]);
+        date_paiement = COALESCE($3, date_paiement)
+        WHERE id = $4
+      `, [nouveauStatut, montantPayeFinal, datePaiementValue, cot.id]);
 
       const { rows: [cvAvant] } = await client.query(
         'SELECT * FROM comptes_virtuels WHERE tontine_id = $1', [decl.tontine_id]
