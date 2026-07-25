@@ -36,6 +36,14 @@ const cronJobs = {
       await this.nettoyerSessionsExpirees();
     });
 
+    // NOUVEAU: vérification des déclarations de paiement USSD en attente
+    // — toutes les 6h. Rappel à l'organisateur après 24h sans traitement,
+    // puis escalade vers organisateur + tous les admins après 48h.
+    cron.schedule('0 */6 * * *', async () => {
+      logger.info('CRON: Vérification déclarations USSD en attente...');
+      await this.verifierDeclarationsEnAttente();
+    });
+
     logger.info('Jobs cron initialisés avec succès');
   },
 
@@ -128,6 +136,73 @@ const cronJobs = {
       logger.info('Nettoyage sessions terminé');
     } catch (err) {
       logger.error('Erreur nettoyage:', err);
+    }
+  },
+
+  // NOUVEAU
+  async verifierDeclarationsEnAttente() {
+    try {
+      // Palier 1: rappel simple à l'organisateur après 24h
+      const { rows: premiereAlerte } = await pool.query(`
+        SELECT d.*, t.nom as nom_tontine, t.responsable_id, u.prenom, u.nom
+        FROM declarations_paiement_ussd d
+        JOIN tontines t ON t.id = d.tontine_id
+        JOIN utilisateurs u ON u.id = d.membre_id
+        WHERE d.statut = 'en_attente_verification'
+          AND d.nombre_alertes = 0
+          AND d.created_at < NOW() - INTERVAL '24 hours'
+      `);
+
+      for (const d of premiereAlerte) {
+        const nomComplet = `${d.prenom || ''} ${d.nom || ''}`.trim();
+        const messageOverride = notificationService.getMessage(
+          'rappel_declaration_attente', 'fr', nomComplet, d.montant_declare, d.nom_tontine
+        );
+        await notificationService.notifierMembre(d.responsable_id, {
+          type: 'rappel_declaration_attente',
+          tontine_id: d.tontine_id,
+          message_override: messageOverride,
+        });
+        await pool.query(`
+          UPDATE declarations_paiement_ussd
+          SET nombre_alertes = 1, derniere_alerte_envoyee = NOW()
+          WHERE id = $1
+        `, [d.id]);
+      }
+
+      // Palier 2: escalade vers organisateur + TOUS les admins après 48h
+      const { rows: escalade } = await pool.query(`
+        SELECT d.*, t.nom as nom_tontine, t.responsable_id, u.prenom, u.nom
+        FROM declarations_paiement_ussd d
+        JOIN tontines t ON t.id = d.tontine_id
+        JOIN utilisateurs u ON u.id = d.membre_id
+        WHERE d.statut = 'en_attente_verification'
+          AND d.nombre_alertes = 1
+          AND d.created_at < NOW() - INTERVAL '48 hours'
+      `);
+
+      for (const d of escalade) {
+        const nomComplet = `${d.prenom || ''} ${d.nom || ''}`.trim();
+        const messageOverride = notificationService.getMessage(
+          'rappel_declaration_attente', 'fr', nomComplet, d.montant_declare, d.nom_tontine
+        );
+        const notifOptions = {
+          type: 'rappel_declaration_attente',
+          tontine_id: d.tontine_id,
+          message_override: messageOverride,
+        };
+        await notificationService.notifierMembre(d.responsable_id, notifOptions);
+        await notificationService.notifierTousLesAdmins(notifOptions);
+        await pool.query(`
+          UPDATE declarations_paiement_ussd
+          SET nombre_alertes = 2, derniere_alerte_envoyee = NOW()
+          WHERE id = $1
+        `, [d.id]);
+      }
+
+      logger.info(`Déclarations USSD: ${premiereAlerte.length} rappels 24h, ${escalade.length} escalades 48h`);
+    } catch (err) {
+      logger.error('Erreur verifierDeclarationsEnAttente:', err.message);
     }
   }
 };

@@ -6,6 +6,7 @@ const logger = require('../utils/logger');
 
 // Lien temporaire — à remplacer par le vrai lien Play Store une fois l'app publiée.
 const LIEN_TELECHARGEMENT = 'https://tontiligdi.com/telecharger';
+
 // ── INIT AFRICA'S TALKING ─────────────────────────────
 const AT = africastalking({
   apiKey: process.env.AT_API_KEY || 'sandbox',
@@ -110,6 +111,17 @@ const MESSAGES = {
     dioula: (nom, montant, tontine) => `📊 Rapport "${tontine}" : ${montant} F bɔra kalo in na. Taa !`,
     en: (nom, montant, tontine) => `📊 Monthly report for "${tontine}": ${montant} collected this month. Keep it up!`,
   },
+  // NOUVEAU: déclaration de paiement USSD reçue — envoyé à l'organisateur
+  // ET à l'admin, pour qu'ils sachent qu'une vérification est attendue.
+  declaration_paiement_recue: {
+    fr: (nom, montant, tontine) => `📲 ${nom} déclare avoir payé ${montant} F pour "${tontine}" (via USSD). Vérifiez le SMS Orange/Moov Money reçu et validez dans l'app.`,
+    en: (nom, montant, tontine) => `📲 ${nom} declared a payment of ${montant} for "${tontine}" (via USSD). Check the Orange/Moov Money SMS received and validate in the app.`,
+  },
+  // NOUVEAU: rappel automatique si une déclaration reste sans suite
+  rappel_declaration_attente: {
+    fr: (nom, montant, tontine) => `⏰ Rappel : ${nom} a déclaré ${montant} F pour "${tontine}" il y a plus de 24h, toujours pas vérifié. Merci de traiter.`,
+    en: (nom, montant, tontine) => `⏰ Reminder: ${nom} declared ${montant} for "${tontine}" over 24h ago, still not verified. Please process.`,
+  },
 };
 
 function getMessage(type, langue, nom, montant, tontine) {
@@ -120,10 +132,6 @@ function getMessage(type, langue, nom, montant, tontine) {
 }
 
 // ── IKODDI (SMS) ───────────────────────────────────────
-// Client créé une seule fois et mis en cache. Si IKODDI_KEY/IKODDI_GROUP_ID
-// ne sont pas configurées, reste `false` et envoyerSMS retombe sur
-// Africa's Talking (comportement inchangé) — aucun risque de casser
-// l'existant tant que les clés Ikoddi ne sont pas ajoutées sur Render.
 let ikoddiClient = null;
 function getIkoddiClient() {
   if (ikoddiClient !== null) return ikoddiClient;
@@ -165,7 +173,6 @@ async function envoyerSMS(telephone, message) {
       return { success: true };
     }
 
-    // Repli : Africa's Talking (inchangé)
     if (process.env.AT_USERNAME === 'sandbox') {
       logger.info(`[SMS SANDBOX] → ${telephone}: ${message}`);
       return { success: true, sandbox: true };
@@ -187,13 +194,8 @@ async function envoyerSMS(telephone, message) {
     return { success: false, error: err.message };
   }
 }
+
 // ── ENVOI WHATSAPP ──────────────────────────────────────
-// FIX: le texte libre (type "text") est bloqué par Meta hors fenêtre de 24h
-// (le destinataire doit avoir écrit en premier récemment) — nos
-// notifications sont initiées par l'app, donc systématiquement hors
-// fenêtre. On passe par le modèle pré-approuvé "notification_tontiligdi"
-// (catégorie Utilitaire), qui insère le message complet dans sa seule
-// variable {{1}}.
 async function envoyerWhatsApp(telephone, message) {
   try {
     if (!process.env.WHATSAPP_TOKEN || !telephone) return { success: false };
@@ -232,6 +234,7 @@ async function envoyerWhatsApp(telephone, message) {
     return { success: false, error: detailMeta?.message || err.message };
   }
 }
+
 // ── ENVOI EMAIL ───────────────────────────────────────
 async function envoyerEmail(email, sujet, message) {
   try {
@@ -239,7 +242,7 @@ async function envoyerEmail(email, sujet, message) {
     await sgMail.send({
       to: email,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@tontiLigdi.com',
+        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@tontiligdi.com',
         name: process.env.SENDGRID_FROM_NAME || 'TontiLigdi',
       },
       subject: sujet,
@@ -312,13 +315,17 @@ async function notifierMembre(userId, options) {
     const u = rows[0];
     const langue = u.langue || 'fr';
     const nom = u.prenom || u.nom || '';
-    const message = getMessage(
+    // NOUVEAU: message_override permet d'envoyer un texte entièrement
+    // personnalisé (ex: confirmation de paiement détaillée avec solde
+    // avant/après) sans forcer le contenu dans le format rigide à 3
+    // paramètres de getMessage(). N'affecte aucun appel existant — ils ne
+    // passent jamais ce champ, donc leur comportement reste identique.
+    const message = options.message_override || getMessage(
       options.type, langue, nom,
       options.montant || '', options.nom_tontine || ''
     );
     const titre = 'TontiLigdi';
 
-    // Sauvegarder en base
     try {
       await pool.query(`
         INSERT INTO notifications (utilisateur_id, tontine_id, type, titre, message, canal)
@@ -328,7 +335,6 @@ async function notifierMembre(userId, options) {
       logger.error('Erreur sauvegarde notification:', dbErr.message);
     }
 
-    // Envoyer sur tous les canaux en parallèle
     const canaux = [
       envoyerSMS(u.telephone, message),
       envoyerWhatsApp(u.telephone, message),
@@ -357,6 +363,72 @@ async function notifierGroupeTontine(tontineId, options) {
   }
 }
 
+// NOUVEAU: notifie tous les comptes administrateurs (role = 'admin').
+async function notifierTousLesAdmins(options) {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id FROM utilisateurs WHERE role = 'admin'`
+    );
+    await Promise.allSettled(rows.map(r => notifierMembre(r.id, options)));
+  } catch (err) {
+    logger.error('Erreur notifierTousLesAdmins:', err.message);
+  }
+}
+
+// NOUVEAU (FIX BUG CRITIQUE): cette fonction était appelée depuis
+// cronJobs.js chaque jour à 8h mais n'existait nulle part — le rappel
+// quotidien de cotisation échouait silencieusement depuis le début.
+async function envoyerRappelsCotisations() {
+  try {
+    const { rows } = await pool.query(`
+      SELECT c.id, c.montant, c.membre_id, c.tontine_id, t.nom as nom_tontine
+      FROM cotisations c
+      JOIN tontines t ON t.id = c.tontine_id
+      WHERE c.statut IN ('en_attente', 'partiel')
+        AND c.date_echeance BETWEEN NOW() AND NOW() + INTERVAL '3 days'
+    `);
+
+    for (const c of rows) {
+      await notifierMembre(c.membre_id, {
+        type: 'rappel_cotisation',
+        tontine_id: c.tontine_id,
+        nom_tontine: c.nom_tontine,
+        montant: c.montant,
+      });
+    }
+    logger.info(`${rows.length} rappels de cotisation envoyés`);
+  } catch (err) {
+    logger.error('Erreur envoyerRappelsCotisations:', err.message);
+  }
+}
+
+// NOUVEAU (FIX BUG CRITIQUE): même problème que ci-dessus — appelée depuis
+// cronJobs.js chaque minuit, mais n'existait pas. Les cotisations en retard
+// n'étaient probablement jamais marquées automatiquement.
+async function marquerRetards() {
+  try {
+    const { rows } = await pool.query(`
+      UPDATE cotisations SET statut = 'en_retard'
+      WHERE statut IN ('en_attente', 'partiel')
+        AND date_echeance < NOW()
+      RETURNING id, membre_id, tontine_id, montant
+    `);
+
+    for (const c of rows) {
+      const { rows: [t] } = await pool.query('SELECT nom FROM tontines WHERE id = $1', [c.tontine_id]);
+      await notifierMembre(c.membre_id, {
+        type: 'retard_paiement',
+        tontine_id: c.tontine_id,
+        nom_tontine: t?.nom || '',
+        montant: c.montant,
+      });
+    }
+    logger.info(`${rows.length} cotisations marquées en retard`);
+  } catch (err) {
+    logger.error('Erreur marquerRetards:', err.message);
+  }
+}
+
 // ── NOTIFICATION PARLER (vocal) ───────────────────────
 function parlerMultilingue({ fr, moore, dioula, en }) {
   return { fr, moore, dioula, en };
@@ -369,6 +441,9 @@ module.exports = {
   envoyerPush,
   notifierMembre,
   notifierGroupeTontine,
+  notifierTousLesAdmins,
+  envoyerRappelsCotisations,
+  marquerRetards,
   getMessage,
   parlerMultilingue,
   LIEN_TELECHARGEMENT,
