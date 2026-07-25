@@ -70,4 +70,7 @@ router.post('/admins', adminController.ajouterAdmin);
 router.put('/admins/:id/droits', adminController.modifierDroitsAdmin);
 router.delete('/admins/:id', adminController.supprimerAdmin);
 
+router.get('/declarations-ussd', adminController.getDeclarationsPaiement);
+router.post('/reconciliation', adminController.enregistrerReconciliation);
+router.get('/reconciliation', adminController.getReconciliations);
 module.exports = router;

@@ -1394,6 +1394,191 @@ const tontineController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
+ async confirmerDeclarationUSSD(req, res) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { declarationId } = req.params;
+      const userId = req.user.id;
+
+      const { rows: [decl] } = await client.query(
+        'SELECT * FROM declarations_paiement_ussd WHERE id = $1', [declarationId]
+      );
+      if (!decl) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Déclaration non trouvée' });
+      }
+      if (decl.statut !== 'en_attente_verification') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Cette déclaration a déjà été traitée' });
+      }
+
+      const { rows: [tontineCheck] } = await client.query(
+        'SELECT responsable_id FROM tontines WHERE id = $1', [decl.tontine_id]
+      );
+      const { rows: [userCheck] } = await client.query(
+        'SELECT role FROM utilisateurs WHERE id = $1', [userId]
+      );
+      const autorise = tontineCheck?.responsable_id === userId || userCheck?.role === 'admin';
+      if (!autorise) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Accès refusé' });
+      }
+
+      const { rows: [cot] } = await client.query(
+        'SELECT * FROM cotisations WHERE id = $1', [decl.cotisation_id]
+      );
+      if (!cot) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Cotisation non trouvée' });
+      }
+
+      const montantDu = parseFloat(cot.montant);
+      const dejaPaye = parseFloat(cot.montant_paye) || 0;
+      const montantDeclare = parseFloat(decl.montant_declare);
+      const cumul = dejaPaye + montantDeclare;
+      const nouveauStatut = cumul >= montantDu ? 'paye' : 'partiel';
+      const montantPayeFinal = Math.min(cumul, montantDu);
+
+      await client.query(`
+        UPDATE cotisations SET statut = $1, montant_paye = $2,
+        date_paiement = CASE WHEN $1 = 'paye' THEN NOW() ELSE date_paiement END
+        WHERE id = $3
+      `, [nouveauStatut, montantPayeFinal, cot.id]);
+
+      const { rows: [cvAvant] } = await client.query(
+        'SELECT * FROM comptes_virtuels WHERE tontine_id = $1', [decl.tontine_id]
+      );
+      const soldeAvant = parseFloat(cvAvant?.solde) || 0;
+      const soldeApres = soldeAvant + montantDeclare;
+
+      await client.query(`
+        INSERT INTO comptes_virtuels (tontine_id, solde, total_depots)
+        VALUES ($1, $2, $2)
+        ON CONFLICT (tontine_id)
+        DO UPDATE SET solde = comptes_virtuels.solde + $2,
+                      total_depots = COALESCE(comptes_virtuels.total_depots, 0) + $2,
+                      updated_at = NOW()
+      `, [decl.tontine_id, montantDeclare]);
+
+      const { rows: [cvApres] } = await client.query(
+        'SELECT id FROM comptes_virtuels WHERE tontine_id = $1', [decl.tontine_id]
+      );
+
+      await client.query(`
+        INSERT INTO transactions_virtuelles
+          (compte_virtuel_id, utilisateur_id, tontine_id, membre_id, cotisation_id,
+           solde_avant, solde_apres, type, montant, statut, description)
+        VALUES ($1, $2, $3, $2, $4, $5, $6, 'depot', $7, 'confirme', 'Paiement confirmé (déclaration USSD)')
+      `, [cvApres?.id, decl.membre_id, decl.tontine_id, cot.id, soldeAvant, soldeApres, montantDeclare]);
+
+      await client.query(`
+        UPDATE declarations_paiement_ussd
+        SET statut = 'confirme', traite_le = NOW(), traite_par = $1
+        WHERE id = $2
+      `, [userId, declarationId]);
+
+      await client.query('COMMIT');
+
+      const { rows: [tontine] } = await pool.query('SELECT nom FROM tontines WHERE id = $1', [decl.tontine_id]);
+
+      const messageDetaille = `✅ Paiement confirmé pour "${tontine?.nom}" !\nMontant ajouté: ${montantDeclare}F\nSolde tontine avant: ${soldeAvant}F\nSolde tontine après: ${soldeApres}F\nMerci !`;
+
+      await notificationService.notifierMembre(decl.membre_id, {
+        type: 'paiement_confirme',
+        tontine_id: decl.tontine_id,
+        message_override: messageDetaille,
+      });
+
+      await notificationService.notifierGroupeTontine(decl.tontine_id, {
+        type: 'paiement_confirme',
+        nom_tontine: tontine?.nom,
+        montant: montantDeclare.toString(),
+        tontine_id: decl.tontine_id,
+      });
+
+      res.json({ success: true, message: 'Paiement confirmé', nouveauStatut, soldeAvant, soldeApres });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Erreur confirmerDeclarationUSSD:', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+      client.release();
+    }
+  },
+
+  async rejeterDeclarationUSSD(req, res) {
+    try {
+      const { declarationId } = req.params;
+      const { motif } = req.body;
+      const userId = req.user.id;
+
+      const { rows: [decl] } = await pool.query(
+        'SELECT * FROM declarations_paiement_ussd WHERE id = $1', [declarationId]
+      );
+      if (!decl) return res.status(404).json({ error: 'Déclaration non trouvée' });
+      if (decl.statut !== 'en_attente_verification') {
+        return res.status(400).json({ error: 'Cette déclaration a déjà été traitée' });
+      }
+
+      const { rows: [tontineCheck] } = await pool.query(
+        'SELECT responsable_id FROM tontines WHERE id = $1', [decl.tontine_id]
+      );
+      const { rows: [userCheck] } = await pool.query(
+        'SELECT role FROM utilisateurs WHERE id = $1', [userId]
+      );
+      const autorise = tontineCheck?.responsable_id === userId || userCheck?.role === 'admin';
+      if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
+
+      await pool.query(`
+        UPDATE declarations_paiement_ussd
+        SET statut = 'rejete', traite_le = NOW(), traite_par = $1
+        WHERE id = $2
+      `, [userId, declarationId]);
+
+      const { rows: [tontine] } = await pool.query('SELECT nom FROM tontines WHERE id = $1', [decl.tontine_id]);
+      const messageRejet = `❌ Votre déclaration de paiement de ${decl.montant_declare}F pour "${tontine?.nom}" n'a pas pu être confirmée${motif ? ` (${motif})` : ''}. Contactez l'organisateur.`;
+
+      await notificationService.notifierMembre(decl.membre_id, {
+        type: 'declaration_rejetee',
+        tontine_id: decl.tontine_id,
+        message_override: messageRejet,
+      });
+
+      res.json({ success: true, message: 'Déclaration rejetée' });
+    } catch (err) {
+      logger.error('Erreur rejeterDeclarationUSSD:', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
+
+  async getDeclarationsEnAttente(req, res) {
+    try {
+      const { tontineId } = req.params;
+      const userId = req.user.id;
+
+      const { rows: [tontineCheck] } = await pool.query(
+        'SELECT responsable_id FROM tontines WHERE id = $1', [tontineId]
+      );
+      const { rows: [userCheck] } = await pool.query(
+        'SELECT role FROM utilisateurs WHERE id = $1', [userId]
+      );
+      const autorise = tontineCheck?.responsable_id === userId || userCheck?.role === 'admin';
+      if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
+
+      const { rows } = await pool.query(`
+        SELECT d.*, u.prenom, u.nom, u.telephone
+        FROM declarations_paiement_ussd d
+        JOIN utilisateurs u ON u.id = d.membre_id
+        WHERE d.tontine_id = $1 AND d.statut = 'en_attente_verification'
+        ORDER BY d.created_at ASC
+      `, [tontineId]);
+
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  }, 
 };
 
 // ── FONCTIONS UTILITAIRES ──────────────────────────────

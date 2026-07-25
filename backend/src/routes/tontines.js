@@ -144,6 +144,9 @@ router.post('/:id/compte-virtuel/retrait/initier', tontineController.initierRetr
 router.post('/:id/compte-virtuel/retrait/:retraitId/voter', tontineController.voterRetrait);
 router.get('/:id/compte-virtuel/transactions', tontineController.getTransactions);
 
+router.put('/declarations-ussd/:declarationId/confirmer', tontineController.confirmerDeclarationUSSD);
+router.put('/declarations-ussd/:declarationId/rejeter', tontineController.rejeterDeclarationUSSD);
+router.get('/:tontineId/declarations-ussd', tontineController.getDeclarationsEnAttente);
 // ── DASHBOARD ORGANISATEUR (+ ADMIN) ───────────────────
 router.get('/:id/dashboard', async (req, res) => {
   try {

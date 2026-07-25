@@ -980,6 +980,68 @@ const adminController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
+ async getDeclarationsPaiement(req, res) {
+    try {
+      const { statut = '' } = req.query;
+      const params = [];
+      let where = 'WHERE 1=1';
+      if (statut) { params.push(statut); where += ` AND d.statut=$${params.length}`; }
+
+      const { rows } = await pool.query(`
+        SELECT d.*, t.nom as nom_tontine,
+          u.prenom, u.nom, u.telephone,
+          org.prenom as organisateur_prenom, org.nom as organisateur_nom
+        FROM declarations_paiement_ussd d
+        JOIN tontines t ON t.id = d.tontine_id
+        JOIN utilisateurs u ON u.id = d.membre_id
+        JOIN utilisateurs org ON org.id = t.responsable_id
+        ${where}
+        ORDER BY d.created_at DESC
+        LIMIT 100
+      `, params);
+
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
+
+  async enregistrerReconciliation(req, res) {
+    try {
+      const { soldeReelOrange, soldeReelMoov } = req.body;
+      const userId = req.user.id;
+
+      const { rows: [totaux] } = await pool.query(
+        `SELECT COALESCE(SUM(solde), 0) as total FROM comptes_virtuels`
+      );
+
+      const { rows: [ligne] } = await pool.query(`
+        INSERT INTO reconciliation_soldes
+          (solde_reel_orange, solde_reel_moov, solde_total_virtuel, saisi_par)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [soldeReelOrange || 0, soldeReelMoov || 0, totaux.total, userId]);
+
+      res.json({ success: true, data: ligne });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
+
+  async getReconciliations(req, res) {
+    try {
+      const { rows } = await pool.query(`
+        SELECT r.*, u.prenom, u.nom
+        FROM reconciliation_soldes r
+        LEFT JOIN utilisateurs u ON u.id = r.saisi_par
+        ORDER BY r.created_at DESC
+        LIMIT 50
+      `);
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  }, 
 };
 
 module.exports = adminController;
