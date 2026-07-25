@@ -11,16 +11,18 @@ import '../widgets/bottom_nav.dart';
 import '../../main.dart';
 
 // ── PROVIDERS ──────────────────────────────────────────
+// Add .autoDispose right after FutureProvider for automatic reload
 final tontinesProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   return await ApiService.getMesTontines();
 });
 
 final tontinesPubliquesProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>(
+    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
         (ref, search) async {
   return await ApiService.getTontinesPubliques(search: search);
 });
+
 
 // ── TRADUCTIONS ───────────────────────────────────────
 const Map<String, Map<String, String>> _tr = {
