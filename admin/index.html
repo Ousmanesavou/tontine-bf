@@ -31,7 +31,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--fond);color:va
 /* ── LAYOUT ── */
 #dashboard{display:none;min-height:100vh}
 .layout{display:flex;min-height:100vh}
-.sidebar{width:250px;background:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
+.sidebar{width:250px;background:var(--sidebar);height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
 .sidebar-logo{padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sidebar-logo h1{color:white;font-size:18px;font-weight:700}
 .sidebar-logo h1 span{color:var(--vert)}
@@ -201,6 +201,7 @@ tr:hover td{background:#FAFAFA}
     <button class="nav-item" onclick="showPage('tontines',this)">💰 Tontines <span class="nav-badge" id="badgeTontines">—</span></button>
     <button class="nav-item" onclick="showPage('comptes',this)">🏦 Comptes virtuels <span class="nav-badge blue" id="badgeComptes">—</span></button>
     <button class="nav-item" onclick="showPage('retraits',this)">💸 Retraits à valider <span class="nav-badge orange" id="badgeRetraits">0</span></button>
+    <button class="nav-item" onclick="showPage('declarations',this)">📲 Déclarations USSD <span class="nav-badge orange" id="badgeDeclarations">0</span></button>
     <button class="nav-item" onclick="showPage('paiements',this)">💳 Transactions</button>
     <div class="nav-section">Contenu</div>
     <button class="nav-item" onclick="showPage('catalogue',this)">🛒 Catalogue</button>
@@ -210,6 +211,7 @@ tr:hover td{background:#FAFAFA}
     <button class="nav-item" onclick="showPage('rapports',this)">📈 Rapports</button>
     <div class="nav-section">Système</div>
     <button class="nav-item" onclick="showPage('droits',this)">🔐 Droits & Rôles</button>
+    <button class="nav-item" onclick="showPage('reconciliation',this)">⚖️ Réconciliation</button>
     <button class="nav-item" onclick="showPage('parametres',this)">⚙️ Paramètres</button>
   </nav>
   <div class="sidebar-footer">
@@ -306,7 +308,38 @@ tr:hover td{background:#FAFAFA}
       </div>
       <div id="retraitsContent"><div class="loading"><div class="spinner"></div></div></div>
     </div>
+    <div class="page" id="page-retraits">
+      <div class="alert alert-orange" style="margin-bottom:16px">
+        ⚠️ <strong>Retraits en attente de validation admin</strong> — Ces retraits ont été approuvés par tous les membres mais nécessitent votre validation finale avant traitement.
+      </div>
+      <div id="retraitsContent"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
 
+    <!-- DÉCLARATIONS USSD -->
+    <div class="page" id="page-declarations">
+      <div class="alert alert-orange" style="margin-bottom:16px">
+        📲 <strong>Déclarations de paiement par USSD</strong> — Ces membres ont déclaré un paiement sans smartphone. Vérifiez avec l'organisateur concerné avant toute action ici.
+      </div>
+      <div id="declarationsContent"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- RÉCONCILIATION -->
+    <div class="page" id="page-reconciliation">
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-title">⚖️ Nouvelle réconciliation</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Solde réel Orange Money (F)</label><input class="form-input" type="number" id="reconOrange" placeholder="0"></div>
+          <div class="form-group"><label class="form-label">Solde réel Moov Money (F)</label><input class="form-input" type="number" id="reconMoov" placeholder="0"></div>
+        </div>
+        <button class="btn btn-primary" style="padding:10px 20px" onclick="soumettreReconciliation()">Enregistrer la réconciliation</button>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><div class="table-title">📋 Historique des réconciliations</div></div>
+        <div id="reconciliationContainer"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
     <!-- TRANSACTIONS -->
     <div class="page" id="page-paiements">
       <div class="stats-grid" id="paiementsStats"></div>
@@ -714,7 +747,7 @@ async function api(path,options={}){
 }
 
 // ── NAVIGATION ────────────────────────────────────────
-const pageTitles={overview:'📊 Vue d\'ensemble',users:'👥 Utilisateurs',tontines:'💰 Tontines',comptes:'🏦 Comptes virtuels',retraits:'💸 Retraits à valider',paiements:'💳 Transactions',catalogue:'🛒 Catalogue',commercants:'🏪 Commerçants',notifications:'🔔 Notifications',rapports:'📈 Rapports',droits:'🔐 Droits & Rôles',parametres:'⚙️ Paramètres'};
+const pageTitles={overview:'📊 Vue d\'ensemble',users:'👥 Utilisateurs',tontines:'💰 Tontines',comptes:'🏦 Comptes virtuels',retraits:'💸 Retraits à valider',declarations:'📲 Déclarations USSD',reconciliation:'⚖️ Réconciliation',paiements:'💳 Transactions',catalogue:'🛒 Catalogue',commercants:'🏪 Commerçants',notifications:'🔔 Notifications',rapports:'📈 Rapports',droits:'🔐 Droits & Rôles',parametres:'⚙️ Paramètres'};
 
 async function showPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -723,7 +756,7 @@ async function showPage(name,btn){
   document.getElementById('pageTitle').textContent=pageTitles[name]||name;
   if(btn)btn.classList.add('active');
   currentPage=name;
-  const actions={overview:chargerOverview,users:chargerUsers,tontines:chargerTontines,comptes:chargerComptes,retraits:chargerRetraits,paiements:chargerPaiements,catalogue:chargerCatalogue,commercants:chargerCommercants,notifications:chargerNotifications,rapports:chargerRapports,droits:chargerDroits};
+  const actions={overview:chargerOverview,users:chargerUsers,tontines:chargerTontines,comptes:chargerComptes,retraits:chargerRetraits,declarations:chargerDeclarationsUSSD,reconciliation:chargerReconciliation,paiements:chargerPaiements,catalogue:chargerCatalogue,commercants:chargerCommercants,notifications:chargerNotifications,rapports:chargerRapports,droits:chargerDroits};
   if(actions[name]) await actions[name]();
 }
 
@@ -744,6 +777,8 @@ async function chargerBadges(){
     // Commerçants en attente
     const c=await api('/admin/commercants?statut=en_attente&limit=1');
     if(c?.success) document.getElementById('badgeCommercants').textContent=c.total||'0';
+    const dc=await api('/admin/declarations-ussd?statut=en_attente_verification');
+    if(dc?.success) document.getElementById('badgeDeclarations').textContent=(dc.data||[]).length||'0';
   }catch(e){}
 }
 
@@ -1062,7 +1097,100 @@ async function voirDetailRetrait(id){
     <button class="btn btn-danger" onclick="refuserRetrait('${id}');closeModal('modalRetraitDetail')">❌ Refuser</button>
     <button class="btn btn-primary" onclick="validerRetrait('${id}');closeModal('modalRetraitDetail')">✅ Valider</button>`;
 }
+// ── DÉCLARATIONS USSD ─────────────────────────────────
+async function chargerDeclarationsUSSD(){
+  const c=document.getElementById('declarationsContent');
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const data=await api('/admin/declarations-ussd?statut=en_attente_verification');
+    if(!data?.success){c.innerHTML='<div class="table-empty">❌ Erreur</div>';return;}
+    const decls=data.data||[];
+    document.getElementById('badgeDeclarations').textContent=decls.length||'0';
+    if(!decls.length){c.innerHTML='<div class="table-card"><div class="table-empty">✅ Aucune déclaration en attente</div></div>';return;}
+    c.innerHTML=decls.map(d=>{
+      const fm=v=>{v=parseFloat(v)||0;return v.toLocaleString('fr-FR')+' F';};
+      const date=d.created_at?new Date(d.created_at).toLocaleString('fr-FR'):'—';
+      const alerteTag=d.nombre_alertes>=2?'<span class="badge badge-red" style="margin-left:6px">Escaladé 48h</span>':d.nombre_alertes>=1?'<span class="badge badge-orange" style="margin-left:6px">Rappel 24h envoyé</span>':'';
+      return `<div class="compte-card">
+        <div class="compte-header">
+          <div>
+            <div style="font-weight:700;font-size:15px">${d.nom_tontine||'Tontine'}${alerteTag}</div>
+            <div style="font-size:12px;color:var(--gris)">Déclaré par ${d.prenom||''} ${d.nom||''} • ${d.telephone||''}</div>
+          </div>
+          <div class="solde-badge">${fm(d.montant_declare)}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:var(--fond);padding:8px;border-radius:8px">
+            <div style="font-size:10px;color:var(--gris)">ORGANISATEUR</div>
+            <div style="font-weight:600;font-size:13px">${d.organisateur_prenom||''} ${d.organisateur_nom||''}</div>
+          </div>
+          <div style="background:var(--fond);padding:8px;border-radius:8px">
+            <div style="font-size:10px;color:var(--gris)">DÉCLARÉ LE</div>
+            <div style="font-weight:600;font-size:13px">${date}</div>
+          </div>
+        </div>
+        <div class="alert alert-orange" style="margin-bottom:12px;font-size:12px">⚠️ Ne confirmez que si l'organisateur a lui-même vérifié le SMS reçu — vous n'avez normalement pas à traiter ceci directement sauf en cas d'escalade.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-danger" onclick="rejeterDeclarationAdmin('${d.id}')" style="flex:1">❌ Rejeter</button>
+          <button class="btn btn-primary" onclick="confirmerDeclarationAdmin('${d.id}')" style="flex:2">✅ Confirmer</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
 
+async function confirmerDeclarationAdmin(id){
+  if(!confirm('Confirmer cette déclaration ? Le solde de la tontine sera mis à jour.'))return;
+  const d=await api(`/tontines/declarations-ussd/${id}/confirmer`,{method:'PUT'});
+  if(d?.success){showToast(`Confirmé ! Solde: ${d.soldeAvant}F → ${d.soldeApres}F`,'success');chargerDeclarationsUSSD();chargerBadges();}
+  else showToast(d?.error||'Erreur','error');
+}
+
+async function rejeterDeclarationAdmin(id){
+  const motif=prompt('Motif du rejet (optionnel):');
+  const d=await api(`/tontines/declarations-ussd/${id}/rejeter`,{method:'PUT',body:JSON.stringify({motif:motif||''})});
+  if(d?.success){showToast('Déclaration rejetée','warning');chargerDeclarationsUSSD();chargerBadges();}
+  else showToast(d?.error||'Erreur','error');
+}
+
+// ── RÉCONCILIATION ────────────────────────────────────
+async function chargerReconciliation(){
+  const c=document.getElementById('reconciliationContainer');
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const data=await api('/admin/reconciliation');
+    if(!data?.success){c.innerHTML='<div class="table-empty">❌ Erreur</div>';return;}
+    const lignes=data.data||[];
+    if(!lignes.length){c.innerHTML='<div class="table-empty">Aucune réconciliation enregistrée</div>';return;}
+    const fm=v=>{v=parseFloat(v)||0;return v.toLocaleString('fr-FR')+' F';};
+    c.innerHTML=`<table><thead><tr><th>Date</th><th>Solde réel Orange</th><th>Solde réel Moov</th><th>Solde virtuel total</th><th>Écart</th><th>Saisi par</th></tr></thead><tbody>
+      ${lignes.map(r=>{
+        const ecart=parseFloat(r.ecart)||0;
+        const ecartOk=Math.abs(ecart)<1000;
+        return `<tr>
+          <td style="font-size:12px;color:var(--gris)">${new Date(r.created_at).toLocaleString('fr-FR')}</td>
+          <td>${fm(r.solde_reel_orange)}</td>
+          <td>${fm(r.solde_reel_moov)}</td>
+          <td>${fm(r.solde_total_virtuel)}</td>
+          <td style="font-weight:700;color:${ecartOk?'var(--vert)':'var(--rouge)'}">${ecart>0?'+':''}${fm(ecart)}</td>
+          <td style="font-size:12px">${r.prenom||''} ${r.nom||''}</td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`;
+  }catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
+
+async function soumettreReconciliation(){
+  const soldeReelOrange=parseFloat(document.getElementById('reconOrange').value)||0;
+  const soldeReelMoov=parseFloat(document.getElementById('reconMoov').value)||0;
+  const d=await api('/admin/reconciliation',{method:'POST',body:JSON.stringify({soldeReelOrange,soldeReelMoov})});
+  if(d?.success){
+    const ecart=parseFloat(d.data?.ecart)||0;
+    showToast(`Réconciliation enregistrée. Écart: ${ecart>0?'+':''}${ecart.toLocaleString('fr-FR')} F`, Math.abs(ecart)<1000?'success':'warning');
+    document.getElementById('reconOrange').value='';document.getElementById('reconMoov').value='';
+    chargerReconciliation();
+  }else showToast(d?.error||'Erreur','error');
+}
 // ── TRANSACTIONS ──────────────────────────────────────
 function filtrerPaiements(){paiementsPage=1;chargerPaiements();}
 
