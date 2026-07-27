@@ -314,7 +314,12 @@ async function notifierMembre(userId, options) {
 
     const u = rows[0];
     const langue = u.langue || 'fr';
-    const nom = u.prenom || u.nom || '';
+    // FIX: certains messages concernent un tiers (ex: "X demande à
+    // rejoindre VOTRE tontine") — le nom affiché n'est alors pas celui du
+    // destinataire mais celui fourni explicitement par l'appelant. Sans
+    // précision, on retombe sur le nom du destinataire (comportement
+    // historique, correct pour rappel_cotisation, tour_recu, etc.).
+    const nom = options.nom_acteur || (u.prenom || u.nom || '');
     // NOUVEAU: message_override permet d'envoyer un texte entièrement
     // personnalisé (ex: confirmation de paiement détaillée avec solde
     // avant/après) sans forcer le contenu dans le format rigide à 3

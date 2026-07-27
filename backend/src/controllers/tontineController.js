@@ -493,7 +493,7 @@ const tontineController = {
         type: 'nouveau_membre_tontine',
         tontine_id,
         nom_tontine: tontine[0].nom,
-        montant: `${req.user.prenom} ${req.user.nom}`,
+        nom_acteur: `${req.user.prenom} ${req.user.nom}`,
       });
 
       res.json({ success: true, message: 'Vous avez rejoint la tontine !' });
@@ -533,7 +533,7 @@ const tontineController = {
         type: 'demande_adhesion',
         tontine_id,
         nom_tontine: tontine[0].nom,
-        montant: `${req.user.prenom} ${req.user.nom}`,
+        nom_acteur: `${req.user.prenom} ${req.user.nom}`,
       });
 
       res.json({ success: true, message: 'Demande envoyée au responsable' });
