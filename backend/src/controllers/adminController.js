@@ -780,10 +780,21 @@ const adminController = {
   async refuserCommercant(req, res) {
     try {
       const { motif='' } = req.body;
-      await pool.query(
-        "UPDATE commercants SET statut='refuse', updated_at=NOW() WHERE id=$1",
+      const { rows } = await pool.query(
+        "UPDATE commercants SET statut='refuse', updated_at=NOW() WHERE id=$1 RETURNING *",
         [req.params.id]
       );
+      if (!rows[0]) return res.status(404).json({ error: 'Commerçant non trouvé' });
+
+      // NOUVEAU: le demandeur n'était jamais notifié d'un refus.
+      if (rows[0].utilisateur_id) {
+        await notificationService.notifierMembre(rows[0].utilisateur_id, {
+          type: 'adhesion_refusee',
+          nom_tontine: `commerçant "${rows[0].nom}"${motif ? ` (${motif})` : ''}`,
+          tontine_id: null,
+        });
+      }
+
       res.json({ success: true, message: 'Commerçant refusé' });
     } catch (err) {
       res.status(500).json({ error: 'Erreur serveur' });

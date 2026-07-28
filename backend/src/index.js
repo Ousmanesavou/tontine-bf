@@ -18,7 +18,7 @@ const paiementRoutes = require('./routes/paiements');
 const notificationRoutes = require('./routes/notifications');
 const ussdRoutes = require('./routes/ussd');
 const adminRoutes = require('./routes/admin');
-
+const commercantRoutes = require('./routes/commercants');
 const app = express();
 
 // ✅ TRUST PROXY EN PREMIER (avant rateLimit)
@@ -66,7 +66,7 @@ app.use((err, req, res, next) => {
     error: err.message || 'Erreur interne du serveur'
   });
 });
-
+app.use('/api/commercants', commercantRoutes);
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
