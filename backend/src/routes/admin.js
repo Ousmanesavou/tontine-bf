@@ -19,13 +19,14 @@ router.get('/users', adminController.getAllUsers);
 router.get('/users/:id', adminController.getUserDetail);
 router.put('/users/:id/bloquer', adminController.bloquerUser);
 router.put('/users/:id/debloquer', adminController.debloquerUser);
+router.delete('/users/:id', adminController.supprimerUser);
 
 // ── TONTINES ──────────────────────────────────────────
 router.get('/tontines', adminController.getAllTontines);
 router.get('/tontines/:id', adminController.getTontineDetail);
 router.put('/tontines/:id/suspendre', adminController.suspendreTontine);
 router.put('/tontines/:id/reactiver', adminController.reactiverTontine);
-
+router.delete('/tontines/:id', adminController.supprimerTontine);
 // ── COMPTES VIRTUELS ──────────────────────────────────
 router.get('/comptes-virtuels', adminController.getAllComptesVirtuels);
 router.get('/comptes-virtuels/:id', adminController.getCompteVirtuelDetail);

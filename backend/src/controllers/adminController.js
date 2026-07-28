@@ -153,7 +153,7 @@ const adminController = {
       const { page=1, limit=20, search='', statut='', pays='' } = req.query;
       const offset = (page-1)*limit;
       const params = [];
-      let where = "WHERE u.role='user'";
+      let where = "WHERE u.role='user' AND (u.est_supprime IS NULL OR u.est_supprime = false)";
 
       if (search) {
         params.push(`%${search}%`);
@@ -241,7 +241,7 @@ const adminController = {
       const { page=1, limit=20, type='', statut='', search='' } = req.query;
       const offset = (page-1)*limit;
       const params = [];
-      let where = 'WHERE 1=1';
+      let where = "WHERE (t.est_supprime IS NULL OR t.est_supprime = false)";
 
       if (type) { params.push(type); where += ` AND t.type=$${params.length}`; }
       if (statut) { params.push(statut); where += ` AND t.statut=$${params.length}`; }
@@ -945,24 +945,30 @@ const adminController = {
 
   async ajouterAdmin(req, res) {
     try {
-      const { prenom, nom, email, role, permissions } = req.body;
-      const codePin = await bcrypt.hash('Admin2024!', 10);
+      const { prenom, nom, telephone, email, motDePasse, role, permissions } = req.body;
 
+      if (!telephone || !motDePasse) {
+        return res.status(400).json({ error: 'Téléphone et mot de passe sont requis' });
+      }
+      if (motDePasse.length < 6) {
+        return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+      }
+
+      const codePin = await bcrypt.hash(motDePasse, 10);
       const { rows } = await pool.query(`
         INSERT INTO utilisateurs
           (prenom, nom, email, telephone, code_pin, role, langue, permissions)
         VALUES ($1,$2,$3,$4,$5,$6,'fr',$7)
-        RETURNING id, nom, prenom, email, role
-      `, [prenom, nom, email, email, codePin, role||'moderateur',
+        RETURNING id, nom, prenom, email, telephone, role
+      `, [prenom, nom, email || null, telephone, codePin, role||'moderateur',
           JSON.stringify(permissions||{})]);
 
-      res.status(201).json({
-        success: true,
-        data: rows[0],
-        message: 'Admin créé. Mot de passe initial: Admin2024!'
-      });
+      res.status(201).json({ success: true, data: rows[0], message: 'Admin créé avec succès' });
     } catch (err) {
       logger.error('Erreur ajouterAdmin:', err);
+      if (err.code === '23505') {
+        return res.status(400).json({ error: 'Ce téléphone ou cet email est déjà utilisé' });
+      }
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
@@ -979,7 +985,59 @@ const adminController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
+  async supprimerUser(req, res) {
+    try {
+      const { id } = req.params;
+      const { definitif } = req.query;
 
+      const { rows: [historique] } = await pool.query(`
+        SELECT
+          (SELECT COUNT(*) FROM cotisations WHERE membre_id = $1 AND statut IN ('paye','partiel')) as nb_paiements,
+          (SELECT COUNT(*) FROM tontines WHERE responsable_id = $1) as nb_tontines_organisees
+      `, [id]);
+      const aHistorique = parseInt(historique.nb_paiements) > 0 || parseInt(historique.nb_tontines_organisees) > 0;
+
+      if (definitif === 'true') {
+        if (aHistorique) {
+          return res.status(400).json({ error: 'Suppression définitive impossible : historique financier existant. Utilisez la suppression douce.' });
+        }
+        await pool.query('DELETE FROM utilisateurs WHERE id = $1', [id]);
+        return res.json({ success: true, message: 'Utilisateur supprimé définitivement' });
+      }
+
+      await pool.query('UPDATE utilisateurs SET est_supprime = true WHERE id = $1', [id]);
+      res.json({ success: true, message: 'Utilisateur supprimé (données conservées)' });
+    } catch (err) {
+      logger.error('Erreur supprimerUser:', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
+
+  async supprimerTontine(req, res) {
+    try {
+      const { id } = req.params;
+      const { definitif } = req.query;
+
+      const { rows: [historique] } = await pool.query(
+        'SELECT COUNT(*) as nb_transactions FROM transactions_virtuelles WHERE tontine_id = $1', [id]
+      );
+      const aHistorique = parseInt(historique.nb_transactions) > 0;
+
+      if (definitif === 'true') {
+        if (aHistorique) {
+          return res.status(400).json({ error: 'Suppression définitive impossible : historique financier existant. Utilisez la suppression douce ou suspendez la tontine.' });
+        }
+        await pool.query('DELETE FROM tontines WHERE id = $1', [id]);
+        return res.json({ success: true, message: 'Tontine supprimée définitivement' });
+      }
+
+      await pool.query('UPDATE tontines SET est_supprime = true WHERE id = $1', [id]);
+      res.json({ success: true, message: 'Tontine supprimée (données conservées)' });
+    } catch (err) {
+      logger.error('Erreur supprimerTontine:', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
   async supprimerAdmin(req, res) {
     try {
       await pool.query(
