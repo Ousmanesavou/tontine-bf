@@ -667,7 +667,13 @@ tr:hover td{background:#FAFAFA}
       <div class="form-group"><label class="form-label">Prénom</label><input class="form-input" id="adminPrenom" placeholder="Prénom"></div>
       <div class="form-group"><label class="form-label">Nom</label><input class="form-input" id="adminNom" placeholder="Nom"></div>
     </div>
+    router.d<div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="adminTelephone" placeholder="+226 XX XX XX XX"></div>
+    router.d<div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="adminTelephone" placeholder="+226 XX XX XX XX"></div>
+    <div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="adminTelephone" placeholder="+226 XX XX XX XX"></div>
     <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="adminEmail" placeholder="admin@exemple.com"></div>
+    <div class="form-group"><label class="form-label">Mot de passe *</label><input class="form-input" type="password" id="adminMotDePasse" placeholder="6 caractères minimum"></div>
+    <div class="form-group"><label class="form-label">Mot de passe *</label><input class="form-input" type="password" id="adminMotDePasse" placeholder="6 caractères minimum"></div>elete('/tontines/:id', adminController.supprimerTontine);
+    <div class="form-group"><label class="form-label">Mot de passe *</label><input class="form-input" type="password" id="adminMotDePasse" placeholder="6 caractères minimum"></div>elete('/tontines/:id', adminController.supprimerTontine);
     <div class="form-group"><label class="form-label">Rôle</label>
       <select class="form-select" id="adminRole">
         <option value="moderateur">Modérateur</option>
@@ -881,6 +887,7 @@ async function chargerUsers(){
           <td style="display:flex;gap:4px">
             <button class="btn btn-secondary" onclick="voirUser('${u.id}')">👁</button>
             ${u.est_bloque?`<button class="btn btn-orange" onclick="debloquerUser('${u.id}')">✅</button>`:`<button class="btn btn-danger" onclick="bloquerUser('${u.id}')">🚫</button>`}
+            <button class="btn btn-danger" onclick="supprimerUserAdmin('${u.id}')">🗑️</button>
           </td></tr>`;
       }).join('')}
     </tbody></table>
@@ -937,7 +944,7 @@ async function chargerTontines(){
     if(!tontines?.length){c.innerHTML='<div class="table-empty">Aucune tontine</div>';return;}
     const pages=Math.ceil(total/15);
     const fm=v=>{v=parseFloat(v)||0;return v>=1e6?`${(v/1e6).toFixed(1)}M`:v>=1000?`${(v/1000).toFixed(0)}k`:`${v}`;};
-    c.innerHTML=`<table><thead><tr><th>Nom</th><th>Type</th><th>Responsable</th><th>Membres</th><th>Cotisation</th><th>Solde virtuel</th><th>Taux</th><th>Période</th><th>Statut</th></tr></thead><tbody>
+    c.innerHTML=`<table><thead><tr><th>Nom</th><th>Type</th><th>Responsable</th><th>Membres</th><th>Cotisation</th><th>Solde virtuel</th><th>Taux</th><th>Période</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
       ${tontines.map(t=>{
         const taux=t.total_cotisations>0?Math.round(t.cotisations_payees/t.total_cotisations*100):0;
         const sc=taux>=80?'var(--vert)':taux>=60?'var(--orange)':'var(--rouge)';
@@ -954,6 +961,10 @@ async function chargerTontines(){
           <td><div class="score-bar"><div class="score-fill" style="width:${taux}%;background:${sc}"></div></div><span style="color:${sc}">${taux}%</span></td>
           <td style="font-size:11px;color:var(--gris)">${dateFin}${estTermine?' ✅':''}</td>
           <td><span class="badge ${t.statut==='active'?'badge-green':t.statut==='terminee'?'badge-blue':'badge-gray'}">${t.statut}</span></td>
+          <td style="display:flex;gap:4px">
+            ${t.statut==='suspendue'?`<button class="btn btn-orange" onclick="reactiverTontineAdmin('${t.id}')">▶️</button>`:`<button class="btn btn-secondary" onclick="suspendreTontineAdmin('${t.id}')">⏸️</button>`}
+            <button class="btn btn-danger" onclick="supprimerTontineAdmin('${t.id}')">🗑️</button>
+          </td>
         </tr>`;
       }).join('')}
     </tbody></table>
@@ -1190,6 +1201,29 @@ async function soumettreReconciliation(){
     document.getElementById('reconOrange').value='';document.getElementById('reconMoov').value='';
     chargerReconciliation();
   }else showToast(d?.error||'Erreur','error');
+}
+
+async function supprimerUserAdmin(id){
+  if(!confirm('Supprimer cet utilisateur ? (ses données restent conservées, il disparaît juste des listes)'))return;
+  const d=await api(`/admin/users/${id}`,{method:'DELETE'});
+  if(d?.success){showToast(d.message,'success');chargerUsers();}else showToast(d?.error||'Erreur','error');
+}
+
+async function suspendreTontineAdmin(id){
+  if(!confirm('Suspendre cette tontine ?'))return;
+  const d=await api(`/admin/tontines/${id}/suspendre`,{method:'PUT'});
+  if(d?.success){showToast('Tontine suspendue','warning');chargerTontines();}else showToast(d?.error||'Erreur','error');
+}
+
+async function reactiverTontineAdmin(id){
+  const d=await api(`/admin/tontines/${id}/reactiver`,{method:'PUT'});
+  if(d?.success){showToast('Tontine réactivée','success');chargerTontines();}else showToast(d?.error||'Erreur','error');
+}
+
+async function supprimerTontineAdmin(id){
+  if(!confirm('Supprimer cette tontine ? (ses données restent conservées, elle disparaît juste des listes)'))return;
+  const d=await api(`/admin/tontines/${id}`,{method:'DELETE'});
+  if(d?.success){showToast(d.message,'success');chargerTontines();}else showToast(d?.error||'Erreur','error');
 }
 // ── TRANSACTIONS ──────────────────────────────────────
 function filtrerPaiements(){paiementsPage=1;chargerPaiements();}
@@ -1448,10 +1482,11 @@ async function chargerDroits(){
 }
 
 async function ajouterAdmin(){
-  const body={prenom:document.getElementById('adminPrenom').value,nom:document.getElementById('adminNom').value,email:document.getElementById('adminEmail').value,role:document.getElementById('adminRole').value,permissions:{users:document.getElementById('droitUsers').checked,tontines:document.getElementById('droitTontines').checked,paiements:document.getElementById('droitPaiements').checked,retraits:document.getElementById('droitRetraits').checked,catalogue:document.getElementById('droitCatalogue').checked,notifications:document.getElementById('droitNotifs').checked}};
-  if(!body.prenom||!body.email){showToast('Prénom et email requis','error');return;}
+  const body={prenom:document.getElementById('adminPrenom').value,nom:document.getElementById('adminNom').value,telephone:document.getElementById('adminTelephone').value,email:document.getElementById('adminEmail').value,motDePasse:document.getElementById('adminMotDePasse').value,role:document.getElementById('adminRole').value,permissions:{users:document.getElementById('droitUsers').checked,tontines:document.getElementById('droitTontines').checked,paiements:document.getElementById('droitPaiements').checked,retraits:document.getElementById('droitRetraits').checked,catalogue:document.getElementById('droitCatalogue').checked,notifications:document.getElementById('droitNotifs').checked}};
+  if(!body.prenom||!body.telephone||!body.motDePasse){showToast('Prénom, téléphone et mot de passe requis','error');return;}
+  if(body.motDePasse.length<6){showToast('Mot de passe : 6 caractères minimum','error');return;}
   const d=await api('/admin/admins',{method:'POST',body:JSON.stringify(body)});
-  if(d?.success){showToast('Admin créé !','success');closeModal('modalAddAdmin');chargerDroits();}else showToast(d?.error||'Erreur','error');
+  if(d?.success){showToast('Admin créé !','success');closeModal('modalAddAdmin');document.getElementById('adminMotDePasse').value='';chargerDroits();}else showToast(d?.error||'Erreur','error');
 }
 
 // ── PARAMÈTRES ────────────────────────────────────────

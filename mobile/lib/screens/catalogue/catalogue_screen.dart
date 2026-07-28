@@ -283,6 +283,11 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen>
               ref.refresh(commercantsProvider);
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.storefront_outlined, color: Colors.white70),
+            tooltip: 'Devenir commerçant',
+            onPressed: () => context.push('/espace-commercant'),
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,

@@ -480,5 +480,56 @@ class ApiService {
     final r = await _dio.get('/paiements/tontine/$tontineId/transactions');
     return Map<String, dynamic>.from(r.data);
   }
+  // ── ESPACE COMMERÇANT ──────────────────────────────
+  static Future<Map<String, dynamic>?> getMonStatutCommercant() async {
+    try {
+      final resp = await _dio.get('/commercants/mon-statut');
+      final data = resp.data['data'];
+      return data == null ? null : Map<String, dynamic>.from(data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 
+  static Future<void> demanderCommercant(Map<String, dynamic> data) async {
+    try {
+      await _dio.post('/commercants/demander', data: data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getMesProduitsCommercant() async {
+    try {
+      final resp = await _dio.get('/commercants/mes-produits');
+      final data = resp.data['data'] as List;
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> ajouterProduitCommercant(Map<String, dynamic> data) async {
+    try {
+      await _dio.post('/commercants/mes-produits', data: data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> modifierProduitCommercant(String id, Map<String, dynamic> data) async {
+    try {
+      await _dio.put('/commercants/mes-produits/$id', data: data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> supprimerProduitCommercant(String id) async {
+    try {
+      await _dio.delete('/commercants/mes-produits/$id');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 }

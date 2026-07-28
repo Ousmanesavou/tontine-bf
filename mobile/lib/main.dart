@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/tontine/compte_virtuel_screen.dart';
 
+import 'screens/catalogue/espace_commercant_screen.dart';
 import 'screens/auth/splash_screen.dart';
 import 'screens/auth/langue_screen.dart';
 import 'screens/auth/inscription_screen.dart';
@@ -170,6 +171,11 @@ final _router = GoRouter(
       path: '/catalogue',
       builder: (ctx, state) => const CatalogueScreen(),
     ),
+
+    GoRoute(
+      path: '/espace-commercant',
+      builder: (ctx, state) => const EspaceCommercantScreen(),
+    ),
     GoRoute(
       path: '/notifications',
       builder: (ctx, state) => const NotificationsScreen(),
@@ -239,6 +245,8 @@ final _router = GoRouter(
       builder: (ctx, state) => TontineDetailScreen(
           id: state.pathParameters['id']!),
     ),
+
+
   ],
 );
 
