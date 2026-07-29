@@ -95,7 +95,7 @@ router.post('/mes-produits', async (req, res) => {
     const commercantId = await getCommercantValide(req.user.id);
     if (!commercantId) return res.status(403).json({ error: 'Vous n\'êtes pas encore un commerçant validé' });
 
-    const { nom, categorie, description, prix, livraison_disponible, emoji } = req.body;
+    const { nom, categorie, description, prix, livraison_disponible, emoji, medias } = req.body;
     if (!nom || !categorie || !prix) {
       return res.status(400).json({ error: 'Nom, catégorie et prix sont requis' });
     }
@@ -104,18 +104,27 @@ router.post('/mes-produits', async (req, res) => {
       `SELECT nom, telephone FROM commercants WHERE id = $1`, [commercantId]
     );
 
-    // FIX: commercant_id enfin correctement renseigné — jamais utilisé
-    // jusqu'ici, même côté admin (qui ne remplissait que du texte libre).
+    const mediasArray = Array.isArray(medias) ? medias : [];
+
+    // FIX SÉCURITÉ: statut toujours forcé à 'en_attente' ici, jamais pris
+    // du corps de la requête — un produit commerçant doit systématiquement
+    // passer par une validation admin avant d'être visible publiquement.
     const { rows } = await pool.query(`
       INSERT INTO catalogue_produits
         (nom, categorie, description, prix, fournisseur_nom, fournisseur_contact,
-         livraison_disponible, photos, emoji, commercant_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         livraison_disponible, photos, emoji, commercant_id, statut)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'en_attente')
       RETURNING *
     `, [nom, categorie, description || null, prix, commercant.nom, commercant.telephone,
-        livraison_disponible || false, JSON.stringify([emoji || '📦']), emoji || '📦', commercantId]);
+        livraison_disponible || false, JSON.stringify(mediasArray), emoji || '📦', commercantId]);
 
-    res.status(201).json({ success: true, data: rows[0] });
+    await notificationService.notifierTousLesAdmins({
+      type: 'demande_adhesion',
+      nom_acteur: commercant.nom,
+      nom_tontine: `produit "${nom}" à valider`,
+    });
+
+    res.status(201).json({ success: true, message: 'Produit soumis, en attente de validation admin', data: rows[0] });
   } catch (err) {
     logger.error('Erreur ajout produit commerçant:', err);
     res.status(500).json({ error: 'Erreur serveur' });

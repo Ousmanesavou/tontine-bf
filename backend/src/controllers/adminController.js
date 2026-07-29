@@ -636,8 +636,8 @@ const adminController = {
       const { rows } = await pool.query(`
         INSERT INTO catalogue_produits
           (nom, categorie, description, prix, fournisseur_nom,
-           fournisseur_contact, livraison_disponible, photos, emoji)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+           fournisseur_contact, livraison_disponible, photos, emoji, statut)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'valide')
         RETURNING *
       `, [nom, categorie, description, prix, fournisseur_nom,
           fournisseur_contact, livraison_disponible||false,
@@ -676,7 +676,72 @@ const adminController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
+  async getProduitsEnAttente(req, res) {
+    try {
+      const { rows } = await pool.query(`
+        SELECT cp.*, c.nom as commercant_nom, c.telephone as commercant_telephone
+        FROM catalogue_produits cp
+        LEFT JOIN commercants c ON c.id = cp.commercant_id
+        WHERE cp.statut = 'en_attente'
+        ORDER BY cp.created_at ASC
+      `);
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
 
+  async validerProduit(req, res) {
+    try {
+      const { rows } = await pool.query(
+        `UPDATE catalogue_produits SET statut = 'valide' WHERE id = $1 RETURNING *`,
+        [req.params.id]
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'Produit non trouvé' });
+
+      const { rows: [commercant] } = await pool.query(
+        `SELECT utilisateur_id FROM commercants WHERE id = $1`, [rows[0].commercant_id]
+      );
+      if (commercant?.utilisateur_id) {
+        await notificationService.notifierMembre(commercant.utilisateur_id, {
+          type: 'adhesion_acceptee',
+          nom_tontine: `Votre produit "${rows[0].nom}" a été validé !`,
+          montant: 'Il est maintenant visible dans le catalogue.',
+          tontine_id: null,
+        });
+      }
+
+      res.json({ success: true, message: 'Produit validé', data: rows[0] });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
+
+  async refuserProduit(req, res) {
+    try {
+      const { motif = '' } = req.body;
+      const { rows } = await pool.query(
+        `UPDATE catalogue_produits SET statut = 'refuse' WHERE id = $1 RETURNING *`,
+        [req.params.id]
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'Produit non trouvé' });
+
+      const { rows: [commercant] } = await pool.query(
+        `SELECT utilisateur_id FROM commercants WHERE id = $1`, [rows[0].commercant_id]
+      );
+      if (commercant?.utilisateur_id) {
+        await notificationService.notifierMembre(commercant.utilisateur_id, {
+          type: 'adhesion_refusee',
+          nom_tontine: `produit "${rows[0].nom}"${motif ? ` (${motif})` : ''}`,
+          tontine_id: null,
+        });
+      }
+
+      res.json({ success: true, message: 'Produit refusé' });
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  },
   // ── COMMERÇANTS ───────────────────────────────────────
   async getCommercants(req, res) {
     try {

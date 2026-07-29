@@ -51,6 +51,9 @@ router.get('/catalogue', adminController.getCatalogue);
 router.post('/catalogue', adminController.ajouterProduit);
 router.put('/catalogue/:id', adminController.modifierProduit);
 router.delete('/catalogue/:id', adminController.supprimerProduit);
+router.get('/catalogue/en-attente', adminController.getProduitsEnAttente);
+router.put('/catalogue/:id/valider', adminController.validerProduit);
+router.put('/catalogue/:id/refuser', adminController.refuserProduit);
 
 // ── COMMERÇANTS ───────────────────────────────────────
 router.get('/commercants', adminController.getCommercants);
