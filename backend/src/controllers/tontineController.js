@@ -252,13 +252,16 @@ const tontineController = {
         nom, type, description, montant_cotisation, periodicite,
         periodicite_jours, nombre_membres, date_debut,
         ordre_rotation, produit_catalogue_id,
-        est_publique,
+        est_publique, medias,
         photo_tontine, devise, pays,
         orange_money_numero, moov_money_numero,
         mtn_numero, wave_numero,
       } = req.body;
 
       const estPublique = est_publique || false;
+      const mediasArray = Array.isArray(medias) ? medias : [];
+      const premierePhoto = mediasArray.find(m => m.type === 'image');
+      const photoTontineFinal = photo_tontine || premierePhoto?.url || null;
 
       const date_fin = calculerDateFin(
         date_debut, periodicite, periodicite_jours, nombre_membres
@@ -267,15 +270,16 @@ const tontineController = {
       const { rows } = await client.query(`
         INSERT INTO tontines (nom, type, description, montant_cotisation, periodicite,
           periodicite_jours, nombre_membres, date_debut, date_fin, ordre_rotation,
-          responsable_id, produit_catalogue_id, est_publique, photo_tontine)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+          responsable_id, produit_catalogue_id, est_publique, photo_tontine, medias)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
         RETURNING *
       `, [nom, type, description, montant_cotisation, periodicite,
           periodicite_jours || 1, nombre_membres, date_debut, date_fin,
           ordre_rotation || 'tirage_sort', req.user.id,
           produit_catalogue_id || null,
           estPublique,
-          photo_tontine || null]);
+          photoTontineFinal,
+          JSON.stringify(mediasArray)]);
 
       const tontine = rows[0];
 

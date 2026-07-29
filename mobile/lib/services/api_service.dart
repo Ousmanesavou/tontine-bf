@@ -532,4 +532,17 @@ class ApiService {
       throw _handleError(e);
     }
   }
+
+  // ── UPLOAD MÉDIA TONTINE (photo ou vidéo) ──────────
+  static Future<Map<String, dynamic>> uploaderMediaTontine(File file) async {
+    try {
+      final formData = FormData.fromMap({
+        'media': await MultipartFile.fromFile(file.path),
+      });
+      final resp = await _dio.post('/tontines/upload-media', data: formData);
+      return Map<String, dynamic>.from(resp.data['data']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 }
