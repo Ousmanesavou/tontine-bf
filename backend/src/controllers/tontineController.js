@@ -14,8 +14,6 @@ const { LIEN_TELECHARGEMENT } = require('../services/notificationService');
  * n'importe quel utilisateur authentifié.
  */
 async function verifierMembreOuPlus(dbClient, tontineId, userId) {
-  // FIX: est_admin n'existe pas comme colonne — le statut admin passe par
-  // role = 'admin' (confirmé via information_schema.columns).
   const { rows: [acces] } = await dbClient.query(
     `SELECT 1 FROM membres_tontine WHERE tontine_id = $1 AND utilisateur_id = $2 AND est_actif = true
      UNION SELECT 1 FROM tontines WHERE id = $1 AND responsable_id = $2
@@ -27,9 +25,6 @@ async function verifierMembreOuPlus(dbClient, tontineId, userId) {
 
 /**
  * Accès en GESTION : organisateur (responsable_id) OU admin uniquement.
- * Pour les actions de modération/gestion (modifier, supprimer, accepter/
- * refuser une adhésion, retirer un membre, initier un retrait...).
- * Renvoie aussi la tontine chargée pour éviter une requête séparée.
  */
 async function verifierOrganisateurOuAdmin(dbClient, tontineId, userId) {
   const { rows: [tontine] } = await dbClient.query(
@@ -39,7 +34,6 @@ async function verifierOrganisateurOuAdmin(dbClient, tontineId, userId) {
   if (!tontine) return { tontine: null, autorise: false };
   if (tontine.responsable_id === userId) return { tontine, autorise: true };
 
-  // FIX: même correction — role = 'admin' au lieu de est_admin (inexistant).
   const { rows: [user] } = await dbClient.query(
     'SELECT role FROM utilisateurs WHERE id = $1',
     [userId]
@@ -50,10 +44,7 @@ async function verifierOrganisateurOuAdmin(dbClient, tontineId, userId) {
 /**
  * DUPLICATION CONNUE (dette technique à consolider) : cette fonction existe
  * à l identique dans backend/src/routes/paiements.js et
- * backend/src/routes/tontines.js. Trois copies de la même logique de
- * paiement par tranche / report de surplus — à extraire dans un service
- * partagé (ex: cotisationService.js) importé par les trois fichiers dès
- * que ce lot de correctifs sera testé et stabilisé.
+ * backend/src/routes/tontines.js.
  */
 async function appliquerSurplus(client, tontineId, membreId, membreInfo, surplusInitial, periodeDepart) {
   let surplus = surplusInitial;
@@ -114,18 +105,58 @@ async function appliquerSurplus(client, tontineId, membreId, membreInfo, surplus
   return surplus;
 }
 
+/**
+ * NOUVEAU : appelée après chaque ajout de membre (création, rejoindre,
+ * adhésion acceptée, invitation directe). Ne fait rien tant que le groupe
+ * n'a pas atteint nombre_membres. Une fois complet, exactement une fois :
+ *   1. Si ordre_rotation = 'tirage_sort' : mélange réellement les positions
+ *      (jusqu ici cette valeur n avait aucun effet, l ordre était toujours
+ *      celui d inscription, peu importe ce qui était choisi/affiché).
+ *   2. Génère les cotisations pour TOUS les membres définitifs.
+ *      FIX MAJEUR : auparavant, genererCotisations tournait à la création
+ *      de la tontine, où seul l organisateur est membre — tout membre
+ *      rejoignant ensuite n avait donc JAMAIS de cotisation générée.
+ */
+async function finaliserGroupeSiComplet(dbClient, tontineId, tontine) {
+  const { rows: [count] } = await dbClient.query(
+    'SELECT COUNT(*) as total FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true',
+    [tontineId]
+  );
+  if (parseInt(count.total) !== tontine.nombre_membres) return;
+
+  const { rows: [dejaGenere] } = await dbClient.query(
+    'SELECT 1 FROM cotisations WHERE tontine_id = $1 LIMIT 1', [tontineId]
+  );
+  if (dejaGenere) return;
+
+  if (tontine.ordre_rotation === 'tirage_sort') {
+    const { rows: membres } = await dbClient.query(
+      'SELECT id FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true',
+      [tontineId]
+    );
+    const melanges = [...membres];
+    for (let i = melanges.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [melanges[i], melanges[j]] = [melanges[j], melanges[i]];
+    }
+    for (let i = 0; i < melanges.length; i++) {
+      await dbClient.query(
+        'UPDATE membres_tontine SET position_rotation = $1 WHERE id = $2',
+        [i + 1, melanges[i].id]
+      );
+    }
+    logger.info(`Tirage au sort effectué pour la tontine ${tontineId}`);
+  }
+
+  await genererCotisations(dbClient, tontine);
+  logger.info(`Cotisations générées pour la tontine ${tontineId} (groupe complet)`);
+}
+
 const tontineController = {
 
   // ── MES TONTINES ──────────────────────────────────────
   async getMesTontines(req, res) {
     try {
-      // FIX: le calcul de "période actuelle" se basait sur
-      // MAX(periode_numero) — la DERNIÈRE période du cycle complet, presque
-      // toujours encore 'en_attente' jusqu à la toute fin de la tontine.
-      // Le pourcentage de complétion affiché était donc quasi toujours 0%.
-      // On prend maintenant la période la plus ANCIENNE pas encore soldée
-      // (MIN parmi les statuts != 'paye'), qui représente la vraie période
-      // "en cours" de collecte.
       const { rows } = await pool.query(`
         SELECT t.*, mt.position_rotation, mt.a_recu,
           COUNT(mt2.id) as total_membres,
@@ -169,7 +200,7 @@ const tontineController = {
       const userId = req.user.id;
 
       let where = `WHERE t.statut = 'active'
-        AND (t.est_public = true OR t.est_publique = true)
+        AND t.est_publique = true
         AND NOT EXISTS (
           SELECT 1 FROM membres_tontine mt2
           WHERE mt2.tontine_id = t.id
@@ -221,13 +252,13 @@ const tontineController = {
         nom, type, description, montant_cotisation, periodicite,
         periodicite_jours, nombre_membres, date_debut,
         ordre_rotation, produit_catalogue_id,
-        est_publique, est_public,
+        est_publique,
         photo_tontine, devise, pays,
         orange_money_numero, moov_money_numero,
         mtn_numero, wave_numero,
       } = req.body;
 
-      const estPublique = est_publique || est_public || false;
+      const estPublique = est_publique || false;
 
       const date_fin = calculerDateFin(
         date_debut, periodicite, periodicite_jours, nombre_membres
@@ -236,14 +267,14 @@ const tontineController = {
       const { rows } = await client.query(`
         INSERT INTO tontines (nom, type, description, montant_cotisation, periodicite,
           periodicite_jours, nombre_membres, date_debut, date_fin, ordre_rotation,
-          responsable_id, produit_catalogue_id, est_publique, est_public, photo_tontine)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          responsable_id, produit_catalogue_id, est_publique, photo_tontine)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
         RETURNING *
       `, [nom, type, description, montant_cotisation, periodicite,
           periodicite_jours || 1, nombre_membres, date_debut, date_fin,
           ordre_rotation || 'tirage_sort', req.user.id,
           produit_catalogue_id || null,
-          estPublique, estPublique,
+          estPublique,
           photo_tontine || null]);
 
       const tontine = rows[0];
@@ -266,7 +297,12 @@ const tontineController = {
       `, [tontine.id, JSON.stringify(identifiants),
           `CV-${Date.now()}`]);
 
-      await genererCotisations(client, tontine);
+      // FIX: ne génère plus les cotisations ici aveuglément (auparavant
+      // couvrait uniquement l organisateur, seul membre présent à cet
+      // instant) — délègue à finaliserGroupeSiComplet, qui ne le fera que
+      // lorsque le groupe sera réellement complet.
+      await finaliserGroupeSiComplet(client, tontine.id, tontine);
+
       await client.query('COMMIT');
 
       logger.info(`Tontine créée: ${tontine.id} par ${req.user.id}`);
@@ -287,10 +323,6 @@ const tontineController = {
       const { id } = req.params;
       const userId = req.user.id;
 
-      // FIX: aucune vérification d accès auparavant — n importe quel
-      // utilisateur authentifié pouvait voir la liste complète des membres
-      // (dont leurs numéros de téléphone) et le solde de n importe quelle
-      // tontine, y compris privée.
       const autorise = await verifierMembreOuPlus(pool, id, userId);
       if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -340,13 +372,9 @@ const tontineController = {
     try {
       const { id } = req.params;
       const userId = req.user.id;
-      const { nom, description, est_publique, est_public, photo_tontine } = req.body;
-      const estPublique = est_publique !== undefined ? est_publique
-        : est_public !== undefined ? est_public : null;
+      const { nom, description, est_publique, photo_tontine } = req.body;
+      const estPublique = est_publique !== undefined ? est_publique : null;
 
-      // FIX: seul responsable_id était vérifié (dans le WHERE de l UPDATE
-      // lui-même) — pas d accès admin, et un échec silencieux (pas de ligne
-      // modifiée = message d erreur générique sans distinction du cas).
       const { tontine, autorise } = await verifierOrganisateurOuAdmin(pool, id, userId);
       if (!tontine) return res.status(404).json({ error: 'Tontine non trouvée' });
       if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
@@ -356,7 +384,6 @@ const tontineController = {
           nom = COALESCE($1, nom),
           description = COALESCE($2, description),
           est_publique = COALESCE($3, est_publique),
-          est_public = COALESCE($3, est_public),
           photo_tontine = COALESCE($4, photo_tontine),
           updated_at = NOW()
         WHERE id = $5
@@ -375,7 +402,6 @@ const tontineController = {
       const { id } = req.params;
       const userId = req.user.id;
 
-      // FIX: même gap d accès admin que modifierTontine.
       const { tontine, autorise } = await verifierOrganisateurOuAdmin(pool, id, userId);
       if (!tontine) return res.status(404).json({ error: 'Tontine non trouvée' });
       if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
@@ -391,9 +417,6 @@ const tontineController = {
   },
 
   // ── INVITER MEMBRE ────────────────────────────────────
-  // NOTE: aucune restriction sur qui peut inviter (pas seulement
-  // l organisateur) — laissé tel quel intentionnellement, car ambigu si
-  // c est voulu (un membre invite ses proches) ou pas. À clarifier si besoin.
   async inviterMembre(req, res) {
     try {
       const { telephone } = req.body;
@@ -436,6 +459,9 @@ const tontineController = {
         [tontine_id, user.id, position]
       );
 
+      // FIX: même trou que rejoindreTontine/accepterAdhesion.
+      await finaliserGroupeSiComplet(pool, tontine_id, tontineRows[0]);
+
       await notificationService.notifierMembre(user.id, {
         type: 'invitation_tontine',
         tontine_id,
@@ -460,10 +486,7 @@ const tontineController = {
       if (!tontine[0])
         return res.status(404).json({ error: 'Tontine non trouvée' });
 
-      // FIX: aucune vérification que la tontine est publique — n importe
-      // qui pouvait rejoindre directement une tontine PRIVÉE, contournant
-      // entièrement le circuit demande/validation (demanderAdhesion).
-      if (!(tontine[0].est_publique || tontine[0].est_public)) {
+      if (!tontine[0].est_publique) {
         return res.status(403).json({
           error: 'Cette tontine est privée — utilisez la demande d adhésion'
         });
@@ -488,6 +511,10 @@ const tontineController = {
         'INSERT INTO membres_tontine (tontine_id, utilisateur_id, position_rotation) VALUES ($1,$2,$3)',
         [tontine_id, req.user.id, position]
       );
+
+      // FIX: voir finaliserGroupeSiComplet — corrige le trou de cotisations
+      // jamais générées pour les membres rejoignant après la création.
+      await finaliserGroupeSiComplet(pool, tontine_id, tontine[0]);
 
       await notificationService.notifierMembre(tontine[0].responsable_id, {
         type: 'nouveau_membre_tontine',
@@ -575,21 +602,12 @@ const tontineController = {
         return res.status(404).json({ error: 'Demande non trouvée' });
       }
 
-      // FIX MAJEUR: aucune vérification que le demandeur est bien
-      // l organisateur (ou un admin) de la tontine concernée par CETTE
-      // adhésion — n importe quel utilisateur authentifié pouvait accepter
-      // n importe quelle demande d adhésion sur n importe quelle tontine,
-      // ajoutant des membres sans le consentement de l organisateur.
       const { tontine, autorise } = await verifierOrganisateurOuAdmin(client, adhesion[0].tontine_id, userId);
       if (!autorise) {
         await client.query('ROLLBACK');
         return res.status(403).json({ error: 'Accès refusé' });
       }
 
-      // FIX: si une ligne existe déjà (membre actif, ou ancien membre exclu
-      // dont la ligne persiste avec est_actif=false), l'INSERT plantait sur
-      // la contrainte unique (tontine_id, utilisateur_id). On réactive
-      // l'existant au lieu d'en créer un doublon.
       const { rows: existant } = await client.query(
         'SELECT id FROM membres_tontine WHERE tontine_id = $1 AND utilisateur_id = $2',
         [adhesion[0].tontine_id, adhesion[0].demandeur_id]
@@ -617,6 +635,10 @@ const tontineController = {
           [adhesion[0].tontine_id, adhesion[0].demandeur_id, position]
         );
       }
+
+      // FIX: voir finaliserGroupeSiComplet — même trou de cotisations
+      // jamais générées, ici pour le circuit demande/acceptation.
+      await finaliserGroupeSiComplet(client, adhesion[0].tontine_id, tontine);
 
       await client.query(
         "UPDATE adhesions_tontine SET statut = 'accepte', updated_at = NOW() WHERE id = $1",
@@ -652,8 +674,6 @@ const tontineController = {
       );
       if (!adhesion) return res.status(404).json({ error: 'Demande non trouvée' });
 
-      // FIX: même faille que accepterAdhesion — aucune vérification que le
-      // demandeur est organisateur/admin de la tontine concernée.
       const { autorise } = await verifierOrganisateurOuAdmin(pool, adhesion.tontine_id, userId);
       if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -673,8 +693,6 @@ const tontineController = {
       const { id, membreId } = req.params;
       const userId = req.user.id;
 
-      // FIX: aucune vérification d accès — n importe qui pouvait retirer
-      // n importe quel membre de n importe quelle tontine.
       const { autorise } = await verifierOrganisateurOuAdmin(pool, id, userId);
       if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -694,8 +712,6 @@ const tontineController = {
       const { id } = req.params;
       const userId = req.user.id;
 
-      // FIX: n autorisait que les membres — un organisateur/admin externe
-      // à la liste des membres actifs ne pouvait pas consulter le compte.
       const autorise = await verifierMembreOuPlus(pool, id, userId);
       if (!autorise) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -800,10 +816,6 @@ const tontineController = {
         'SELECT prenom, nom FROM utilisateurs WHERE id = $1', [userId]
       );
 
-      // FIX: cherche la période éligible (même règle que /paiements/soumettre)
-      // au lieu de flipper aveuglément la plus ancienne 'en_attente' à
-      // 'paye' peu importe le montant réellement déposé — désormais aligné
-      // sur le suivi montant_paye / paiement par tranche.
       const { rows: [cotisationCible] } = await client.query(
         `SELECT * FROM cotisations
          WHERE tontine_id = $1 AND membre_id = $2
@@ -909,7 +921,6 @@ const tontineController = {
         return res.status(404).json({ error: 'Tontine non trouvée' });
       }
 
-      // FIX: seul responsable_id était vérifié — ajout de l accès admin.
       let autorise = tontine[0].responsable_id === userId;
       if (!autorise) {
         const { rows: [user] } = await client.query(
@@ -935,9 +946,6 @@ const tontineController = {
         }
       }
 
-      // FIX: SELECT ... FOR UPDATE pour verrouiller la ligne pendant la
-      // vérification du solde — évite que deux retraits initiés en même
-      // temps passent tous les deux la vérification sur un solde périmé.
       const { rows: cv } = await client.query(
         'SELECT * FROM comptes_virtuels WHERE tontine_id = $1 FOR UPDATE', [id]
       );
@@ -1401,7 +1409,8 @@ const tontineController = {
       res.status(500).json({ error: 'Erreur serveur' });
     }
   },
- async confirmerDeclarationUSSD(req, res) {
+
+  async confirmerDeclarationUSSD(req, res) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -1587,7 +1596,7 @@ const tontineController = {
     } catch (err) {
       res.status(500).json({ error: 'Erreur serveur' });
     }
-  }, 
+  },
 };
 
 // ── FONCTIONS UTILITAIRES ──────────────────────────────
