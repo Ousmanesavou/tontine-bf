@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../utils/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../main.dart';
+import '../../widgets/media_picker_widget.dart';
 
 class EspaceCommercantScreen extends ConsumerStatefulWidget {
   const EspaceCommercantScreen({super.key});
@@ -114,6 +115,7 @@ class _EspaceCommercantScreenState
     final emojiCtrl = TextEditingController(text: produit?['emoji'] ?? '📦');
     String categorie = produit?['categorie'] ?? 'general';
     bool livraison = produit?['livraison_disponible'] ?? false;
+    List<Map<String, dynamic>> mediasSelectionnes = [];
 
     await showModalBottomSheet(
       context: context,
@@ -168,6 +170,15 @@ class _EspaceCommercantScreenState
                   maxLength: 4,
                   decoration: const InputDecoration(labelText: 'Emoji représentatif'),
                 ),
+                
+                const SizedBox(height: 8),
+                const Text('Photos / vidéos du produit',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                MediaPickerWidget(
+                  onMediaChanged: (medias) => setModal(() => mediasSelectionnes = medias),
+                ),
+                const SizedBox(height: 12),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: livraison,
@@ -194,6 +205,7 @@ class _EspaceCommercantScreenState
                         'description': descCtrl.text.trim(),
                         'emoji': emojiCtrl.text.trim().isEmpty ? '📦' : emojiCtrl.text.trim(),
                         'livraison_disponible': livraison,
+                        'medias': mediasSelectionnes,
                       };
                       try {
                         if (produit == null) {

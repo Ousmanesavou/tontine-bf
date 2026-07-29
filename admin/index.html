@@ -206,6 +206,7 @@ tr:hover td{background:#FAFAFA}
     <div class="nav-section">Contenu</div>
     <button class="nav-item" onclick="showPage('catalogue',this)">🛒 Catalogue</button>
     <button class="nav-item" onclick="showPage('commercants',this)">🏪 Commerçants <span class="nav-badge orange" id="badgeCommercants">0</span></button>
+    <button class="nav-item" onclick="showPage('produits-attente',this)">📦 Produits à valider <span class="nav-badge orange" id="badgeProduitsAttente">0</span></button>
     <div class="nav-section">Communication</div>
     <button class="nav-item" onclick="showPage('notifications',this)">🔔 Notifications <span class="nav-badge orange" id="badgeRetards">0</span></button>
     <button class="nav-item" onclick="showPage('rapports',this)">📈 Rapports</button>
@@ -308,12 +309,6 @@ tr:hover td{background:#FAFAFA}
       </div>
       <div id="retraitsContent"><div class="loading"><div class="spinner"></div></div></div>
     </div>
-    <div class="page" id="page-retraits">
-      <div class="alert alert-orange" style="margin-bottom:16px">
-        ⚠️ <strong>Retraits en attente de validation admin</strong> — Ces retraits ont été approuvés par tous les membres mais nécessitent votre validation finale avant traitement.
-      </div>
-      <div id="retraitsContent"><div class="loading"><div class="spinner"></div></div></div>
-    </div>
 
     <!-- DÉCLARATIONS USSD -->
     <div class="page" id="page-declarations">
@@ -339,7 +334,6 @@ tr:hover td{background:#FAFAFA}
       </div>
     </div>
 
-    <!-- TRANSACTIONS -->
     <!-- TRANSACTIONS -->
     <div class="page" id="page-paiements">
       <div class="stats-grid" id="paiementsStats"></div>
@@ -384,7 +378,13 @@ tr:hover td{background:#FAFAFA}
       </div>
       <div id="catalogueGrid" class="catalogue-grid"><div class="loading" style="grid-column:span 4"><div class="spinner"></div></div></div>
     </div>
-
+    <!-- PRODUITS À VALIDER -->
+    <div class="page" id="page-produits-attente">
+      <div class="alert alert-orange" style="margin-bottom:16px">
+        📦 <strong>Produits soumis par des commerçants</strong> — Chaque produit doit être validé individuellement avant d'apparaître dans le catalogue public, même pour un commerçant déjà validé.
+      </div>
+      <div id="produitsAttenteContent"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
     <!-- COMMERÇANTS -->
     <div class="page" id="page-commercants">
       <div class="alert alert-blue" style="margin-bottom:16px">
@@ -667,13 +667,9 @@ tr:hover td{background:#FAFAFA}
       <div class="form-group"><label class="form-label">Prénom</label><input class="form-input" id="adminPrenom" placeholder="Prénom"></div>
       <div class="form-group"><label class="form-label">Nom</label><input class="form-input" id="adminNom" placeholder="Nom"></div>
     </div>
-    router.d<div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="adminTelephone" placeholder="+226 XX XX XX XX"></div>
-    router.d<div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="adminTelephone" placeholder="+226 XX XX XX XX"></div>
     <div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="adminTelephone" placeholder="+226 XX XX XX XX"></div>
     <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="adminEmail" placeholder="admin@exemple.com"></div>
     <div class="form-group"><label class="form-label">Mot de passe *</label><input class="form-input" type="password" id="adminMotDePasse" placeholder="6 caractères minimum"></div>
-    <div class="form-group"><label class="form-label">Mot de passe *</label><input class="form-input" type="password" id="adminMotDePasse" placeholder="6 caractères minimum"></div>elete('/tontines/:id', adminController.supprimerTontine);
-    <div class="form-group"><label class="form-label">Mot de passe *</label><input class="form-input" type="password" id="adminMotDePasse" placeholder="6 caractères minimum"></div>elete('/tontines/:id', adminController.supprimerTontine);
     <div class="form-group"><label class="form-label">Rôle</label>
       <select class="form-select" id="adminRole">
         <option value="moderateur">Modérateur</option>
@@ -753,7 +749,7 @@ async function api(path,options={}){
 }
 
 // ── NAVIGATION ────────────────────────────────────────
-const pageTitles={overview:'📊 Vue d\'ensemble',users:'👥 Utilisateurs',tontines:'💰 Tontines',comptes:'🏦 Comptes virtuels',retraits:'💸 Retraits à valider',declarations:'📲 Déclarations USSD',reconciliation:'⚖️ Réconciliation',paiements:'💳 Transactions',catalogue:'🛒 Catalogue',commercants:'🏪 Commerçants',notifications:'🔔 Notifications',rapports:'📈 Rapports',droits:'🔐 Droits & Rôles',parametres:'⚙️ Paramètres'};
+const pageTitles={overview:'📊 Vue d\'ensemble',users:'👥 Utilisateurs',tontines:'💰 Tontines',comptes:'🏦 Comptes virtuels',retraits:'💸 Retraits à valider',declarations:'📲 Déclarations USSD',reconciliation:'⚖️ Réconciliation',paiements:'💳 Transactions',catalogue:'🛒 Catalogue',commercants:'🏪 Commerçants','produits-attente':'📦 Produits à valider',notifications:'🔔 Notifications',rapports:'📈 Rapports',droits:'🔐 Droits & Rôles',parametres:'⚙️ Paramètres'};
 
 async function showPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -762,7 +758,7 @@ async function showPage(name,btn){
   document.getElementById('pageTitle').textContent=pageTitles[name]||name;
   if(btn)btn.classList.add('active');
   currentPage=name;
-  const actions={overview:chargerOverview,users:chargerUsers,tontines:chargerTontines,comptes:chargerComptes,retraits:chargerRetraits,declarations:chargerDeclarationsUSSD,reconciliation:chargerReconciliation,paiements:chargerPaiements,catalogue:chargerCatalogue,commercants:chargerCommercants,notifications:chargerNotifications,rapports:chargerRapports,droits:chargerDroits};
+  const actions={overview:chargerOverview,users:chargerUsers,tontines:chargerTontines,comptes:chargerComptes,retraits:chargerRetraits,declarations:chargerDeclarationsUSSD,reconciliation:chargerReconciliation,paiements:chargerPaiements,catalogue:chargerCatalogue,commercants:chargerCommercants,'produits-attente':chargerProduitsEnAttente,notifications:chargerNotifications,rapports:chargerRapports,droits:chargerDroits};
   if(actions[name]) await actions[name]();
 }
 
@@ -785,6 +781,8 @@ async function chargerBadges(){
     if(c?.success) document.getElementById('badgeCommercants').textContent=c.total||'0';
     const dc=await api('/admin/declarations-ussd?statut=en_attente_verification');
     if(dc?.success) document.getElementById('badgeDeclarations').textContent=(dc.data||[]).length||'0';
+    const pa=await api('/admin/catalogue/en-attente');
+    if(pa?.success) document.getElementById('badgeProduitsAttente').textContent=(pa.data||[]).length||'0';
   }catch(e){}
 }
 
@@ -1012,7 +1010,6 @@ async function voirTransactionsCompte(tontineId){
   showToast('Chargement transactions...','');
   const data=await api(`/tontines/${tontineId}/compte-virtuel/transactions`);
   if(!data?.success){showToast('Erreur chargement','error');return;}
-  // Pour l'instant ouvrir dans un nouvel onglet du dashboard
   showToast(`${data.data?.length||0} transactions trouvées`,'success');
 }
 
@@ -1108,6 +1105,7 @@ async function voirDetailRetrait(id){
     <button class="btn btn-danger" onclick="refuserRetrait('${id}');closeModal('modalRetraitDetail')">❌ Refuser</button>
     <button class="btn btn-primary" onclick="validerRetrait('${id}');closeModal('modalRetraitDetail')">✅ Valider</button>`;
 }
+
 // ── DÉCLARATIONS USSD ─────────────────────────────────
 async function chargerDeclarationsUSSD(){
   const c=document.getElementById('declarationsContent');
@@ -1203,6 +1201,7 @@ async function soumettreReconciliation(){
   }else showToast(d?.error||'Erreur','error');
 }
 
+// ── SUPPRESSION UTILISATEURS / TONTINES ───────────────
 async function supprimerUserAdmin(id){
   if(!confirm('Supprimer cet utilisateur ? (ses données restent conservées, il disparaît juste des listes)'))return;
   const d=await api(`/admin/users/${id}`,{method:'DELETE'});
@@ -1224,6 +1223,49 @@ async function supprimerTontineAdmin(id){
   if(!confirm('Supprimer cette tontine ? (ses données restent conservées, elle disparaît juste des listes)'))return;
   const d=await api(`/admin/tontines/${id}`,{method:'DELETE'});
   if(d?.success){showToast(d.message,'success');chargerTontines();}else showToast(d?.error||'Erreur','error');
+}
+// ── PRODUITS À VALIDER ─────────────────────────────────
+async function chargerProduitsEnAttente(){
+  const c=document.getElementById('produitsAttenteContent');
+  c.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const data=await api('/admin/catalogue/en-attente');
+    if(!data?.success){c.innerHTML='<div class="table-empty">❌ Erreur</div>';return;}
+    const produits=data.data||[];
+    document.getElementById('badgeProduitsAttente').textContent=produits.length||'0';
+    if(!produits.length){c.innerHTML='<div class="table-card"><div class="table-empty">✅ Aucun produit en attente</div></div>';return;}
+    const fm=v=>{v=parseFloat(v)||0;return v.toLocaleString('fr-FR')+' F';};
+    c.innerHTML=produits.map(p=>{
+      const photos=(()=>{try{return JSON.parse(p.photos||'[]');}catch(e){return [];}})();
+      const aDesMedias=Array.isArray(photos)&&photos.some(m=>typeof m==='object'&&m.url);
+      return `<div class="compte-card">
+        <div class="compte-header">
+          <div>
+            <div style="font-weight:700;font-size:15px">${p.emoji||'📦'} ${p.nom}</div>
+            <div style="font-size:12px;color:var(--gris)">Par ${p.commercant_nom||'—'} • ${p.commercant_telephone||''} • ${p.categorie||''}</div>
+          </div>
+          <div class="solde-badge">${fm(p.prix)}</div>
+        </div>
+        ${p.description?`<div style="font-size:12px;color:var(--gris);margin-bottom:10px">${p.description}</div>`:''}
+        ${aDesMedias?`<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">${photos.filter(m=>typeof m==='object'&&m.url).map(m=>m.type==='video'?`<div style="width:60px;height:60px;background:var(--texte);border-radius:8px;display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:18px">▶️</span></div>`:`<img src="${m.url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px">`).join('')}</div>`:'<div style="font-size:11px;color:var(--gris);margin-bottom:10px">Aucune photo/vidéo jointe</div>'}
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-danger" onclick="refuserProduitAdmin('${p.id}')" style="flex:1">❌ Refuser</button>
+          <button class="btn btn-primary" onclick="validerProduitAdmin('${p.id}')" style="flex:2">✅ Valider</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){c.innerHTML=`<div class="table-empty">Erreur: ${e.message}</div>`;}
+}
+
+async function validerProduitAdmin(id){
+  const d=await api(`/admin/catalogue/${id}/valider`,{method:'PUT'});
+  if(d?.success){showToast('Produit validé, visible dans le catalogue','success');chargerProduitsEnAttente();}else showToast(d?.error||'Erreur','error');
+}
+
+async function refuserProduitAdmin(id){
+  const motif=prompt('Motif du refus (optionnel):');
+  const d=await api(`/admin/catalogue/${id}/refuser`,{method:'PUT',body:JSON.stringify({motif:motif||''})});
+  if(d?.success){showToast('Produit refusé','warning');chargerProduitsEnAttente();}else showToast(d?.error||'Erreur','error');
 }
 // ── TRANSACTIONS ──────────────────────────────────────
 function filtrerPaiements(){paiementsPage=1;chargerPaiements();}
@@ -1472,7 +1514,7 @@ async function chargerDroits(){
     document.getElementById('adminsContainer').innerHTML=data.data.map(a=>`
       <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F5F5F5">
         <div class="user-avatar" style="background:var(--vert)">${(a.prenom||'A')[0]}${(a.nom||'D')[0]}</div>
-        <div><div style="font-weight:600;font-size:13px">${a.prenom} ${a.nom}</div><div style="font-size:11px;color:var(--gris)">${a.email}</div></div>
+        <div><div style="font-weight:600;font-size:13px">${a.prenom} ${a.nom}</div><div style="font-size:11px;color:var(--gris)">${a.email||a.telephone||''}</div></div>
         <span class="badge badge-green" style="margin-left:auto">${a.role}</span>
       </div>`).join('');
   }else{
