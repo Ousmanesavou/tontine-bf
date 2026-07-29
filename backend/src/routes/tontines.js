@@ -5,6 +5,56 @@ const { authenticate } = require('../middleware/auth');
 const { validateTontine } = require('../middleware/validation');
 const { pool } = require('../../config/database');
 const notificationService = require('../services/notificationService');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
+
+const uploadMedia = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 Mo max (plafond vidéo, le plus haut des deux)
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Seules les images et vidéos sont acceptées'));
+  }
+});
+
+router.use(authenticate);
+
+// ── UPLOAD MÉDIA TONTINE (photo ou vidéo) ─────────────
+router.post('/upload-media', uploadMedia.single('media'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu' });
+
+    const isImage = req.file.mimetype.startsWith('image/');
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const limiteOctets = isImage ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
+
+    if (req.file.size > limiteOctets) {
+      return res.status(400).json({
+        error: isImage
+          ? 'Photo trop volumineuse (10 Mo maximum)'
+          : 'Vidéo trop volumineuse (50 Mo maximum)'
+      });
+    }
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'tontiligdi/tontines',
+          resource_type: isVideo ? 'video' : 'image',
+          transformation: isImage ? [{ quality: 'auto', fetch_format: 'auto' }, { width: 1200, crop: 'limit' }] : undefined,
+        },
+        (error, result) => { if (error) reject(error); else resolve(result); }
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    res.json({ success: true, data: { url: uploadResult.secure_url, type: isVideo ? 'video' : 'image' } });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Erreur upload' });
+  }
+});
+/**
 
 router.use(authenticate);
 

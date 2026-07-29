@@ -364,8 +364,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   DateTime _dateDebut = DateTime.now().add(const Duration(days: 1));
   DateTime? _dateFin;
   bool _chargement = false;
-  String? _mediaImagePath;
-  String? _mediaVideoPath;
+  List<Map<String, dynamic>> _medias = [];
 
   List<Map<String, dynamic>> _getTypes(String langue) => [
     {'code': 'argent_liquide', 'label': _t(langue, 'argent_liquide'),
@@ -447,6 +446,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         'date_debut': _dateDebut.toIso8601String().split('T')[0],
         'date_fin': _dateFinCalculee.toIso8601String().split('T')[0],
         'ordre_rotation': _ordreRotation,
+        'medias': _medias,
         'est_publique': _estPublique, // ✅
         'est_public': _estPublique,   // ✅
       });
@@ -1186,11 +1186,8 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
               // ── MEDIA ─────────────────────────────────────
               _buildSection(_t(langue, 'media'), isSmall),
               MediaPickerWidget(
-                onMediaSelected: (imagePath, videoPath) {
-                  setState(() {
-                    _mediaImagePath = imagePath;
-                    _mediaVideoPath = videoPath;
-                  });
+                onMediaChanged: (medias) {
+                  setState(() => _medias = medias);
                 },
               ),
               SizedBox(height: isSmall ? 14 : 20),

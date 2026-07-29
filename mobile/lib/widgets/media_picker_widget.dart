@@ -1,16 +1,34 @@
-﻿import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+﻿import 'dart:io';
+import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
+import '../services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
+
+class _MediaItem {
+  final File file;
+  final String type; // 'image' ou 'video'
+  bool uploading;
+  String? url;
+  bool erreur;
+
+  _MediaItem({
+    required this.file,
+    required this.type,
+    this.uploading = true,
+    this.url,
+    this.erreur = false,
+  });
+}
 
 class MediaPickerWidget extends StatefulWidget {
-  final Function(String? imagePath, String? videoPath) onMediaSelected;
-  final String? initialImage;
+  /// Appelée à chaque changement (ajout, suppression, upload terminé) avec
+  /// la liste à jour des médias déjà uploadés — chaque élément :
+  /// {'url': String, 'type': 'image'|'video'}
+  final Function(List<Map<String, dynamic>> medias) onMediaChanged;
 
   const MediaPickerWidget({
     super.key,
-    required this.onMediaSelected,
-    this.initialImage,
+    required this.onMediaChanged,
   });
 
   @override
@@ -18,59 +36,96 @@ class MediaPickerWidget extends StatefulWidget {
 }
 
 class _MediaPickerWidgetState extends State<MediaPickerWidget> {
-  String? _imagePath;
-  String? _exempleSelectionne;
+  final List<_MediaItem> _items = [];
   final ImagePicker _picker = ImagePicker();
 
-  final List<Map<String, dynamic>> _exemples = [
-    {'emoji': '💰', 'label': 'Argent', 'couleur': const Color(0xFF1D9E75)},
-    {'emoji': '🛋️', 'label': 'Meuble', 'couleur': const Color(0xFF378ADD)},
-    {'emoji': '❄️', 'label': 'Frigo', 'couleur': const Color(0xFF534AB7)},
-    {'emoji': '📺', 'label': 'TV', 'couleur': const Color(0xFFD85A30)},
-    {'emoji': '🏥', 'label': 'Santé', 'couleur': const Color(0xFFE24B4A)},
-    {'emoji': '🎓', 'label': 'École', 'couleur': const Color(0xFF534AB7)},
-    {'emoji': '🌾', 'label': 'Champ', 'couleur': const Color(0xFF639922)},
-    {'emoji': '🏗️', 'label': 'Construction', 'couleur': const Color(0xFF888780)},
-    {'emoji': '✈️', 'label': 'Voyage', 'couleur': const Color(0xFF0F6E56)},
-    {'emoji': '🛒', 'label': 'Commerce', 'couleur': const Color(0xFFBA7517)},
-    {'emoji': '💊', 'label': 'Médicament', 'couleur': const Color(0xFFD4537E)},
-    {'emoji': '🎉', 'label': 'Fête', 'couleur': const Color(0xFFD4537E)},
-  ];
+  static const int _maxFichiers = 10;
+  static const int _maxImageOctets = 10 * 1024 * 1024; // 10 Mo
+  static const int _maxVideoOctets = 50 * 1024 * 1024; // 50 Mo
+
+  void _notifierParent() {
+    widget.onMediaChanged(
+      _items
+          .where((i) => i.url != null)
+          .map((i) => {'url': i.url, 'type': i.type})
+          .toList(),
+    );
+  }
+
+  void _snack(String msg, Color couleur) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: couleur));
+  }
+
+  Future<void> _ajouterFichier(File file, String type) async {
+    if (_items.length >= _maxFichiers) {
+      _snack('Maximum $_maxFichiers fichiers par tontine', AppTheme.rouge);
+      return;
+    }
+
+    final taille = await file.length();
+    final limite = type == 'image' ? _maxImageOctets : _maxVideoOctets;
+    if (taille > limite) {
+      final limiteAffichee = type == 'image' ? '10 Mo' : '50 Mo';
+      _snack(
+        '${type == 'image' ? 'Photo' : 'Vidéo'} trop volumineuse — $limiteAffichee maximum',
+        AppTheme.rouge,
+      );
+      return;
+    }
+
+    final item = _MediaItem(file: file, type: type);
+    setState(() => _items.add(item));
+
+    try {
+      final resultat = await ApiService.uploaderMediaTontine(file);
+      setState(() {
+        item.url = resultat['url'];
+        item.uploading = false;
+      });
+      _notifierParent();
+    } catch (e) {
+      setState(() {
+        item.erreur = true;
+        item.uploading = false;
+      });
+      _snack('Échec de l\'envoi — réessayez', AppTheme.rouge);
+    }
+  }
+
+  void _supprimer(_MediaItem item) {
+    setState(() => _items.remove(item));
+    _notifierParent();
+  }
 
   Future<void> _prendrePhoto() async {
     final image = await _picker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 800, maxHeight: 600, imageQuality: 80,
+      source: ImageSource.camera, imageQuality: 80,
     );
-    if (image != null) {
-      setState(() { _imagePath = image.path; _exempleSelectionne = null; });
-      widget.onMediaSelected(image.path, null);
-    }
+    if (image != null) await _ajouterFichier(File(image.path), 'image');
   }
 
   Future<void> _choisirGalerie() async {
     final image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 800, maxHeight: 600, imageQuality: 80,
+      source: ImageSource.gallery, imageQuality: 80,
     );
-    if (image != null) {
-      setState(() { _imagePath = image.path; _exempleSelectionne = null; });
-      widget.onMediaSelected(image.path, null);
-    }
+    if (image != null) await _ajouterFichier(File(image.path), 'image');
   }
 
   Future<void> _choisirVideo() async {
     final video = await _picker.pickVideo(
       source: ImageSource.gallery,
-      maxDuration: const Duration(minutes: 2),
+      maxDuration: const Duration(minutes: 3),
     );
-    if (video != null) {
-      setState(() { _imagePath = null; _exempleSelectionne = null; });
-      widget.onMediaSelected(null, video.path);
-    }
+    if (video != null) await _ajouterFichier(File(video.path), 'video');
   }
 
   void _afficherOptions() {
+    if (_items.length >= _maxFichiers) {
+      _snack('Maximum $_maxFichiers fichiers par tontine', AppTheme.orange);
+      return;
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -85,53 +140,28 @@ class _MediaPickerWidgetState extends State<MediaPickerWidget> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width:40, height:4, decoration: BoxDecoration(color: AppTheme.grisClair, borderRadius: BorderRadius.circular(2)))),
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppTheme.grisClair,
+                    borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
-            const Text('Choisir une image', style: TextStyle(fontFamily:'Nunito', fontSize:18, fontWeight:FontWeight.w700)),
+            const Text('Ajouter un média',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w700)),
+            Text('${_items.length}/$_maxFichiers fichiers · 10 Mo max/photo, 50 Mo max/vidéo',
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppTheme.grisTexte)),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _sourceBtn(Icons.camera_alt_outlined, 'Photo', AppTheme.vert, () { Navigator.pop(ctx); _prendrePhoto(); })),
+                Expanded(child: _sourceBtn(Icons.camera_alt_outlined, 'Photo', AppTheme.vert,
+                    () { Navigator.pop(ctx); _prendrePhoto(); })),
                 const SizedBox(width: 10),
-                Expanded(child: _sourceBtn(Icons.photo_library_outlined, 'Galerie', AppTheme.vert, () { Navigator.pop(ctx); _choisirGalerie(); })),
+                Expanded(child: _sourceBtn(Icons.photo_library_outlined, 'Galerie', AppTheme.vert,
+                    () { Navigator.pop(ctx); _choisirGalerie(); })),
                 const SizedBox(width: 10),
-                Expanded(child: _sourceBtn(Icons.videocam_outlined, 'Vidéo', const Color(0xFF378ADD), () { Navigator.pop(ctx); _choisirVideo(); })),
+                Expanded(child: _sourceBtn(Icons.videocam_outlined, 'Vidéo', const Color(0xFF378ADD),
+                    () { Navigator.pop(ctx); _choisirVideo(); })),
               ],
             ),
-            const SizedBox(height: 20),
-            const Text('Ou choisir un exemple', style: TextStyle(fontFamily:'Nunito', fontSize:14, fontWeight:FontWeight.w600, color:AppTheme.grisTexte)),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 4, shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 8, mainAxisSpacing: 8,
-              children: _exemples.map((ex) {
-                final selected = _exempleSelectionne == ex['emoji'];
-                return GestureDetector(
-                  onTap: () {
-                    setState(() { _exempleSelectionne = ex['emoji']; _imagePath = null; });
-                    widget.onMediaSelected(null, null);
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: (ex['couleur'] as Color).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: selected ? ex['couleur'] as Color : Colors.transparent, width: 2),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(ex['emoji'], style: const TextStyle(fontSize: 24)),
-                        const SizedBox(height: 2),
-                        Text(ex['label'], style: const TextStyle(fontFamily:'Nunito', fontSize:9, color:AppTheme.grisTexte)),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -152,52 +182,115 @@ class _MediaPickerWidgetState extends State<MediaPickerWidget> {
           children: [
             Icon(icon, color: couleur, size: 24),
             const SizedBox(height: 4),
-            Text(label, textAlign: TextAlign.center, style: TextStyle(fontFamily:'Nunito', fontSize:11, fontWeight:FontWeight.w600, color:couleur)),
+            Text(label, textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w600, color: couleur)),
           ],
         ),
       ),
     );
   }
 
+  Widget _tuile(_MediaItem item) {
+    return Container(
+      width: 100, height: 100,
+      margin: const EdgeInsets.only(right: 10),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: item.type == 'image'
+                ? Image.file(item.file, width: 100, height: 100, fit: BoxFit.cover)
+                : Container(
+                    width: 100, height: 100,
+                    color: AppTheme.texte,
+                    child: const Center(
+                      child: Icon(Icons.play_circle_fill, color: Colors.white, size: 36),
+                    ),
+                  ),
+          ),
+          if (item.uploading)
+            Container(
+              width: 100, height: 100,
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Center(
+                child: SizedBox(width: 24, height: 24,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
+              ),
+            ),
+          if (item.erreur)
+            Container(
+              width: 100, height: 100,
+              decoration: BoxDecoration(
+                color: AppTheme.rouge.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Center(child: Icon(Icons.error_outline, color: Colors.white, size: 28)),
+            ),
+          Positioned(
+            top: 4, right: 4,
+            child: GestureDetector(
+              onTap: () => _supprimer(item),
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                child: const Icon(Icons.close, color: Colors.white, size: 14),
+              ),
+            ),
+          ),
+          if (item.type == 'video' && !item.uploading && !item.erreur)
+            const Positioned(
+              bottom: 4, left: 4,
+              child: Text('🎬', style: TextStyle(fontSize: 14)),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _afficherOptions,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: (_imagePath != null || _exempleSelectionne != null) ? AppTheme.vert : const Color(0xFFD3D1C7),
-            width: (_imagePath != null || _exempleSelectionne != null) ? 2 : 1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 100,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              ..._items.map(_tuile),
+              if (_items.length < _maxFichiers)
+                GestureDetector(
+                  onTap: _afficherOptions,
+                  child: Container(
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: const Color(0xFFD3D1C7), width: 1.5,
+                          style: BorderStyle.solid),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_photo_alternate_outlined, size: 28, color: AppTheme.grisTexte),
+                        SizedBox(height: 4),
+                        Text('Ajouter', style: TextStyle(
+                            fontFamily: 'Nunito', fontSize: 11, color: AppTheme.grisTexte)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        child: _imagePath != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.file(File(_imagePath!), fit: BoxFit.cover, width: double.infinity),
-              )
-            : _exempleSelectionne != null
-                ? Center(child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(_exempleSelectionne!, style: const TextStyle(fontSize: 56)),
-                      const SizedBox(height: 8),
-                      const Text('Appuyez pour changer', style: TextStyle(fontFamily:'Nunito', fontSize:12, color:AppTheme.grisTexte)),
-                    ],
-                  ))
-                : const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppTheme.grisTexte),
-                      SizedBox(height: 8),
-                      Text('Ajouter une image ou vidéo', style: TextStyle(fontFamily:'Nunito', fontSize:13, fontWeight:FontWeight.w600, color:AppTheme.grisTexte)),
-                      SizedBox(height: 4),
-                      Text('Ou choisir parmi nos exemples', style: TextStyle(fontFamily:'Nunito', fontSize:11, color:AppTheme.gris)),
-                    ],
-                  ),
-      ),
+        const SizedBox(height: 6),
+        Text('${_items.length}/$_maxFichiers · photos et vidéos mélangées possibles',
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppTheme.grisTexte)),
+      ],
     );
   }
 }
