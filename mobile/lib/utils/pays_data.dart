@@ -11,7 +11,7 @@ class PaysData {
       'indicatif': '+226',
       'devise': 'XOF',
       'langues': ['fr', 'mos', 'bm', 'ful'],
-      'mobile_money': ['Orange Money', 'Moov Money'],
+      'mobile_money': ['Orange Money', 'Moov Money', 'Telecel Money'],
     },
     {
       'code': 'ML',

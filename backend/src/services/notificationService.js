@@ -37,7 +37,7 @@ try {
     firebaseAdmin = admin;
   }
 } catch (err) {
-  logger.error('Erreur init Firebase Admin:', err.message);
+  logger.error('Erreur init Firebase Admin:', err.message, err.code || '', err.stack?.split('\n')[0] || '');
 }
 
 // ── MESSAGES MULTILINGUES ─────────────────────────────

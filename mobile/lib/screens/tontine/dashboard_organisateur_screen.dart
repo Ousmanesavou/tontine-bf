@@ -1122,7 +1122,7 @@ class _DashboardOrganisateurScreenState
           Container(
             decoration: _cardDeco(),
             child: Column(children: [
-              _secItem('KYC organisateur verifie', true, Icons.badge_outlined),
+              _secItem('Organisateur inscrit', true, Icons.badge_outlined),
               _secItem('KYC membres ($membresKycOk/${_membres.length})',
                   membresKycOk == _membres.length, Icons.people_outlined),
               _secItem('Validation captures paiement', true, Icons.photo_outlined),

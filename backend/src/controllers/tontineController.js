@@ -625,10 +625,13 @@ const tontineController = {
   async refuserAdhesion(req, res) {
     try {
       const { adhesionId } = req.params;
+      const { motif } = req.body;
       const userId = req.user.id;
 
       const { rows: [adhesion] } = await pool.query(
-        'SELECT * FROM adhesions_tontine WHERE id = $1', [adhesionId]
+        `SELECT at.*, t.nom as tontine_nom FROM adhesions_tontine at
+         JOIN tontines t ON t.id = at.tontine_id
+         WHERE at.id = $1`, [adhesionId]
       );
       if (!adhesion) return res.status(404).json({ error: 'Demande non trouvée' });
 
@@ -639,6 +642,15 @@ const tontineController = {
         "UPDATE adhesions_tontine SET statut = 'refuse', updated_at = NOW() WHERE id = $1",
         [adhesionId]
       );
+
+      // NOUVEAU: le demandeur n'était jamais notifié d'un refus, contrairement
+      // à accepterAdhesion qui le fait déjà.
+      await notificationService.notifierMembre(adhesion.demandeur_id, {
+        type: 'adhesion_refusee',
+        tontine_id: adhesion.tontine_id,
+        nom_tontine: `${adhesion.tontine_nom}${motif ? ` (${motif})` : ''}`,
+      });
+
       res.json({ success: true, message: 'Demande refusée' });
     } catch (err) {
       res.status(500).json({ error: 'Erreur serveur' });

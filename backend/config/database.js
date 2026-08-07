@@ -54,6 +54,7 @@ async function createTables(client) {
       email VARCHAR(200),
       est_bloque BOOLEAN DEFAULT false,
       permissions JSONB DEFAULT '{}',
+      est_supprime BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )
@@ -78,6 +79,8 @@ async function createTables(client) {
       est_public BOOLEAN DEFAULT false,
       est_publique BOOLEAN DEFAULT false,
       photo_tontine TEXT,
+      medias JSONB DEFAULT '[]',
+      est_supprime BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )
@@ -128,19 +131,8 @@ async function createTables(client) {
       livraison_disponible BOOLEAN DEFAULT false,
       est_actif BOOLEAN DEFAULT true,
       commercant_id INTEGER,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS fournisseurs (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      nom VARCHAR(200) NOT NULL,
-      categorie VARCHAR(50),
-      telephone VARCHAR(20),
-      adresse TEXT,
-      livraison_disponible BOOLEAN DEFAULT false,
-      est_actif BOOLEAN DEFAULT true,
+      statut VARCHAR(20) DEFAULT 'valide'
+        CHECK (statut IN ('en_attente','valide','refuse')),
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -257,7 +249,58 @@ async function createTables(client) {
       updated_at TIMESTAMP DEFAULT NOW()
     )
   `);
+// ── USSD, MOYENS DE PAIEMENT & RÉCONCILIATION (ajoutées après coup, jamais reportées ici avant) ──
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS declarations_paiement_ussd (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      cotisation_id UUID REFERENCES cotisations(id),
+      membre_id UUID REFERENCES utilisateurs(id),
+      tontine_id UUID REFERENCES tontines(id),
+      montant_declare DECIMAL(12,2) NOT NULL,
+      statut VARCHAR(30) DEFAULT 'en_attente_verification'
+        CHECK (statut IN ('en_attente_verification', 'confirme', 'rejete')),
+      nombre_alertes INTEGER DEFAULT 0,
+      derniere_alerte_envoyee TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW(),
+      traite_le TIMESTAMP,
+      traite_par UUID REFERENCES utilisateurs(id)
+    )
+  `);
 
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS moyens_paiement_utilisateur (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      utilisateur_id UUID REFERENCES utilisateurs(id) ON DELETE CASCADE,
+      operateur VARCHAR(50) NOT NULL,
+      numero VARCHAR(20) NOT NULL,
+      est_principal BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(utilisateur_id, operateur)
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS numeros_reception_toeeg (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      operateur VARCHAR(50) NOT NULL UNIQUE,
+      numero VARCHAR(20) NOT NULL,
+      actif BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS reconciliation_soldes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      solde_reel_orange DECIMAL(12,2),
+      solde_reel_moov DECIMAL(12,2),
+      solde_total_virtuel DECIMAL(12,2),
+      ecart DECIMAL(12,2) GENERATED ALWAYS AS
+        ((COALESCE(solde_reel_orange,0)+COALESCE(solde_reel_moov,0))-solde_total_virtuel) STORED,
+      saisi_par UUID REFERENCES utilisateurs(id),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
   // ── NOTIFICATIONS ADMIN ───────────────────────────────
   await client.query(`
     CREATE TABLE IF NOT EXISTS notifications_admin (
