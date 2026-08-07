@@ -750,7 +750,7 @@ const adminController = {
       const { statut='' } = req.query;
       let where = 'WHERE 1=1';
       const params = [];
-      if (statut) { params.push(statut); where += ` AND statut=$${params.length}`; }
+      if (statut) { params.push(statut); where += ` AND c.statut=$${params.length}`; }
 
       const { rows } = await pool.query(`
         SELECT c.*,
