@@ -875,46 +875,6 @@ const adminController = {
     }
   },
 
-  // ── FOURNISSEURS ──────────────────────────────────────
-  async getFournisseurs(req, res) {
-    try {
-      const { rows } = await pool.query(
-        'SELECT * FROM fournisseurs ORDER BY created_at DESC'
-      );
-      res.json({ success: true, data: rows });
-    } catch (err) {
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  },
-
-  async ajouterFournisseur(req, res) {
-    try {
-      const { nom, categorie, telephone, adresse, livraison_disponible } = req.body;
-      const { rows } = await pool.query(`
-        INSERT INTO fournisseurs (nom, categorie, telephone, adresse, livraison_disponible)
-        VALUES ($1,$2,$3,$4,$5) RETURNING *
-      `, [nom, categorie, telephone, adresse, livraison_disponible||false]);
-      res.status(201).json({ success: true, data: rows[0] });
-    } catch (err) {
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  },
-
-  async modifierFournisseur(req, res) {
-    try {
-      const { nom, categorie, telephone, adresse, livraison_disponible, est_actif } = req.body;
-      const { rows } = await pool.query(`
-        UPDATE fournisseurs SET
-          nom=$1, categorie=$2, telephone=$3, adresse=$4,
-          livraison_disponible=$5, est_actif=$6
-        WHERE id=$7 RETURNING *
-      `, [nom, categorie, telephone, adresse, livraison_disponible, est_actif, req.params.id]);
-      res.json({ success: true, data: rows[0] });
-    } catch (err) {
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  },
-
   // ── NOTIFICATIONS ─────────────────────────────────────
   async envoyerNotificationMasse(req, res) {
     try {

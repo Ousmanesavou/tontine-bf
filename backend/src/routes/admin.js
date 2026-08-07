@@ -63,10 +63,6 @@ router.put('/commercants/:id/valider', adminController.validerCommercant);
 router.put('/commercants/:id/refuser', adminController.refuserCommercant);
 router.delete('/commercants/:id', adminController.supprimerCommercant);
 
-// ── FOURNISSEURS (ancien système) ─────────────────────
-router.get('/fournisseurs', adminController.getFournisseurs);
-router.post('/fournisseurs', adminController.ajouterFournisseur);
-router.put('/fournisseurs/:id', adminController.modifierFournisseur);
 
 // ── ADMINS & DROITS ───────────────────────────────────
 router.get('/admins', adminController.getAdmins);
