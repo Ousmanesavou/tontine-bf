@@ -406,7 +406,6 @@ const tontineController = {
         [tontine_id, user.id, position]
       );
 
-      // FIX: même trou que rejoindreTontine/accepterAdhesion.
       await finaliserGroupeSiComplet(pool, tontine_id, tontineRows[0]);
 
       await notificationService.notifierMembre(user.id, {
@@ -415,6 +414,18 @@ const tontineController = {
         nom_tontine: tontineRows[0].nom,
         montant: `${req.user.prenom} ${req.user.nom}`,
       });
+
+      // NOUVEAU: décision produit — tout membre peut inviter, mais
+      // l'organisateur est informé pour garder une visibilité sur qui
+      // rejoint son groupe (sauf s'il est lui-même l'inviteur).
+      if (req.user.id !== tontineRows[0].responsable_id) {
+        await notificationService.notifierMembre(tontineRows[0].responsable_id, {
+          type: 'nouveau_membre_tontine',
+          tontine_id,
+          nom_tontine: tontineRows[0].nom,
+          nom_acteur: `${user.prenom} ${user.nom} (invité par ${req.user.prenom})`,
+        });
+      }
 
       res.json({ success: true, message: 'Membre invité avec succès' });
     } catch (err) {
@@ -1223,42 +1234,50 @@ const tontineController = {
   },
 
   async voterEmprunt(req, res) {
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
       const { id, empruntId } = req.params;
       const userId = req.user.id;
       const { vote } = req.body;
 
-      const { rows: membre } = await pool.query(
+      const { rows: membre } = await client.query(
         'SELECT id FROM membres_tontine WHERE tontine_id = $1 AND utilisateur_id = $2 AND est_actif = true',
         [id, userId]
       );
       if (membre.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(403).json({ error: 'Accès refusé' });
       }
 
-      const { rows } = await pool.query(
+      const { rows } = await client.query(
         'SELECT * FROM emprunts WHERE id = $1', [empruntId]
       );
-      if (!rows[0])
+      if (!rows[0]) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Emprunt non trouvé' });
+      }
 
       if (rows[0].emprunteur_id === userId) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Vous ne pouvez pas voter pour votre propre demande' });
       }
 
       if (rows[0].statut !== 'en_attente') {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Cet emprunt n est plus en attente de vote' });
       }
 
       const approuves = rows[0].approuve_par || [];
 
       if (approuves.some(v => v.userId === userId)) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Vous avez déjà voté' });
       }
 
       const newApprouves = [...approuves, { userId, vote, date: new Date() }];
 
-      const { rows: [{ count: nbMembresActifs }] } = await pool.query(
+      const { rows: [{ count: nbMembresActifs }] } = await client.query(
         'SELECT COUNT(*) FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true AND utilisateur_id != $2',
         [id, rows[0].emprunteur_id]
       );
@@ -1267,41 +1286,156 @@ const tontineController = {
       const seuilMajorite = Math.floor(parseInt(nbMembresActifs) / 2) + 1;
 
       let nouveauStatut = 'en_attente';
-      if (votesOui >= seuilMajorite) nouveauStatut = 'approuve';
-      else if (votesNon >= seuilMajorite) nouveauStatut = 'refuse';
+      let fondsInsuffisants = false;
 
-      await pool.query(
+      if (votesOui >= seuilMajorite) {
+        // FIX: vérifie enfin que le compte virtuel a réellement les fonds
+        // avant d'approuver — jusqu'ici un emprunt approuvé ne touchait
+        // jamais au solde réel, qui restait affiché comme "disponible"
+        // alors qu'une partie était en réalité prêtée.
+        const { rows: [cv] } = await client.query(
+          'SELECT * FROM comptes_virtuels WHERE tontine_id = $1 FOR UPDATE', [id]
+        );
+        const soldeDisponible = parseFloat(cv?.solde) || 0;
+        const montantEmprunt = parseFloat(rows[0].montant);
+
+        if (soldeDisponible >= montantEmprunt) {
+          nouveauStatut = 'approuve';
+
+          await client.query(
+            'UPDATE comptes_virtuels SET solde = solde - $1, updated_at = NOW() WHERE id = $2',
+            [montantEmprunt, cv.id]
+          );
+
+          const { rows: [emprunteur] } = await client.query(
+            'SELECT prenom, nom FROM utilisateurs WHERE id = $1', [rows[0].emprunteur_id]
+          );
+
+          await client.query(
+            `INSERT INTO transactions_virtuelles
+              (tontine_id, compte_virtuel_id, type, montant, membre_id, utilisateur_id,
+               description, solde_avant, solde_apres)
+             VALUES ($1,$2,'retrait',$3,$4,$4,$5,$6,$7)`,
+            [id, cv.id, montantEmprunt, rows[0].emprunteur_id,
+             `Emprunt accordé à ${emprunteur?.prenom || ''} ${emprunteur?.nom || ''}`,
+             soldeDisponible, soldeDisponible - montantEmprunt]
+          );
+        } else {
+          fondsInsuffisants = true;
+        }
+      } else if (votesNon >= seuilMajorite) {
+        nouveauStatut = 'refuse';
+      }
+
+      await client.query(
         'UPDATE emprunts SET approuve_par = $1, statut = $2 WHERE id = $3',
         [JSON.stringify(newApprouves), nouveauStatut, empruntId]
       );
 
+      await client.query('COMMIT');
+
       res.json({
         success: true,
-        message: nouveauStatut === 'approuve' ? 'Emprunt approuvé !'
+        message: nouveauStatut === 'approuve' ? 'Emprunt approuvé et décaissé !'
+          : fondsInsuffisants ? 'Majorité atteinte, mais le solde de la tontine est insuffisant pour décaisser cet emprunt.'
           : nouveauStatut === 'refuse' ? 'Emprunt refusé.'
           : `Vote enregistré. ${votesOui}/${seuilMajorite} votes pour requis.`,
         statut: nouveauStatut,
         votesOui,
         votesNon,
         seuilMajorite,
+        fondsInsuffisants,
       });
     } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Erreur voterEmprunt:', err);
       res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+      client.release();
     }
   },
-
-  async rembourserEmprunt(req, res) {
+async rembourserEmprunt(req, res) {
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+      const { empruntId } = req.params;
       const { montant } = req.body;
-      const { rows } = await pool.query(`
-        UPDATE emprunts SET
-          montant_rembourse = COALESCE(montant_rembourse, 0) + $1,
-          statut = CASE WHEN COALESCE(montant_rembourse, 0) + $1 >= montant THEN 'rembourse' ELSE statut END
-        WHERE id = $2 RETURNING *
-      `, [montant, req.params.empruntId]);
-      res.json({ success: true, data: rows[0] });
+      const userId = req.user.id;
+      const montantF = parseFloat(montant);
+
+      if (!montantF || montantF <= 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Montant invalide' });
+      }
+
+      const { rows: [emprunt] } = await client.query(
+        'SELECT * FROM emprunts WHERE id = $1', [empruntId]
+      );
+      if (!emprunt) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Emprunt non trouvé' });
+      }
+
+      // FIX: aucune vérification d'accès auparavant — n'importe quel
+      // utilisateur authentifié pouvait rembourser n'importe quel emprunt.
+      const { rows: membre } = await client.query(
+        'SELECT id FROM membres_tontine WHERE tontine_id = $1 AND utilisateur_id = $2 AND est_actif = true',
+        [emprunt.tontine_id, userId]
+      );
+      if (membre.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Vous n\'êtes pas membre de cette tontine' });
+      }
+
+      if (emprunt.statut !== 'approuve') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Cet emprunt n\'est pas en cours (non approuvé ou déjà remboursé)' });
+      }
+
+      const nouveauMontantRembourse = (parseFloat(emprunt.montant_rembourse) || 0) + montantF;
+      const nouveauStatut = nouveauMontantRembourse >= parseFloat(emprunt.montant) ? 'rembourse' : 'approuve';
+
+      const { rows: [empruntMaj] } = await client.query(
+        `UPDATE emprunts SET montant_rembourse = $1, statut = $2 WHERE id = $3 RETURNING *`,
+        [nouveauMontantRembourse, nouveauStatut, empruntId]
+      );
+
+      // FIX: crédite enfin le remboursement au solde réel — jusqu'ici
+      // jamais connecté, le solde affiché ne reflétait jamais les
+      // remboursements d'emprunts.
+      const { rows: [cv] } = await client.query(
+        'SELECT * FROM comptes_virtuels WHERE tontine_id = $1 FOR UPDATE', [emprunt.tontine_id]
+      );
+      const soldeAvant = parseFloat(cv?.solde) || 0;
+
+      await client.query(
+        'UPDATE comptes_virtuels SET solde = solde + $1, total_depots = total_depots + $1, updated_at = NOW() WHERE id = $2',
+        [montantF, cv.id]
+      );
+
+      const { rows: [emprunteur] } = await client.query(
+        'SELECT prenom, nom FROM utilisateurs WHERE id = $1', [emprunt.emprunteur_id]
+      );
+
+      await client.query(
+        `INSERT INTO transactions_virtuelles
+          (tontine_id, compte_virtuel_id, type, montant, membre_id, utilisateur_id,
+           description, solde_avant, solde_apres)
+         VALUES ($1,$2,'depot',$3,$4,$4,$5,$6,$7)`,
+        [emprunt.tontine_id, cv.id, montantF, emprunt.emprunteur_id,
+         `Remboursement emprunt de ${emprunteur?.prenom || ''} ${emprunteur?.nom || ''}`,
+         soldeAvant, soldeAvant + montantF]
+      );
+
+      await client.query('COMMIT');
+
+      res.json({ success: true, data: empruntMaj, statut: nouveauStatut });
     } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Erreur rembourserEmprunt:', err);
       res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+      client.release();
     }
   },
 
