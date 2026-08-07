@@ -5,14 +5,14 @@ import '../services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
 
 class _MediaItem {
-  final File file;
+  final File? file; // null si déjà en ligne (pré-rempli à l'édition)
   final String type; // 'image' ou 'video'
   bool uploading;
   String? url;
   bool erreur;
 
   _MediaItem({
-    required this.file,
+    this.file,
     required this.type,
     this.uploading = true,
     this.url,
@@ -26,9 +26,13 @@ class MediaPickerWidget extends StatefulWidget {
   /// {'url': String, 'type': 'image'|'video'}
   final Function(List<Map<String, dynamic>> medias) onMediaChanged;
 
+  /// Médias déjà en ligne à pré-remplir (édition d'un produit existant).
+  final List<Map<String, dynamic>>? initialMedias;
+
   const MediaPickerWidget({
     super.key,
     required this.onMediaChanged,
+    this.initialMedias,
   });
 
   @override
@@ -42,6 +46,21 @@ class _MediaPickerWidgetState extends State<MediaPickerWidget> {
   static const int _maxFichiers = 10;
   static const int _maxImageOctets = 10 * 1024 * 1024; // 10 Mo
   static const int _maxVideoOctets = 50 * 1024 * 1024; // 50 Mo
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialMedias != null) {
+      for (final m in widget.initialMedias!) {
+        _items.add(_MediaItem(
+          type: m['type'] ?? 'image',
+          url: m['url'],
+          uploading: false,
+        ));
+      }
+    }
+  }
+
 
   void _notifierParent() {
     widget.onMediaChanged(
@@ -199,7 +218,11 @@ class _MediaPickerWidgetState extends State<MediaPickerWidget> {
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: item.type == 'image'
-                ? Image.file(item.file, width: 100, height: 100, fit: BoxFit.cover)
+                ? (item.file != null
+                    ? Image.file(item.file!, width: 100, height: 100, fit: BoxFit.cover)
+                    : Image.network(item.url ?? '', width: 100, height: 100, fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(color: AppTheme.grisClair,
+                            child: const Icon(Icons.broken_image_outlined, color: AppTheme.grisTexte))))
                 : Container(
                     width: 100, height: 100,
                     color: AppTheme.texte,

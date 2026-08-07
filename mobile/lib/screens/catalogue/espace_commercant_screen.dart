@@ -116,6 +116,27 @@ class _EspaceCommercantScreenState
     String categorie = produit?['categorie'] ?? 'general';
     bool livraison = produit?['livraison_disponible'] ?? false;
     List<Map<String, dynamic>> mediasSelectionnes = [];
+    if (produit != null && produit['photos'] is List) {
+      for (final p in produit['photos']) {
+        if (p is Map && p['url'] != null) {
+          mediasSelectionnes.add({'url': p['url'], 'type': p['type'] ?? 'image'});
+        }
+      }
+    }
+    if (produit != null && produit['photos'] is List) {
+      for (final p in produit['photos']) {
+        if (p is Map && p['url'] != null) {
+          mediasSelectionnes.add({'url': p['url'], 'type': p['type'] ?? 'image'});
+        }
+      }
+    }
+    if (produit != null && produit['photos'] is List) {
+      for (final p in produit['photos']) {
+        if (p is Map && p['url'] != null) {
+          mediasSelectionnes.add({'url': p['url'], 'type': p['type'] ?? 'image'});
+        }
+      }
+    }
 
     await showModalBottomSheet(
       context: context,
@@ -176,6 +197,7 @@ class _EspaceCommercantScreenState
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 MediaPickerWidget(
+                  initialMedias: mediasSelectionnes,
                   onMediaChanged: (medias) => setModal(() => mediasSelectionnes = medias),
                 ),
                 const SizedBox(height: 12),
