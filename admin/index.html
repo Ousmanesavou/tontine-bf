@@ -373,7 +373,7 @@ tr:hover td{background:#FAFAFA}
             <option value="cuisine">Cuisine</option><option value="agriculture">Agriculture</option>
             <option value="transport">Transport</option><option value="informatique">Informatique</option>
           </select>
-          <button class="btn btn-primary" onclick="openModal('modalAddProduit')">+ Ajouter produit</button>
+          <button class="btn btn-primary" onclick="ouvrirModalAjoutProduit()">+ Ajouter produit</button>
         </div>
       </div>
       <div id="catalogueGrid" class="catalogue-grid"><div class="loading" style="grid-column:span 4"><div class="spinner"></div></div></div>
@@ -599,6 +599,11 @@ tr:hover td{background:#FAFAFA}
       <div class="form-group"><label class="form-label">Contact</label><input class="form-input" id="produitContact" placeholder="+226 XX XX XX XX"></div>
     </div>
     <div class="form-group"><label class="form-label">Emoji représentatif</label><input class="form-input" id="produitEmoji" placeholder="❄️" maxlength="4"></div>
+    <div class="form-group">
+      <label class="form-label">Photos / Vidéos (10 Mo max/photo, 50 Mo max/vidéo)</label>
+      <input type="file" id="produitMediaInput" accept="image/*,video/*" multiple style="margin-bottom:8px">
+      <div id="produitMediaPreview" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
     <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="produitDesc" placeholder="Description du produit..."></textarea></div>
     <div class="form-grid">
       <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="produitLivraison"> <span style="font-size:14px">Livraison disponible</span></label></div>
@@ -1374,8 +1379,48 @@ function renderCatalogue(produits){
   }).join('');
 }
 
+let produitMediasUploades=[];
+
+function ouvrirModalAjoutProduit(){
+  produitMediasUploades=[];
+  document.getElementById('produitMediaPreview').innerHTML='';
+  document.getElementById('produitMediaInput').value='';
+  openModal('modalAddProduit');
+}
+
+document.getElementById('produitMediaInput')?.addEventListener('change', async function(e){
+  const fichiers=Array.from(e.target.files);
+  for(const fichier of fichiers){
+    const isImage=fichier.type.startsWith('image/');
+    const limite=isImage?10*1024*1024:50*1024*1024;
+    if(fichier.size>limite){showToast(`${fichier.name}: trop volumineux (${isImage?'10':'50'} Mo max)`,'error');continue;}
+    const idTemp='media_'+Date.now()+Math.random().toString(36).slice(2);
+    document.getElementById('produitMediaPreview').insertAdjacentHTML('beforeend',`<div id="${idTemp}" style="width:60px;height:60px;background:var(--gris-clair);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gris)">...</div>`);
+    try{
+      const formData=new FormData();
+      formData.append('media',fichier);
+      const resp=await fetch(`${API}/tontines/upload-media`,{method:'POST',headers:{'Authorization':`Bearer ${TOKEN}`},body:formData});
+      const data=await resp.json();
+      const el=document.getElementById(idTemp);
+      if(data.success){
+        produitMediasUploades.push(data.data);
+        el.outerHTML=data.data.type==='video'
+          ?`<div style="width:60px;height:60px;background:var(--texte);border-radius:8px;display:flex;align-items:center;justify-content:center"><span style="color:white">▶️</span></div>`
+          :`<img src="${data.data.url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px">`;
+      }else{
+        el.remove();
+        showToast(data.error||'Erreur upload','error');
+      }
+    }catch(err){
+      document.getElementById(idTemp).remove();
+      showToast('Erreur upload','error');
+    }
+  }
+  e.target.value='';
+});
+
 async function ajouterProduit(){
-  const body={nom:document.getElementById('produitNom').value,categorie:document.getElementById('produitCategorie').value,prix:parseFloat(document.getElementById('produitPrix').value),description:document.getElementById('produitDesc').value,fournisseur_nom:document.getElementById('produitFournisseur').value,fournisseur_contact:document.getElementById('produitContact').value,livraison_disponible:document.getElementById('produitLivraison').checked,emoji:document.getElementById('produitEmoji').value||'📦',creer_tontine_auto:document.getElementById('produitTontineAuto').checked};
+  const body={nom:document.getElementById('produitNom').value,categorie:document.getElementById('produitCategorie').value,prix:parseFloat(document.getElementById('produitPrix').value),description:document.getElementById('produitDesc').value,fournisseur_nom:document.getElementById('produitFournisseur').value,fournisseur_contact:document.getElementById('produitContact').value,livraison_disponible:document.getElementById('produitLivraison').checked,emoji:document.getElementById('produitEmoji').value||'📦',medias:produitMediasUploades,creer_tontine_auto:document.getElementById('produitTontineAuto').checked};
   if(!body.nom||!body.prix){showToast('Nom et prix requis','error');return;}
   const d=await api('/admin/catalogue',{method:'POST',body:JSON.stringify(body)});
   if(d?.success){showToast('Produit ajouté !','success');closeModal('modalAddProduit');chargerCatalogue();}else showToast(d?.error||'Erreur','error');

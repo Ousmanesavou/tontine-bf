@@ -632,7 +632,9 @@ const adminController = {
   async ajouterProduit(req, res) {
     try {
       const { nom, categorie, description, prix, fournisseur_nom,
-              fournisseur_contact, livraison_disponible, emoji, creer_tontine_auto } = req.body;
+              fournisseur_contact, livraison_disponible, emoji, medias, creer_tontine_auto } = req.body;
+      const mediasArray = Array.isArray(medias) ? medias : [];
+      const photosValue = mediasArray.length > 0 ? mediasArray : [emoji||'📦'];
       const { rows } = await pool.query(`
         INSERT INTO catalogue_produits
           (nom, categorie, description, prix, fournisseur_nom,
@@ -641,7 +643,7 @@ const adminController = {
         RETURNING *
       `, [nom, categorie, description, prix, fournisseur_nom,
           fournisseur_contact, livraison_disponible||false,
-          JSON.stringify([emoji||'📦']), emoji||'📦']);
+          JSON.stringify(photosValue), emoji||'📦']);
       res.status(201).json({ success: true, data: rows[0] });
     } catch (err) {
       logger.error('Erreur ajouterProduit:', err);
