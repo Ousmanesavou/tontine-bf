@@ -610,7 +610,31 @@ tr:hover td{background:#FAFAFA}
     </div>
   </div>
 </div>
-
+<div class="modal-overlay" id="modalEditProduit">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifier le produit</div>
+    <div class="form-group"><label class="form-label">Nom du produit</label><input class="form-input" id="editProduitNom"></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Catégorie</label>
+        <select class="form-select" id="editProduitCategorie">
+          <option value="electromenager">❄️ Électroménager</option><option value="meubles">🛋️ Meubles</option>
+          <option value="cuisine">🍳 Cuisine</option><option value="bureau">💼 Bureau</option>
+          <option value="agriculture">🌾 Agriculture</option><option value="transport">🚗 Transport</option>
+          <option value="informatique">💻 Informatique</option><option value="sante">🏥 Santé</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Prix (F CFA)</label><input class="form-input" id="editProduitPrix" type="number"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Emoji représentatif</label><input class="form-input" id="editProduitEmoji" maxlength="4"></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="editProduitDesc"></textarea></div>
+    <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="editProduitActif"> <span style="font-size:14px">Produit actif (visible)</span></label></div>
+    <input type="hidden" id="editProduitId">
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditProduit')">Annuler</button>
+      <button class="btn btn-primary" onclick="soumettreModifierProduit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modalAddCommercant">
   <div class="modal">
     <div class="modal-title">🏪 Ajouter un commerçant partenaire</div>
@@ -1357,7 +1381,32 @@ async function ajouterProduit(){
   if(d?.success){showToast('Produit ajouté !','success');closeModal('modalAddProduit');chargerCatalogue();}else showToast(d?.error||'Erreur','error');
 }
 
-function ouvrirModifierProduit(id){showToast('Modification bientôt disponible','');}
+function ouvrirModifierProduit(id){
+  const p=catalogueData.find(x=>x.id===id);
+  if(!p){showToast('Produit introuvable','error');return;}
+  document.getElementById('editProduitId').value=p.id;
+  document.getElementById('editProduitNom').value=p.nom||'';
+  document.getElementById('editProduitCategorie').value=p.categorie||'electromenager';
+  document.getElementById('editProduitPrix').value=p.prix||'';
+  document.getElementById('editProduitEmoji').value=p.emoji||'📦';
+  document.getElementById('editProduitDesc').value=p.description||'';
+  document.getElementById('editProduitActif').checked=p.est_actif!==false;
+  openModal('modalEditProduit');
+}
+
+async function soumettreModifierProduit(){
+  const id=document.getElementById('editProduitId').value;
+  const body={
+    nom:document.getElementById('editProduitNom').value,
+    categorie:document.getElementById('editProduitCategorie').value,
+    prix:parseFloat(document.getElementById('editProduitPrix').value),
+    description:document.getElementById('editProduitDesc').value,
+    emoji:document.getElementById('editProduitEmoji').value||'📦',
+    est_actif:document.getElementById('editProduitActif').checked,
+  };
+  const d=await api(`/admin/catalogue/${id}`,{method:'PUT',body:JSON.stringify(body)});
+  if(d?.success){showToast('Produit modifié !','success');closeModal('modalEditProduit');chargerCatalogue();}else showToast(d?.error||'Erreur','error');
+}
 
 async function supprimerProduit(id){
   if(!confirm('Supprimer ce produit du catalogue ?'))return;
