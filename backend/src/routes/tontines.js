@@ -126,6 +126,7 @@ router.post('/:id/emprunts/:empruntId/rembourser', tontineController.rembourserE
 router.get('/:id/compte-virtuel', tontineController.getCompteVirtuel);
 router.post('/:id/compte-virtuel/depot', tontineController.effectuerDepot);
 router.post('/:id/compte-virtuel/retrait/initier', tontineController.initierRetrait);
+router.post('/:id/compte-virtuel/tour/initier', tontineController.initierPaiementTour);
 router.post('/:id/compte-virtuel/retrait/:retraitId/voter', tontineController.voterRetrait);
 router.get('/:id/compte-virtuel/transactions', tontineController.getTransactions);
 

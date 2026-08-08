@@ -980,6 +980,114 @@ const tontineController = {
   },
 
   // ── VOTER RETRAIT ─────────────────────────────────────
+  async initierPaiementTour(req, res) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      const { rows: tontine } = await client.query(
+        'SELECT * FROM tontines WHERE id = $1', [id]
+      );
+      if (tontine.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Tontine non trouvée' });
+      }
+
+      let autorise = tontine[0].responsable_id === userId;
+      if (!autorise) {
+        const { rows: [user] } = await client.query(
+          'SELECT role FROM utilisateurs WHERE id = $1', [userId]
+        );
+        autorise = user?.role === 'admin';
+      }
+      if (!autorise) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          error: 'Seul l organisateur ou un administrateur peut initier un paiement de tour'
+        });
+      }
+
+      const { rows: [prochain] } = await client.query(
+        `SELECT mt.*, u.prenom, u.nom
+         FROM membres_tontine mt
+         JOIN utilisateurs u ON u.id = mt.utilisateur_id
+         WHERE mt.tontine_id = $1 AND mt.est_actif = true AND mt.a_recu = false
+         ORDER BY mt.position_rotation ASC LIMIT 1`,
+        [id]
+      );
+      if (!prochain) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Tous les membres actifs ont déjà reçu leur tour' });
+      }
+
+      const montantAttendu = parseFloat(tontine[0].montant_cotisation) * tontine[0].nombre_membres;
+
+      const { rows: cv } = await client.query(
+        'SELECT * FROM comptes_virtuels WHERE tontine_id = $1 FOR UPDATE', [id]
+      );
+      if (cv.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Compte virtuel non trouvé' });
+      }
+
+      const soldeDisponible = parseFloat(cv[0].solde) || 0;
+      if (soldeDisponible < montantAttendu) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Solde insuffisant pour ce tour : ${soldeDisponible} F disponibles, ${montantAttendu} F requis`
+        });
+      }
+
+      const { rows: retraitEnCours } = await client.query(`
+        SELECT id FROM transactions_virtuelles
+        WHERE compte_virtuel_id = $1 AND type = 'retrait' AND statut = 'en_attente_vote'
+      `, [cv[0].id]);
+      if (retraitEnCours.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Un retrait est déjà en cours de vote' });
+      }
+
+      const { rows: retrait } = await client.query(`
+        INSERT INTO transactions_virtuelles
+          (compte_virtuel_id, utilisateur_id, tontine_id, membre_id, type, montant,
+           statut, description, est_tour_paiement)
+        VALUES ($1, $2, $3, $4, 'retrait', $5, 'en_attente_vote', $6, true)
+        RETURNING *
+      `, [cv[0].id, userId, id, prochain.utilisateur_id, montantAttendu,
+          `Tour de ${prochain.prenom} ${prochain.nom} (position ${prochain.position_rotation})`]);
+
+      const { rows: membres } = await client.query(
+        'SELECT utilisateur_id FROM membres_tontine WHERE tontine_id = $1 AND est_actif = true AND utilisateur_id != $2',
+        [id, prochain.utilisateur_id]
+      );
+
+      await client.query('COMMIT');
+
+      for (const m of membres) {
+        await notificationService.notifierMembre(m.utilisateur_id, {
+          type: 'rappel_cotisation',
+          nom_tontine: tontine[0].nom,
+          montant: `${montantAttendu} F - VOTE POUR LE TOUR DE ${prochain.prenom.toUpperCase()} REQUIS`,
+          tontine_id: id,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Paiement du tour de ${prochain.prenom} ${prochain.nom} initié. ${membres.length} membre(s) doivent voter.`,
+        data: retrait[0]
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Erreur initierPaiementTour:', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+      client.release();
+    }
+  },
+
   async voterRetrait(req, res) {
     const client = await pool.connect();
     try {
@@ -1064,6 +1172,13 @@ const tontineController = {
           'UPDATE comptes_virtuels SET solde = solde - $1, total_retraits = total_retraits + $1, updated_at = NOW() WHERE id = $2',
           [retrait[0].montant, retrait[0].compte_virtuel_id]
         );
+
+        if (retrait[0].est_tour_paiement) {
+          await client.query(
+            'UPDATE membres_tontine SET a_recu = true, date_reception = NOW() WHERE tontine_id = $1 AND utilisateur_id = $2',
+            [id, retrait[0].membre_id]
+          );
+        }
         await client.query('COMMIT');
         await notificationService.notifierGroupeTontine(id, {
           type: 'tour_recu',
