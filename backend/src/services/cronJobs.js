@@ -1,4 +1,4 @@
-const cron = require('node-cron');
+﻿const cron = require('node-cron');
 const notificationService = require('./notificationService');
 const { pool } = require('../../config/database');
 const logger = require('../utils/logger');
@@ -81,25 +81,55 @@ const cronJobs = {
   async mettreAJourScoresMembresEnRetard() {
     try {
       const { rows } = await pool.query(`
-        SELECT DISTINCT membre_id FROM cotisations
-        WHERE statut = 'en_retard'
-          AND date_paiement IS NULL
-          AND date_echeance >= NOW() - INTERVAL '1 day'
+        SELECT DISTINCT c.membre_id, c.tontine_id,
+          COALESCE(mt.a_recu, false) as a_deja_recu
+        FROM cotisations c
+        LEFT JOIN membres_tontine mt ON mt.tontine_id = c.tontine_id AND mt.utilisateur_id = c.membre_id
+        WHERE c.statut = 'en_retard'
+          AND c.date_paiement IS NULL
+          AND c.date_echeance >= NOW() - INTERVAL '1 day'
       `);
 
-      for (const { membre_id } of rows) {
+      for (const row of rows) {
+        // FIX: pénalité renforcée si le membre a déjà reçu son tour dans
+        // CETTE tontine — un retard après réception est bien plus grave
+        // qu'un retard classique, puisque les membres suivants comptent
+        // sur ce paiement pour recevoir le leur.
+        const penalite = row.a_deja_recu ? 20 : 5;
+
         await pool.query(`
           UPDATE utilisateurs SET
-            score_fiabilite = GREATEST(0, score_fiabilite - 5),
+            score_fiabilite = GREATEST(0, score_fiabilite - $1),
             updated_at = NOW()
-          WHERE id = $1
-        `, [membre_id]);
+          WHERE id = $2
+        `, [penalite, row.membre_id]);
+
+        if (row.a_deja_recu) {
+          // NOUVEAU: alerte immédiate à l'organisateur et aux autres
+          // membres — c'est le risque le plus dangereux d'une tontine
+          // tournante (abandon après réception du tour).
+          const { rows: [tontine] } = await pool.query(
+            'SELECT nom FROM tontines WHERE id = $1', [row.tontine_id]
+          );
+          const { rows: [membreInfo] } = await pool.query(
+            'SELECT prenom, nom FROM utilisateurs WHERE id = $1', [row.membre_id]
+          );
+          if (tontine) {
+            await notificationService.notifierGroupeTontine(row.tontine_id, {
+              type: 'retard_paiement',
+              nom_tontine: tontine.nom,
+              montant: `ALERTE : ${membreInfo?.prenom || ''} ${membreInfo?.nom || ''} a déjà reçu son tour et est maintenant en retard de cotisation`,
+              tontine_id: row.tontine_id,
+            });
+          }
+        }
       }
       logger.info(`Scores mis à jour pour ${rows.length} membres en retard`);
     } catch (err) {
       logger.error('Erreur mise à jour scores:', err);
     }
   },
+
 
   async envoyerRapportsMensuels() {
     try {
