@@ -182,6 +182,18 @@ class _DashboardOrganisateurScreenState
 
   // NOUVEAU: confirmer une déclaration USSD — le backend renvoie solde
   // avant/après, montrés directement dans la confirmation.
+  Future<void> _distribuerTour() async {
+    try {
+      final resultat = await ApiService.initierPaiementTour(widget.tontineId);
+      await _charger();
+      if (mounted) {
+        _snack(resultat['message'] ?? 'Paiement de tour initié, vote en cours', AppTheme.vert);
+      }
+    } catch (e) {
+      if (mounted) _snack(e.toString(), AppTheme.rouge);
+    }
+  }
+
   Future<void> _confirmerDeclaration(String declarationId) async {
     try {
       final resultat = await ApiService.confirmerDeclarationUSSD(declarationId);
@@ -495,6 +507,43 @@ class _DashboardOrganisateurScreenState
             ),
 
             const SizedBox(height: 16),
+            if (_membres.any((m) => m['a_recu'] != true)) ...[
+              _sectionTitre('Tour suivant'),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: _cardDeco(),
+                child: Builder(builder: (ctx) {
+                  final eligibles = _membres.where((m) => m['a_recu'] != true).toList()
+                    ..sort((a, b) => ((a['position_rotation'] ?? 999) as num)
+                        .compareTo((b['position_rotation'] ?? 999) as num));
+                  final prochain = eligibles.first;
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${prochain['prenom'] ?? ''} ${prochain['nom'] ?? ''}',
+                                style: const TextStyle(fontFamily: 'Nunito',
+                                    fontWeight: FontWeight.w700, fontSize: 14)),
+                            Text('Position ${prochain['position_rotation'] ?? '-'}',
+                                style: const TextStyle(fontFamily: 'Nunito',
+                                    fontSize: 12, color: AppTheme.grisTexte)),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.vert),
+                        onPressed: _distribuerTour,
+                        child: const Text('Distribuer le tour',
+                            style: TextStyle(color: Colors.white, fontSize: 12)),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+            ],
             _sectionTitre(_t(langue, 'progression')),
             Container(
               padding: const EdgeInsets.all(14),

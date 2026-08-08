@@ -545,4 +545,14 @@ class ApiService {
       throw _handleError(e);
     }
   }
+
+  // ── PAIEMENT DE TOUR ────────────────────────────────
+  static Future<Map<String, dynamic>> initierPaiementTour(String tontineId) async {
+    try {
+      final resp = await _dio.post('/tontines/$tontineId/compte-virtuel/tour/initier');
+      return Map<String, dynamic>.from(resp.data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 }
