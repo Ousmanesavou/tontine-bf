@@ -358,6 +358,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
   String _type = 'argent_liquide';
   String _periodicite = 'hebdomadaire';
   String _ordreRotation = 'tirage_sort';
+  String _modeGestion = 'direct';
   int _periodicitejours = 7;
   bool _periodePersonnalisee = false;
   bool _estPublique = true; // ✅ publique par défaut
@@ -446,6 +447,7 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
         'date_debut': _dateDebut.toIso8601String().split('T')[0],
         'date_fin': _dateFinCalculee.toIso8601String().split('T')[0],
         'ordre_rotation': _ordreRotation,
+        'mode_gestion': _modeGestion,
         'medias': _medias,
         'est_publique': _estPublique, // ✅
         'est_public': _estPublique,   // ✅
@@ -763,6 +765,90 @@ class _CreerTontineScreenState extends ConsumerState<CreerTontineScreen> {
                                     fontSize: isSmall ? 12 : 13, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 2),
                             const Text('Premier arrivé, premier servi',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontFamily: 'Nunito',
+                                    fontSize: 10, color: AppTheme.grisTexte)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: isSmall ? 14 : 20),
+              SizedBox(height: isSmall ? 14 : 20),
+
+              // ── MODE DE GESTION ───────────────────────────
+              _buildSection('Mode de gestion des fonds', isSmall),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _modeGestion = 'direct'),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: EdgeInsets.all(isSmall ? 10 : 14),
+                        decoration: BoxDecoration(
+                          color: _modeGestion == 'direct'
+                              ? AppTheme.vert.withOpacity(0.15)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _modeGestion == 'direct'
+                                ? AppTheme.vert
+                                : const Color(0xFFE8E8E5),
+                            width: _modeGestion == 'direct' ? 2 : 0.5,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('👤', style: TextStyle(fontSize: 26)),
+                            const SizedBox(height: 6),
+                            Text('Direct',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontFamily: 'Nunito',
+                                    fontSize: isSmall ? 12 : 13, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            const Text('Mon numéro Mobile Money personnel',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontFamily: 'Nunito',
+                                    fontSize: 10, color: AppTheme.grisTexte)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _modeGestion = 'gere'),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: EdgeInsets.all(isSmall ? 10 : 14),
+                        decoration: BoxDecoration(
+                          color: _modeGestion == 'gere'
+                              ? AppTheme.vert.withOpacity(0.15)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _modeGestion == 'gere'
+                                ? AppTheme.vert
+                                : const Color(0xFFE8E8E5),
+                            width: _modeGestion == 'gere' ? 2 : 0.5,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('🏦', style: TextStyle(fontSize: 26)),
+                            const SizedBox(height: 6),
+                            Text('Compte géré',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontFamily: 'Nunito',
+                                    fontSize: isSmall ? 12 : 13, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            const Text('Numéros Toeeg Digital centralisés',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontFamily: 'Nunito',
                                     fontSize: 10, color: AppTheme.grisTexte)),

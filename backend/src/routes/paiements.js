@@ -41,7 +41,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
 
     // 1. Vérifier que l utilisateur est membre de la tontine
     const { rows: [membre] } = await client.query(
-      `SELECT mt.*, t.montant_cotisation, t.nom as tontine_nom,
+      `SELECT mt.*, t.montant_cotisation, t.nom as tontine_nom, t.mode_gestion, t.responsable_id,
               u.prenom, u.nom as nom_membre
        FROM membres_tontine mt
        JOIN tontines t ON t.id = mt.tontine_id
@@ -54,12 +54,23 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
       return res.status(403).json({ error: 'Vous n êtes pas membre de cette tontine' });
     }
 
-    // NOUVEAU: numéros de réception centralisés Toeeg Digital — remplace
-    // l'ancien numéro personnel de l'organisateur (cohérent avec le flux
-    // USSD, réduit le risque qu'un seul organisateur détienne les fonds).
-    const { rows: numerosToeeg } = await client.query(
-      `SELECT operateur, numero FROM numeros_reception_toeeg WHERE actif = true`
-    );
+    // NOUVEAU: la destination dépend désormais du mode de gestion choisi à
+    // la création — numéros centralisés Toeeg Digital en mode "géré", ou
+    // numéro personnel de l'organisateur en mode "direct" (comportement
+    // historique, par défaut pour toute tontine déjà existante).
+    let numerosValides = [];
+    if (membre.mode_gestion === 'gere') {
+      const { rows: numerosToeeg } = await client.query(
+        `SELECT numero FROM numeros_reception_toeeg WHERE actif = true`
+      );
+      numerosValides = numerosToeeg.map(n => n.numero);
+    } else {
+      const { rows: [organisateur] } = await client.query(
+        `SELECT orange_money_numero, moov_money_numero FROM utilisateurs WHERE id = $1`,
+        [membre.responsable_id]
+      );
+      numerosValides = [organisateur?.orange_money_numero, organisateur?.moov_money_numero].filter(Boolean);
+    }
 
     // 2. Trouver la période de cotisation à honorer
     const { rows: [cotisationCible] } = await client.query(
@@ -117,7 +128,7 @@ router.post('/soumettre', upload.single('capture'), async (req, res) => {
     );
     const contexteAnalyse = {
       montantAttendu: montantRestantDu || membre.montant_cotisation,
-      numerosValides: numerosToeeg.map(n => n.numero),
+      numerosValides,
     };
     const texteOCR = await CaptureAnalyseService.extraireTexte(uploadResult.secure_url, contexteAnalyse);
     const analyse = CaptureAnalyseService.analyserTexte(texteOCR, contexteAnalyse);

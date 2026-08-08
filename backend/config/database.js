@@ -81,6 +81,7 @@ async function createTables(client) {
       photo_tontine TEXT,
       medias JSONB DEFAULT '[]',
       est_supprime BOOLEAN DEFAULT false,
+      mode_gestion VARCHAR(20) DEFAULT 'direct',
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )

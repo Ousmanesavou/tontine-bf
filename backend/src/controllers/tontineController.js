@@ -1,4 +1,4 @@
-const { pool } = require('../../config/database');
+﻿const { pool } = require('../../config/database');
 const { deleteCache } = require('../../config/redis');
 const notificationService = require('../services/notificationService');
 const logger = require('../utils/logger');
@@ -195,13 +195,14 @@ const tontineController = {
         nom, type, description, montant_cotisation, periodicite,
         periodicite_jours, nombre_membres, date_debut,
         ordre_rotation, produit_catalogue_id,
-        est_publique, medias,
+        est_publique, mode_gestion, medias,
         photo_tontine, devise, pays,
         orange_money_numero, moov_money_numero,
         mtn_numero, wave_numero,
       } = req.body;
 
       const estPublique = est_publique || false;
+      const modeGestionFinal = mode_gestion === 'gere' ? 'gere' : 'direct';
       const mediasArray = Array.isArray(medias) ? medias : [];
       const premierePhoto = mediasArray.find(m => m.type === 'image');
       const photoTontineFinal = photo_tontine || premierePhoto?.url || null;
@@ -213,8 +214,8 @@ const tontineController = {
       const { rows } = await client.query(`
         INSERT INTO tontines (nom, type, description, montant_cotisation, periodicite,
           periodicite_jours, nombre_membres, date_debut, date_fin, ordre_rotation,
-          responsable_id, produit_catalogue_id, est_publique, photo_tontine, medias)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          responsable_id, produit_catalogue_id, est_publique, photo_tontine, medias, mode_gestion)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
         RETURNING *
       `, [nom, type, description, montant_cotisation, periodicite,
           periodicite_jours || 1, nombre_membres, date_debut, date_fin,
@@ -222,7 +223,8 @@ const tontineController = {
           produit_catalogue_id || null,
           estPublique,
           photoTontineFinal,
-          JSON.stringify(mediasArray)]);
+          JSON.stringify(mediasArray),
+          modeGestionFinal]);
 
       const tontine = rows[0];
 
